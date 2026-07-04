@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeeDee (ที่ดี) — หาบ้านเช่า บ้านขาย ที่ดิน ครบจบในที่เดียว</title>
+  <meta name="description" content="แพลตฟอร์มอสังหาริมทรัพย์ รวมบ้านเช่า บ้าน-คอนโดขาย และที่ดินทั่วไทย ค้นหาง่าย ข้อมูลครบ ติดต่อตรง">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230d5c4a'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif'>ท</text></svg>">
+</head>
+<body>
+  <div id="nav"></div>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="container">
+      <span class="eyebrow">🏡 รวมบ้านเช่า · บ้านขาย · ที่ดิน ทั่วไทย</span>
+      <h1>หา<span class="hl">ที่ที่ใช่</span> สำหรับชีวิตที่ดี<br>เริ่มต้นได้ที่นี่</h1>
+      <p class="sub">ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ทั้งราคา ขนาด และสถานที่ใกล้เคียง — ติดต่อเจ้าของได้โดยตรง</p>
+
+      <!-- Signature Search -->
+      <div class="searchbox">
+        <div class="search-tabs" role="tablist">
+          <button class="active" data-type="" role="tab">ทั้งหมด</button>
+          <button data-type="rent" role="tab">เช่า</button>
+          <button data-type="sale" role="tab">ซื้อ</button>
+        </div>
+        <form class="search-panel" id="searchForm">
+          <div class="field" style="flex:2 1 240px">
+            <span id="ic-search"></span>
+            <input type="text" name="q" placeholder="ค้นหาทำเล โครงการ หรือคำที่คิด เช่น พญาไท, ใกล้ BTS..." aria-label="คำค้นหา">
+          </div>
+          <div class="field">
+            <span id="ic-home"></span>
+            <select name="category" aria-label="ประเภท">
+              <option value="">ทุกประเภท</option>
+              <option value="condo">คอนโด</option>
+              <option value="house">บ้านเดี่ยว</option>
+              <option value="townhouse">ทาวน์เฮาส์</option>
+              <option value="land">ที่ดิน</option>
+              <option value="commercial">อาคารพาณิชย์</option>
+            </select>
+          </div>
+          <div class="field">
+            <span id="ic-coin"></span>
+            <select name="budget" aria-label="งบประมาณ">
+              <option value="">ทุกช่วงราคา</option>
+              <option value="0-15000">ไม่เกิน 15,000</option>
+              <option value="15000-30000">15,000 – 30,000</option>
+              <option value="30000-60000">30,000 – 60,000</option>
+              <option value="0-3000000">ไม่เกิน 3 ล้าน</option>
+              <option value="3000000-6000000">3 – 6 ล้าน</option>
+              <option value="6000000-999999999">6 ล้านขึ้นไป</option>
+            </select>
+          </div>
+          <button class="btn btn-primary go" type="submit"><span id="ic-search2"></span> ค้นหา</button>
+        </form>
+        <div class="quick-chips" id="chips">
+          <span>ลองค้น:</span>
+          <button data-q="ใกล้ BTS">คอนโดใกล้ BTS</button>
+          <button data-q="นครปฐม">บ้านนครปฐม</button>
+          <button data-q="เชียงใหม่">บ้านเช่าเชียงใหม่</button>
+          <button data-cat="land">ที่ดินทั้งหมด</button>
+          <button data-q="เลี้ยงสัตว์">เลี้ยงสัตว์ได้</button>
+        </div>
+      </div>
+
+      <div class="stats" id="stats"></div>
+    </div>
+  </header>
+
+  <!-- Featured -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2>ประกาศแนะนำ</h2>
+          <p>คัดมาให้เฉพาะประกาศเด่น ข้อมูลครบ พร้อมติดต่อ</p>
+        </div>
+        <a class="more" href="/search">ดูทั้งหมด <span id="ic-arrow"></span></a>
+      </div>
+      <div class="grid" id="featured">
+        <div class="skeleton" style="height:380px"></div>
+        <div class="skeleton" style="height:380px"></div>
+        <div class="skeleton" style="height:380px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="section" id="categories" style="padding-top:20px">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2>เลือกดูตามประเภท</h2>
+          <p>อยากได้แบบไหน เข้าดูได้ตรงหมวดเลย</p>
+        </div>
+      </div>
+      <div class="cat-grid" id="catGrid"></div>
+    </div>
+  </section>
+
+  <!-- Latest -->
+  <section class="section" style="padding-top:12px">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2>ประกาศมาใหม่</h2>
+          <p>อัปเดตล่าสุดจากเจ้าของทั่วประเทศ</p>
+        </div>
+        <a class="more" href="/search?sort=newest">ดูทั้งหมด <span id="ic-arrow2"></span></a>
+      </div>
+      <div class="grid" id="latest"></div>
+    </div>
+  </section>
+
+  <!-- Why us -->
+  <section class="section">
+    <div class="container">
+      <div class="why">
+        <h2>ทำไมต้อง TeeDee</h2>
+        <p class="sub">เราตั้งใจให้การหาบ้านเป็นเรื่องง่ายและโปร่งใสที่สุด</p>
+        <div class="why-grid" id="whyGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section" id="list-cta" style="padding-top:0">
+    <div class="container">
+      <div class="cta-list">
+        <div>
+          <h2>มีบ้านหรือที่ดินอยากปล่อยเช่า/ขาย?</h2>
+          <p>ลงประกาศกับเราฟรี ทีมงานช่วยตรวจสอบข้อมูลและเขียนคอนเทนต์ให้น่าสนใจด้วย AI</p>
+        </div>
+        <a class="btn btn-copper" href="#contact-owner" id="ownerBtn">ติดต่อลงประกาศ <span id="ic-arrow3"></span></a>
+      </div>
+      <div class="contact-card" id="contact-owner" style="max-width:520px;margin:22px auto 0;display:none">
+        <h3>ฝากข้อมูลไว้ ทีมงานติดต่อกลับ</h3>
+        <div class="frm">
+          <input id="o-name" placeholder="ชื่อของคุณ *">
+          <input id="o-phone" placeholder="เบอร์โทร">
+          <input id="o-line" placeholder="LINE ID">
+          <textarea id="o-msg" placeholder="เล่าคร่าว ๆ ว่ามีทรัพย์แบบไหน อยู่ที่ไหน"></textarea>
+          <div class="form-msg" id="o-formMsg"></div>
+          <button class="btn btn-primary" id="o-send" style="justify-content:center">ส่งข้อมูล</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="footer"></div>
+
+  <script src="/js/shared.js"></script>
+  <script>
+    document.getElementById('nav').innerHTML = TD.navbar();
+    document.getElementById('footer').innerHTML = TD.footer();
+    ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
+    document.getElementById('ic-home').innerHTML = TD.icons.home;
+    document.getElementById('ic-coin').innerHTML = TD.icons.coin;
+    ['ic-arrow', 'ic-arrow2', 'ic-arrow3'].forEach(id => document.getElementById(id).innerHTML = TD.icons.arrowRight);
+
+    // Category tiles
+    const cats = [
+      { key: 'condo', desc: 'ใกล้รถไฟฟ้า พร้อมอยู่' },
+      { key: 'house', desc: 'พื้นที่กว้าง เป็นส่วนตัว' },
+      { key: 'townhouse', desc: 'คุ้มค่า ทำเลดี' },
+      { key: 'land', desc: 'ปลูกสร้าง / ลงทุน' },
+      { key: 'commercial', desc: 'ทำเลค้าขาย' }
+    ];
+    document.getElementById('catGrid').innerHTML = cats.map(c => `
+      <a class="cat-tile" href="/search?category=${c.key}">
+        <div class="ico">${TD.icons[TD.catIcon[c.key]]}</div>
+        <h3>${TD.catLabel[c.key]}</h3><p>${c.desc}</p>
+      </a>`).join('');
+
+    // Why us
+    const whys = [
+      { ic: 'shield', h: 'ข้อมูลตรวจสอบแล้ว', p: 'ทุกประกาศผ่านการคัดกรองจากทีมงาน ราคาและรายละเอียดตรงตามจริง' },
+      { ic: 'mapSearch', h: 'ค้นหาตามไลฟ์สไตล์', p: 'กรองได้ทั้งงบ ทำเล ขนาด และเงื่อนไขอย่างเลี้ยงสัตว์ได้' },
+      { ic: 'phone', h: 'ติดต่อตรง ไม่ผ่านคนกลาง', p: 'คุยกับเจ้าของหรือผู้ดูแลทรัพย์ได้ทันที ไม่มีค่านายหน้าแอบแฝง' },
+      { ic: 'fileCheck', h: 'ครบทั้งเช่า ซื้อ และที่ดิน', p: 'ไม่ต้องเปิดหลายเว็บ ที่นี่รวมทุกประเภททรัพย์ไว้ให้แล้ว' }
+    ];
+    document.getElementById('whyGrid').innerHTML = whys.map(w => `
+      <div class="why-item"><div class="ico">${TD.icons[w.ic]}</div><h3>${w.h}</h3><p>${w.p}</p></div>`).join('');
+
+    // Search behavior
+    let currentType = '';
+    document.querySelectorAll('.search-tabs button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('.search-tabs button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      currentType = b.dataset.type;
+    }));
+    document.getElementById('searchForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const p = new URLSearchParams();
+      if (currentType) p.set('type', currentType);
+      if (f.get('q')) p.set('q', f.get('q'));
+      if (f.get('category')) p.set('category', f.get('category'));
+      const budget = f.get('budget');
+      if (budget) { const [min, max] = budget.split('-'); p.set('min', min); p.set('max', max); }
+      location.href = '/search?' + p.toString();
+    });
+    document.getElementById('chips').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const p = new URLSearchParams();
+      if (b.dataset.q) p.set('q', b.dataset.q);
+      if (b.dataset.cat) p.set('category', b.dataset.cat);
+      location.href = '/search?' + p.toString();
+    });
+
+    // Load data
+    (async () => {
+      try {
+        const [feat, latest] = await Promise.all([
+          fetch('/api/listings?featured=1').then(r => r.json()),
+          fetch('/api/listings?sort=newest').then(r => r.json())
+        ]);
+        document.getElementById('featured').innerHTML =
+          feat.items.slice(0, 6).map(l => TD.card(l)).join('') ||
+          '<p style="color:var(--muted)">ยังไม่มีประกาศแนะนำ</p>';
+        document.getElementById('latest').innerHTML =
+          latest.items.slice(0, 6).map(l => TD.card(l)).join('');
+
+        const total = latest.total || 0;
+        const rentCount = await fetch('/api/listings?type=rent').then(r => r.json());
+        const saleCount = await fetch('/api/listings?type=sale').then(r => r.json());
+        document.getElementById('stats').innerHTML = `
+          <div class="stat"><div class="num">${total.toLocaleString()}</div><div class="lbl">ประกาศทั้งหมด</div></div>
+          <div class="stat"><div class="num">${rentCount.total.toLocaleString()}</div><div class="lbl">สำหรับเช่า</div></div>
+          <div class="stat"><div class="num">${saleCount.total.toLocaleString()}</div><div class="lbl">สำหรับขาย</div></div>`;
+      } catch (err) { console.error(err); }
+    })();
+
+    // Owner contact form
+    document.getElementById('ownerBtn').addEventListener('click', e => {
+      document.getElementById('contact-owner').style.display = 'block';
+    });
+    document.getElementById('o-send').addEventListener('click', async () => {
+      const msg = document.getElementById('o-formMsg');
+      msg.className = 'form-msg';
+      try {
+        await TD.post('/api/inquiries', {
+          name: document.getElementById('o-name').value.trim(),
+          phone: document.getElementById('o-phone').value.trim(),
+          line_id: document.getElementById('o-line').value.trim(),
+          message: '[ลงประกาศ] ' + document.getElementById('o-msg').value.trim()
+        });
+        msg.textContent = 'ส่งข้อมูลเรียบร้อย ทีมงานจะติดต่อกลับโดยเร็วครับ';
+        msg.classList.add('ok');
+        ['o-name', 'o-phone', 'o-line', 'o-msg'].forEach(id => document.getElementById(id).value = '');
+      } catch (e2) {
+        msg.textContent = e2.message;
+        msg.classList.add('err');
+      }
+    });
+  </script>
+</body>
+</html>

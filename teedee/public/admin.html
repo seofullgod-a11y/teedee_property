@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบหลังบ้าน — TeeDee Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #eef0ec; }
+    .admin-shell { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+    .side {
+      background: var(--pine-deep); color: #d7e6de; padding: 22px 14px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .side .brand { color: #fff; margin-bottom: 22px; padding: 0 10px; }
+    .side button, .side a.menu {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      background: transparent; border: none; color: #cfe0d7; text-align: left;
+      padding: 11px 12px; border-radius: 10px; font-family: var(--font-display);
+      font-size: .95rem; font-weight: 400;
+    }
+    .side button svg, .side a.menu svg { width: 19px; height: 19px; }
+    .side button.active, .side button:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .side .spacer { flex: 1; }
+    .main-area { padding: 28px 32px; overflow-x: hidden; }
+    .main-area h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 26px; }
+    .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+    .stat-card .n { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; color: var(--pine); }
+    .stat-card .l { font-size: .82rem; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+    th, td { padding: 12px 14px; text-align: left; font-size: .9rem; border-bottom: 1px solid #f0ede3; vertical-align: middle; }
+    th { background: var(--sand); font-family: var(--font-display); font-weight: 500; font-size: .85rem; }
+    tr:hover td { background: #fbfaf6; }
+    .tbl-thumb { width: 62px; height: 44px; object-fit: cover; border-radius: 8px; }
+    .st { border-radius: 999px; padding: 3px 11px; font-size: .75rem; font-weight: 500; }
+    .st.active { background: var(--pine-soft); color: var(--pine-deep); }
+    .st.draft { background: #f3efe2; color: #8a7634; }
+    .st.closed { background: #f2e4e0; color: var(--danger); }
+    .mini-btn { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; font-size: .82rem; margin-right: 5px; }
+    .mini-btn:hover { border-color: var(--pine); color: var(--pine); }
+    .mini-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+
+    /* Editor */
+    .editor { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 26px; max-width: 860px; }
+    .frm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .frm-grid .full { grid-column: 1 / -1; }
+    .frm-grid label { display: block; font-size: .83rem; font-weight: 500; margin-bottom: 5px; color: #41524b; font-family: var(--font-display); }
+    .frm-grid input, .frm-grid select, .frm-grid textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+      background: var(--sand); outline: none;
+    }
+    .frm-grid input:focus, .frm-grid select:focus, .frm-grid textarea:focus { border-color: var(--pine); background: #fff; }
+    .frm-grid textarea { resize: vertical; min-height: 120px; }
+    .chk { display: flex; align-items: center; gap: 8px; font-size: .92rem; }
+    .chk input { width: auto; }
+    .ai-box {
+      background: linear-gradient(120deg, #eef7f2, #fdf6ea);
+      border: 1.5px dashed var(--pine); border-radius: 14px; padding: 18px; margin: 18px 0;
+    }
+    .ai-box h3 { font-size: 1rem; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; color: var(--pine-deep); }
+    .ai-box h3 svg { width: 20px; height: 20px; color: var(--copper); }
+    .ai-box p { font-size: .83rem; color: var(--muted); margin-bottom: 12px; }
+    .ai-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ai-actions button {
+      background: #fff; border: 1px solid var(--pine); color: var(--pine-deep);
+      border-radius: 999px; padding: 8px 16px; font-size: .86rem; font-family: var(--font-display);
+    }
+    .ai-actions button:hover { background: var(--pine); color: #fff; }
+    .ai-actions button:disabled { opacity: .5; }
+    .ai-result { margin-top: 14px; display: none; }
+    .ai-result.show { display: block; }
+    .ai-result .opt {
+      background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px;
+      margin-bottom: 8px; cursor: pointer; font-size: .92rem; display: flex; justify-content: space-between; gap: 10px; align-items: center;
+    }
+    .ai-result .opt:hover { border-color: var(--copper); background: var(--copper-soft); }
+    .ai-result .opt .use { font-size: .78rem; color: var(--copper); font-family: var(--font-display); white-space: nowrap; }
+    .ai-result pre { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; white-space: pre-wrap; font-family: var(--font-body); font-size: .92rem; }
+    .img-list { display: flex; flex-direction: column; gap: 8px; }
+    .img-row { display: flex; gap: 8px; align-items: center; }
+    .img-row img { width: 60px; height: 42px; object-fit: cover; border-radius: 7px; background: var(--pine-soft); }
+    .img-row input { flex: 1; }
+    .nb-row { display: flex; gap: 8px; }
+    .add-row-btn { background: none; border: 1.5px dashed var(--line); border-radius: 10px; padding: 9px; width: 100%; color: var(--muted); font-size: .86rem; }
+    .add-row-btn:hover { border-color: var(--pine); color: var(--pine); }
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: #fff;
+      padding: 13px 20px; border-radius: 12px; font-size: .92rem; z-index: 99;
+      opacity: 0; transform: translateY(10px); transition: all .25s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: none; }
+    .toast.err { background: var(--danger); }
+
+    /* Login */
+    .login-wrap { min-height: 100vh; display: grid; place-items: center; }
+    .login-card { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 40px; width: min(400px, 92vw); box-shadow: var(--shadow); text-align: center; }
+    .login-card .mark { width: 54px; height: 54px; border-radius: 15px; background: var(--pine); color: #fff; display: grid; place-items: center; margin: 0 auto 16px; }
+    .login-card .mark svg { width: 28px; height: 28px; }
+    .login-card h1 { font-size: 1.3rem; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); font-size: .9rem; margin-bottom: 22px; }
+    .login-card input { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; margin-bottom: 12px; background: var(--sand); outline: none; }
+    .login-card input:focus { border-color: var(--pine); }
+    .unread-dot { display: inline-block; min-width: 20px; height: 20px; line-height: 20px; background: var(--copper); color: #fff; font-size: .72rem; border-radius: 999px; text-align: center; padding: 0 5px; font-family: var(--font-display); }
+    .inq-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    .inq-card.unread { border-left: 4px solid var(--copper); }
+    .inq-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+    .inq-head b { font-family: var(--font-display); font-weight: 500; }
+    .inq-meta { font-size: .82rem; color: var(--muted); }
+    @media (max-width: 860px) {
+      .admin-shell { grid-template-columns: 1fr; }
+      .side { flex-direction: row; overflow-x: auto; align-items: center; padding: 10px; }
+      .side .brand { margin: 0 10px 0 0; }
+      .side .spacer, .side .foot-link { display: none; }
+      .frm-grid { grid-template-columns: 1fr; }
+      .main-area { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login -->
+  <div class="login-wrap" id="loginView">
+    <div class="login-card">
+      <div class="mark" id="loginIcon"></div>
+      <h1>TeeDee Admin</h1>
+      <p>ระบบจัดการประกาศอสังหาริมทรัพย์</p>
+      <input type="password" id="pw" placeholder="รหัสผ่านผู้ดูแล" autocomplete="current-password">
+      <div class="form-msg" id="loginMsg" style="margin-bottom:10px;text-align:left"></div>
+      <button class="btn btn-primary" id="loginBtn" style="width:100%;justify-content:center">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+
+  <!-- Shell -->
+  <div class="admin-shell" id="shell" style="display:none">
+    <aside class="side">
+      <a class="brand" href="/"><span class="mark" id="sideIcon"></span>Tee<em style="color:#7ed0b4">Dee</em></a>
+      <button data-view="dashboard" class="active"><span data-ic="home"></span> แดชบอร์ด</button>
+      <button data-view="listings"><span data-ic="building"></span> ประกาศทั้งหมด</button>
+      <button data-view="editor"><span data-ic="sparkles"></span> เพิ่มประกาศใหม่</button>
+      <button data-view="inbox"><span data-ic="phone"></span> ข้อความติดต่อ <span class="unread-dot" id="unreadDot" style="display:none">0</span></button>
+      <span class="spacer"></span>
+      <a class="menu foot-link" href="/" target="_blank"><span data-ic="arrowRight"></span> ดูหน้าเว็บ</a>
+      <button id="logoutBtn" class="foot-link">ออกจากระบบ</button>
+    </aside>
+
+    <main class="main-area">
+      <!-- Dashboard -->
+      <div data-panel="dashboard">
+        <h1>ภาพรวมระบบ</h1>
+        <div class="stat-grid" id="statGrid"></div>
+        <h2 style="font-size:1.05rem;margin-bottom:12px;font-family:var(--font-display)">ประกาศล่าสุด</h2>
+        <div id="dashRecent"></div>
+      </div>
+
+      <!-- Listings -->
+      <div data-panel="listings" style="display:none">
+        <div class="toolbar">
+          <h1 style="margin:0">ประกาศทั้งหมด</h1>
+          <button class="btn btn-primary" id="newBtn" style="padding:10px 20px">+ เพิ่มประกาศ</button>
+        </div>
+        <div id="listTable"></div>
+      </div>
+
+      <!-- Editor -->
+      <div data-panel="editor" style="display:none">
+        <h1 id="editorTitle">เพิ่มประกาศใหม่</h1>
+        <div class="editor">
+          <div class="frm-grid">
+            <div class="full">
+              <label>ชื่อประกาศ *</label>
+              <input id="f-title" placeholder="เช่น คอนโด 1 ห้องนอน ใกล้ BTS พญาไท">
+            </div>
+            <div><label>ประเภทประกาศ</label>
+              <select id="f-type"><option value="rent">ให้เช่า</option><option value="sale">ขาย</option></select>
+            </div>
+            <div><label>ประเภททรัพย์</label>
+              <select id="f-cat">
+                <option value="condo">คอนโด</option><option value="house">บ้านเดี่ยว</option>
+                <option value="townhouse">ทาวน์เฮาส์</option><option value="land">ที่ดิน</option>
+                <option value="commercial">อาคารพาณิชย์</option>
+              </select>
+            </div>
+            <div><label>ราคา (บาท) — ถ้าเช่าคือต่อเดือน</label><input id="f-price" type="number" min="0" placeholder="25000"></div>
+            <div><label>สถานะ</label>
+              <select id="f-status"><option value="active">เผยแพร่</option><option value="draft">ฉบับร่าง</option><option value="closed">ปิดประกาศ</option></select>
+            </div>
+            <div><label>ทำเล (เขต/อำเภอ, จังหวัด)</label><input id="f-loc" placeholder="พญาไท, กรุงเทพฯ"></div>
+            <div><label>จังหวัด</label><input id="f-prov" placeholder="กรุงเทพมหานคร"></div>
+            <div><label>ห้องนอน</label><input id="f-bed" type="number" min="0"></div>
+            <div><label>ห้องน้ำ</label><input id="f-bath" type="number" min="0"></div>
+            <div><label>พื้นที่ใช้สอย (ตร.ม.)</label><input id="f-sqm" type="number" min="0" step="0.1"></div>
+            <div><label>ที่ดิน (ตร.ว.)</label><input id="f-wah" type="number" min="0" step="0.1"></div>
+            <div><label>ชั้น (สำหรับคอนโด)</label><input id="f-floor" placeholder="18"></div>
+            <div style="display:flex;align-items:end;gap:20px;padding-bottom:8px">
+              <label class="chk"><input type="checkbox" id="f-pets"> เลี้ยงสัตว์ได้</label>
+              <label class="chk"><input type="checkbox" id="f-feat"> ⭐ ประกาศแนะนำ</label>
+            </div>
+          </div>
+
+          <!-- AI box -->
+          <div class="ai-box">
+            <h3><span data-ic="sparkles"></span> AI ช่วยคิดคอนเทนต์</h3>
+            <p>กรอกข้อมูลด้านบนให้ครบก่อน แล้วให้ AI ช่วยเขียน — ยิ่งข้อมูลละเอียด ผลลัพธ์ยิ่งดี</p>
+            <input id="f-ainotes" placeholder="โน้ตเพิ่มเติมให้ AI (ถ้ามี) เช่น เพิ่งรีโนเวท, วิวสระ, เจ้าของใจดี" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px;background:#fff">
+            <div class="ai-actions">
+              <button data-ai="title">✨ คิดชื่อประกาศ</button>
+              <button data-ai="description">📝 เขียนคำอธิบาย</button>
+              <button data-ai="highlights">📌 สรุปจุดเด่น</button>
+              <button data-ai="social">📣 แคปชันโซเชียล</button>
+            </div>
+            <div class="ai-result" id="aiResult"></div>
+          </div>
+
+          <div class="frm-grid">
+            <div class="full"><label>คำอธิบาย</label><textarea id="f-desc" placeholder="รายละเอียดประกาศ..."></textarea></div>
+            <div class="full">
+              <label>จุดเด่น (บรรทัดละ 1 ข้อ)</label>
+              <textarea id="f-hl" style="min-height:90px" placeholder="เฟอร์นิเจอร์ครบ พร้อมอยู่&#10;เดินถึง BTS 5 นาที"></textarea>
+            </div>
+            <div class="full">
+              <label>รูปภาพ (ลิงก์ URL)</label>
+              <div class="img-list" id="imgList"></div>
+              <button class="add-row-btn" id="addImg" type="button" style="margin-top:8px">+ เพิ่มรูป</button>
+              <p style="font-size:.78rem;color:var(--muted);margin-top:6px">แนะนำ: อัปโหลดรูปขึ้น postimages.org / imgbb.com แล้วนำลิงก์ direct มาวาง</p>
+            </div>
+            <div class="full">
+              <label>สถานที่ใกล้เคียง</label>
+              <div class="img-list" id="nbList"></div>
+              <button class="add-row-btn" id="addNb" type="button" style="margin-top:8px">+ เพิ่มสถานที่</button>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="saveBtn">บันทึกประกาศ</button>
+            <button class="btn btn-ghost" id="cancelBtn">ยกเลิก</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inbox -->
+      <div data-panel="inbox" style="display:none">
+        <h1>ข้อความติดต่อ</h1>
+        <div id="inqList"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/shared.js"></script>
+  <script>
+    let token = localStorage.getItem('teedee_token') || '';
+    let editingId = null;
+
+    document.getElementById('loginIcon').innerHTML = TD.icons.home;
+    document.getElementById('sideIcon').innerHTML = TD.icons.home;
+    document.querySelectorAll('[data-ic]').forEach(el => el.innerHTML = TD.icons[el.dataset.ic]);
+
+    const $ = id => document.getElementById(id);
+    function toast(msg, err) {
+      const t = $('toast');
+      t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+      setTimeout(() => t.className = 'toast', 2600);
+    }
+    async function api(url, opt = {}) {
+      const r = await fetch(url, {
+        ...opt,
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}`, ...(opt.headers || {}) }
+      });
+      if (r.status === 401) { logout(); throw new Error('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่'); }
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'เกิดข้อผิดพลาด');
+      return j;
+    }
+
+    // ---------- Auth ----------
+    function logout() {
+      token = ''; localStorage.removeItem('teedee_token');
+      $('shell').style.display = 'none'; $('loginView').style.display = 'grid';
+    }
+    async function login() {
+      const msg = $('loginMsg'); msg.className = 'form-msg';
+      try {
+        const j = await TD.post('/api/admin/login', { password: $('pw').value });
+        token = j.token; localStorage.setItem('teedee_token', token);
+        enter();
+      } catch (e) { msg.textContent = e.message; msg.classList.add('err'); }
+    }
+    $('loginBtn').onclick = login;
+    $('pw').addEventListener('keydown', e => e.key === 'Enter' && login());
+    $('logoutBtn').onclick = logout;
+
+    async function enter() {
+      try {
+        await api('/api/admin/stats'); // verify token
+        $('loginView').style.display = 'none';
+        $('shell').style.display = 'grid';
+        show('dashboard');
+      } catch { logout(); }
+    }
+    if (token) enter();
+
+    // ---------- Navigation ----------
+    document.querySelectorAll('.side button[data-view]').forEach(b =>
+      b.onclick = () => show(b.dataset.view));
+    $('newBtn').onclick = () => { resetEditor(); show('editor'); };
+    $('cancelBtn').onclick = () => show('listings');
+
+    function show(view) {
+      document.querySelectorAll('.side button[data-view]').forEach(b =>
+        b.classList.toggle('active', b.dataset.view === view));
+      document.querySelectorAll('[data-panel]').forEach(p =>
+        p.style.display = p.dataset.panel === view ? 'block' : 'none');
+      if (view === 'dashboard') loadDash();
+      if (view === 'listings') loadListings();
+      if (view === 'inbox') loadInbox();
+      if (view === 'editor' && !editingId) resetEditor();
+    }
+
+    // ---------- Dashboard ----------
+    async function loadDash() {
+      const s = await api('/api/admin/stats');
+      $('statGrid').innerHTML = `
+        <div class="stat-card"><div class="n">${s.active}</div><div class="l">ประกาศเผยแพร่</div></div>
+        <div class="stat-card"><div class="n">${s.draft}</div><div class="l">ฉบับร่าง</div></div>
+        <div class="stat-card"><div class="n">${s.views.toLocaleString()}</div><div class="l">ยอดเข้าชมรวม</div></div>
+        <div class="stat-card"><div class="n">${s.inquiries}</div><div class="l">ข้อความติดต่อ</div></div>
+        <div class="stat-card"><div class="n" style="color:var(--copper)">${s.unread}</div><div class="l">ยังไม่ได้อ่าน</div></div>`;
+      $('unreadDot').style.display = s.unread ? 'inline-block' : 'none';
+      $('unreadDot').textContent = s.unread;
+      const l = await api('/api/admin/listings');
+      $('dashRecent').innerHTML = renderTable(l.items.slice(0, 5));
+      bindTable($('dashRecent'));
+    }
+
+    // ---------- Listings table ----------
+    function renderTable(items) {
+      if (!items.length) return '<p style="color:var(--muted)">ยังไม่มีประกาศ</p>';
+      const stLabel = { active: 'เผยแพร่', draft: 'ร่าง', closed: 'ปิดแล้ว' };
+      return `<div style="overflow-x:auto"><table><thead><tr>
+        <th></th><th>ประกาศ</th><th>ประเภท</th><th>ราคา</th><th>สถานะ</th><th>วิว</th><th style="min-width:150px"></th>
+      </tr></thead><tbody>` + items.map(l => `
+        <tr>
+          <td><img class="tbl-thumb" src="${TD.esc((l.images || [])[0] || '')}" onerror="this.style.visibility='hidden'"></td>
+          <td><b style="font-weight:500">${TD.esc(l.title)}</b><br><span style="font-size:.8rem;color:var(--muted)">${TD.esc(l.location_text)}</span></td>
+          <td>${TD.typeLabel[l.listing_type]} · ${TD.catLabel[l.category]}${l.featured ? ' ⭐' : ''}</td>
+          <td>${TD.price(l.price, l.listing_type)}${l.listing_type === 'rent' ? '/ด.' : ''}</td>
+          <td><span class="st ${l.status}">${stLabel[l.status]}</span></td>
+          <td>${l.views}</td>
+          <td>
+            <button class="mini-btn" data-edit="${l.id}">แก้ไข</button>
+            <a class="mini-btn" href="/listing/${l.id}" target="_blank" style="display:inline-block;text-decoration:none">ดู</a>
+            <button class="mini-btn danger" data-del="${l.id}">ลบ</button>
+          </td>
+        </tr>`).join('') + '</tbody></table></div>';
+    }
+    let allListings = [];
+    async function loadListings() {
+      const j = await api('/api/admin/listings');
+      allListings = j.items;
+      $('listTable').innerHTML = renderTable(j.items);
+      bindTable($('listTable'));
+    }
+    function bindTable(root) {
+      root.onclick = async e => {
+        const ed = e.target.closest('[data-edit]');
+        const del = e.target.closest('[data-del]');
+        if (ed) {
+          if (!allListings.length) allListings = (await api('/api/admin/listings')).items;
+          const l = allListings.find(x => x.id == ed.dataset.edit);
+          if (l) { fillEditor(l); show('editor'); }
+        }
+        if (del && confirm('ยืนยันลบประกาศนี้? ลบแล้วกู้คืนไม่ได้')) {
+          await api('/api/admin/listings/' + del.dataset.del, { method: 'DELETE' });
+          toast('ลบประกาศแล้ว');
+          loadListings();
+        }
+      };
+    }
+
+    // ---------- Editor ----------
+    function imgRow(url = '') {
+      const d = document.createElement('div');
+      d.className = 'img-row';
+      d.innerHTML = `<img src="${TD.esc(url)}" onerror="this.style.visibility='hidden'">
+        <input placeholder="https://..." value="${TD.esc(url)}">
+        <button class="mini-btn danger" type="button">✕</button>`;
+      d.querySelector('input').oninput = e => {
+        const im = d.querySelector('img'); im.style.visibility = 'visible'; im.src = e.target.value;
+      };
+      d.querySelector('button').onclick = () => d.remove();
+      return d;
+    }
+    function nbRow(label = '', dist = '') {
+      const d = document.createElement('div');
+      d.className = 'img-row nb-row';
+      d.innerHTML = `<input placeholder="ชื่อสถานที่ เช่น BTS พญาไท" value="${TD.esc(label)}" style="flex:2">
+        <input placeholder="ระยะ เช่น 440 ม." value="${TD.esc(dist)}" style="flex:1">
+        <button class="mini-btn danger" type="button">✕</button>`;
+      d.querySelector('button').onclick = () => d.remove();
+      return d;
+    }
+    $('addImg').onclick = () => $('imgList').appendChild(imgRow());
+    $('addNb').onclick = () => $('nbList').appendChild(nbRow());
+
+    function resetEditor() {
+      editingId = null;
+      $('editorTitle').textContent = 'เพิ่มประกาศใหม่';
+      ['f-title', 'f-price', 'f-loc', 'f-prov', 'f-bed', 'f-bath', 'f-sqm', 'f-wah', 'f-floor', 'f-desc', 'f-hl', 'f-ainotes']
+        .forEach(id => $(id).value = '');
+      $('f-type').value = 'rent'; $('f-cat').value = 'condo'; $('f-status').value = 'active';
+      $('f-pets').checked = false; $('f-feat').checked = false;
+      $('imgList').innerHTML = ''; $('imgList').appendChild(imgRow());
+      $('nbList').innerHTML = ''; $('nbList').appendChild(nbRow());
+      $('aiResult').className = 'ai-result'; $('aiResult').innerHTML = '';
+    }
+    function fillEditor(l) {
+      editingId = l.id;
+      $('editorTitle').textContent = 'แก้ไขประกาศ #' + l.id;
+      $('f-title').value = l.title; $('f-type').value = l.listing_type; $('f-cat').value = l.category;
+      $('f-price').value = l.price; $('f-status').value = l.status;
+      $('f-loc').value = l.location_text; $('f-prov').value = l.province;
+      $('f-bed').value = l.bedrooms || ''; $('f-bath').value = l.bathrooms || '';
+      $('f-sqm').value = Number(l.area_sqm) || ''; $('f-wah').value = Number(l.land_area_sqwah) || '';
+      $('f-floor').value = l.floor_text; $('f-desc').value = l.description;
+      $('f-hl').value = (l.highlights || []).join('\n');
+      $('f-pets').checked = l.pets_allowed; $('f-feat').checked = l.featured;
+      $('f-ainotes').value = '';
+      $('imgList').innerHTML = '';
+      (l.images?.length ? l.images : ['']).forEach(u => $('imgList').appendChild(imgRow(u)));
+      $('nbList').innerHTML = '';
+      (l.nearby?.length ? l.nearby : [{}]).forEach(n => $('nbList').appendChild(nbRow(n.label || '', n.dist || '')));
+      $('aiResult').className = 'ai-result'; $('aiResult').innerHTML = '';
+    }
+    function collect() {
+      return {
+        title: $('f-title').value.trim(),
+        listing_type: $('f-type').value,
+        category: $('f-cat').value,
+        price: Number($('f-price').value) || 0,
+        status: $('f-status').value,
+        location_text: $('f-loc').value.trim(),
+        province: $('f-prov').value.trim(),
+        bedrooms: Number($('f-bed').value) || 0,
+        bathrooms: Number($('f-bath').value) || 0,
+        area_sqm: Number($('f-sqm').value) || 0,
+        land_area_sqwah: Number($('f-wah').value) || 0,
+        floor_text: $('f-floor').value.trim(),
+        description: $('f-desc').value.trim(),
+        highlights: $('f-hl').value.split('\n').map(s => s.trim()).filter(Boolean),
+        images: [...$('imgList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean),
+        nearby: [...$('nbList').querySelectorAll('.img-row')].map(r => {
+          const [a, b] = r.querySelectorAll('input');
+          return a.value.trim() ? { label: a.value.trim(), dist: b.value.trim() } : null;
+        }).filter(Boolean),
+        pets_allowed: $('f-pets').checked,
+        featured: $('f-feat').checked
+      };
+    }
+    $('saveBtn').onclick = async () => {
+      const d = collect();
+      if (!d.title) return toast('กรุณากรอกชื่อประกาศ', true);
+      $('saveBtn').disabled = true;
+      try {
+        if (editingId) await api('/api/admin/listings/' + editingId, { method: 'PUT', body: JSON.stringify(d) });
+        else await api('/api/admin/listings', { method: 'POST', body: JSON.stringify(d) });
+        toast('บันทึกประกาศเรียบร้อย ✓');
+        show('listings');
+      } catch (e) { toast(e.message, true); }
+      finally { $('saveBtn').disabled = false; }
+    };
+
+    // ---------- AI ----------
+    document.querySelectorAll('[data-ai]').forEach(btn => btn.onclick = async () => {
+      const mode = btn.dataset.ai;
+      const box = $('aiResult');
+      box.className = 'ai-result show';
+      box.innerHTML = '<p style="font-size:.9rem;color:var(--pine-deep)">⏳ AI กำลังคิดให้อยู่ครับ...</p>';
+      document.querySelectorAll('[data-ai]').forEach(b => b.disabled = true);
+      try {
+        const d = collect();
+        d.notes = $('f-ainotes').value.trim();
+        const j = await api('/api/admin/ai/generate', { method: 'POST', body: JSON.stringify({ mode, data: d }) });
+        if (Array.isArray(j.result)) {
+          box.innerHTML = j.result.map(x =>
+            `<div class="opt" data-val="${TD.esc(x)}" data-mode="${mode}"><span>${TD.esc(x)}</span><span class="use">ใช้อันนี้ ›</span></div>`).join('');
+          if (mode === 'highlights')
+            box.insertAdjacentHTML('afterbegin',
+              `<div class="opt" data-all="1" data-mode="highlights" style="border-color:var(--copper)"><span><b>ใช้ทั้งหมด</b> (${j.result.length} ข้อ)</span><span class="use">ใช้เลย ›</span></div>`);
+          box.dataset.items = JSON.stringify(j.result);
+        } else {
+          box.innerHTML = `<pre>${TD.esc(j.result)}</pre>
+            <button class="mini-btn" id="useTxt" style="margin-top:8px">${mode === 'social' ? '📋 คัดลอกแคปชัน' : 'ใช้เป็นคำอธิบาย ›'}</button>`;
+          $('useTxt').onclick = () => {
+            if (mode === 'social') {
+              navigator.clipboard?.writeText(j.result);
+              toast('คัดลอกแคปชันแล้ว ✓');
+            } else {
+              $('f-desc').value = j.result;
+              toast('ใส่คำอธิบายให้แล้ว ✓');
+            }
+          };
+        }
+      } catch (e) {
+        box.innerHTML = `<div class="form-msg err" style="display:block">${TD.esc(e.message)}</div>`;
+      } finally {
+        document.querySelectorAll('[data-ai]').forEach(b => b.disabled = false);
+      }
+    });
+    $('aiResult').addEventListener('click', e => {
+      const opt = e.target.closest('.opt'); if (!opt) return;
+      const mode = opt.dataset.mode;
+      if (mode === 'title') { $('f-title').value = opt.dataset.val; toast('ใช้ชื่อนี้แล้ว ✓'); }
+      if (mode === 'highlights') {
+        if (opt.dataset.all) $('f-hl').value = JSON.parse($('aiResult').dataset.items || '[]').join('\n');
+        else $('f-hl').value = ($('f-hl').value ? $('f-hl').value + '\n' : '') + opt.dataset.val;
+        toast('เพิ่มจุดเด่นแล้ว ✓');
+      }
+    });
+
+    // ---------- Inbox ----------
+    async function loadInbox() {
+      const j = await api('/api/admin/inquiries');
+      if (!j.items.length) { $('inqList').innerHTML = '<p style="color:var(--muted)">ยังไม่มีข้อความติดต่อ</p>'; return; }
+      $('inqList').innerHTML = j.items.map(q => `
+        <div class="inq-card ${q.is_read ? '' : 'unread'}">
+          <div class="inq-head">
+            <b>${TD.esc(q.name)}</b>
+            <span class="inq-meta">${new Date(q.created_at).toLocaleString('th-TH')}</span>
+          </div>
+          <div class="inq-meta" style="margin-bottom:8px">
+            ${q.phone ? '📞 ' + TD.esc(q.phone) + ' · ' : ''}${q.line_id ? 'LINE: ' + TD.esc(q.line_id) + ' · ' : ''}
+            ${q.listing_title ? 'เรื่อง: <a href="/listing/' + q.listing_id + '" target="_blank" style="color:var(--pine);text-decoration:underline">' + TD.esc(q.listing_title) + '</a>' : 'ติดต่อทั่วไป'}
+          </div>
+          <p style="font-size:.93rem">${TD.esc(q.message || '-')}</p>
+          ${q.is_read ? '' : `<button class="mini-btn" data-read="${q.id}" style="margin-top:10px">✓ ทำเครื่องหมายว่าอ่านแล้ว</button>`}
+        </div>`).join('');
+      $('inqList').onclick = async e => {
+        const b = e.target.closest('[data-read]'); if (!b) return;
+        await api(`/api/admin/inquiries/${b.dataset.read}/read`, { method: 'PUT' });
+        loadInbox(); loadDash();
+      };
+    }
+  </script>
+</body>
+</html>

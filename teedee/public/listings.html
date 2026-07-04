@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ค้นหาอสังหาริมทรัพย์ — TeeDee (ที่ดี)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="nav"></div>
+
+  <div class="container">
+    <div class="page-head">
+      <h1 id="pageTitle">ค้นหาอสังหาริมทรัพย์</h1>
+      <p id="pageSub">กรองตามประเภท งบประมาณ และทำเลที่ต้องการ</p>
+    </div>
+
+    <form class="filter-bar" id="filterForm">
+      <div class="field" style="flex:2 1 200px">
+        <span data-ic="search"></span>
+        <input type="text" name="q" placeholder="ทำเล, ชื่อโครงการ, คำค้น...">
+      </div>
+      <div class="field">
+        <select name="type">
+          <option value="">เช่า + ขาย</option>
+          <option value="rent">เช่า</option>
+          <option value="sale">ขาย</option>
+        </select>
+      </div>
+      <div class="field">
+        <select name="category">
+          <option value="">ทุกประเภท</option>
+          <option value="condo">คอนโด</option>
+          <option value="house">บ้านเดี่ยว</option>
+          <option value="townhouse">ทาวน์เฮาส์</option>
+          <option value="land">ที่ดิน</option>
+          <option value="commercial">อาคารพาณิชย์</option>
+        </select>
+      </div>
+      <div class="field" style="min-width:110px">
+        <input type="number" name="min" placeholder="ราคาต่ำสุด" min="0">
+      </div>
+      <div class="field" style="min-width:110px">
+        <input type="number" name="max" placeholder="ราคาสูงสุด" min="0">
+      </div>
+      <div class="field" style="min-width:120px">
+        <select name="beds">
+          <option value="">ห้องนอน</option>
+          <option value="1">1+ ห้องนอน</option>
+          <option value="2">2+ ห้องนอน</option>
+          <option value="3">3+ ห้องนอน</option>
+          <option value="4">4+ ห้องนอน</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit" style="padding:11px 26px"><span data-ic="search"></span> ค้นหา</button>
+    </form>
+
+    <div class="result-meta">
+      <span class="count" id="resultCount">กำลังโหลด...</span>
+      <select id="sortSel" aria-label="เรียงลำดับ">
+        <option value="">แนะนำก่อน</option>
+        <option value="newest">มาใหม่ล่าสุด</option>
+        <option value="price_asc">ราคาต่ำ → สูง</option>
+        <option value="price_desc">ราคาสูง → ต่ำ</option>
+        <option value="popular">ยอดนิยม</option>
+      </select>
+    </div>
+
+    <div class="grid" id="results">
+      <div class="skeleton" style="height:380px"></div>
+      <div class="skeleton" style="height:380px"></div>
+      <div class="skeleton" style="height:380px"></div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <div id="footer"></div>
+
+  <script src="/js/shared.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    document.getElementById('nav').innerHTML = TD.navbar(params.get('type') || (params.get('category') === 'land' ? 'land' : ''));
+    document.getElementById('footer').innerHTML = TD.footer();
+    document.querySelectorAll('[data-ic]').forEach(el => el.innerHTML = TD.icons[el.dataset.ic]);
+
+    // Fill form from URL
+    const form = document.getElementById('filterForm');
+    ['q', 'type', 'category', 'min', 'max', 'beds'].forEach(k => {
+      if (params.get(k) && form.elements[k]) form.elements[k].value = params.get(k);
+    });
+    if (params.get('sort')) document.getElementById('sortSel').value = params.get('sort');
+
+    // Dynamic page title
+    const typeTxt = { rent: 'ประกาศให้เช่า', sale: 'ประกาศขาย' };
+    const t = params.get('type'), c = params.get('category');
+    let title = 'ค้นหาอสังหาริมทรัพย์';
+    if (c && TD.catLabel[c]) title = TD.catLabel[c] + (t ? ` (${TD.typeLabel[t]})` : ' ทั้งหมด');
+    else if (t) title = typeTxt[t];
+    if (params.get('q')) title += ` — "${params.get('q')}"`;
+    document.getElementById('pageTitle').textContent = title;
+    document.title = title + ' — TeeDee (ที่ดี)';
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const f = new FormData(form);
+      const p = new URLSearchParams();
+      for (const [k, v] of f.entries()) if (v) p.set(k, v);
+      if (document.getElementById('sortSel').value) p.set('sort', document.getElementById('sortSel').value);
+      location.href = '/search?' + p.toString();
+    });
+    document.getElementById('sortSel').addEventListener('change', e => {
+      const p = new URLSearchParams(location.search);
+      e.target.value ? p.set('sort', e.target.value) : p.delete('sort');
+      p.delete('page');
+      location.href = '/search?' + p.toString();
+    });
+
+    async function load() {
+      const p = new URLSearchParams(location.search);
+      const r = await fetch('/api/listings?' + p.toString()).then(x => x.json());
+      const box = document.getElementById('results');
+      document.getElementById('resultCount').textContent = `พบ ${r.total.toLocaleString()} รายการ`;
+      if (!r.items.length) {
+        box.innerHTML = '';
+        box.insertAdjacentHTML('beforebegin', `
+          <div class="empty-state" id="empty">${TD.icons.mapSearch}
+            <h3 style="font-family:var(--font-display);margin-bottom:6px">ไม่พบประกาศที่ตรงเงื่อนไข</h3>
+            <p>ลองปรับตัวกรอง เช่น ขยายช่วงราคา หรือลบคำค้นบางส่วน</p>
+            <a class="btn btn-ghost" href="/search" style="margin-top:16px">ดูประกาศทั้งหมด</a>
+          </div>`);
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+      box.innerHTML = r.items.map(l => TD.card(l)).join('');
+
+      // Pagination
+      const pages = Math.ceil(r.total / r.limit);
+      const cur = r.page;
+      if (pages > 1) {
+        let html = `<button ${cur <= 1 ? 'disabled' : ''} data-p="${cur - 1}">‹</button>`;
+        for (let i = 1; i <= pages; i++)
+          html += `<button class="${i === cur ? 'active' : ''}" data-p="${i}">${i}</button>`;
+        html += `<button ${cur >= pages ? 'disabled' : ''} data-p="${cur + 1}">›</button>`;
+        document.getElementById('pagination').innerHTML = html;
+        document.getElementById('pagination').onclick = e => {
+          const b = e.target.closest('button[data-p]');
+          if (!b || b.disabled) return;
+          const p2 = new URLSearchParams(location.search);
+          p2.set('page', b.dataset.p);
+          location.href = '/search?' + p2.toString();
+        };
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

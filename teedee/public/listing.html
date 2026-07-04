@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายละเอียดประกาศ — TeeDee (ที่ดี)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="nav"></div>
+
+  <div class="container">
+    <div class="breadcrumb" id="crumb"></div>
+    <div class="detail-wrap" id="wrap">
+      <div class="skeleton" style="height:460px"></div>
+      <div class="skeleton" style="height:300px"></div>
+    </div>
+
+    <section class="section" id="similarSec" style="display:none;padding-top:0">
+      <div class="section-head">
+        <div><h2>ประกาศใกล้เคียง</h2><p>ที่คุณอาจสนใจ</p></div>
+      </div>
+      <div class="grid" id="similar"></div>
+    </section>
+  </div>
+
+  <div id="footer"></div>
+
+  <script src="/js/shared.js"></script>
+  <script>
+    document.getElementById('nav').innerHTML = TD.navbar();
+    document.getElementById('footer').innerHTML = TD.footer();
+
+    const id = Number(location.pathname.split('/').pop());
+
+    function specChip(ic, text) {
+      return `<span class="spec" style="font-size:.9rem;padding:8px 13px">${TD.icons[ic]} ${text}</span>`;
+    }
+
+    async function load() {
+      let data;
+      try {
+        const r = await fetch('/api/listings/' + id);
+        if (!r.ok) throw new Error();
+        data = await r.json();
+      } catch {
+        document.getElementById('wrap').innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">${TD.icons.mapSearch}
+            <h3 style="font-family:var(--font-display)">ไม่พบประกาศนี้</h3>
+            <p>ประกาศอาจถูกปิดไปแล้ว</p>
+            <a class="btn btn-primary" href="/search" style="margin-top:16px">ดูประกาศอื่น</a>
+          </div>`;
+        return;
+      }
+      const l = data.item;
+      document.title = `${l.title} — TeeDee`;
+
+      document.getElementById('crumb').innerHTML = `
+        <a href="/">หน้าแรก</a> › <a href="/search?type=${l.listing_type}">${TD.typeLabel[l.listing_type]}</a>
+        › <a href="/search?category=${l.category}">${TD.catLabel[l.category]}</a> › <span>${TD.esc(l.title)}</span>`;
+
+      const imgs = l.images || [];
+      const specs = [];
+      if (l.bedrooms > 0) specs.push(specChip('bed', `${l.bedrooms} ห้องนอน`));
+      if (l.bathrooms > 0) specs.push(specChip('bath', `${l.bathrooms} ห้องน้ำ`));
+      if (Number(l.area_sqm) > 0) specs.push(specChip('ruler', `${Number(l.area_sqm)} ตร.ม.`));
+      if (Number(l.land_area_sqwah) > 0) specs.push(specChip('land', `ที่ดิน ${Number(l.land_area_sqwah)} ตร.ว.`));
+      if (l.floor_text) specs.push(specChip('stairs', `ชั้น ${TD.esc(l.floor_text)}`));
+      specs.push(specChip(l.pets_allowed ? 'paw' : 'ban', l.pets_allowed ? 'เลี้ยงสัตว์ได้' : 'ไม่อนุญาตสัตว์เลี้ยง'));
+
+      const nearby = (l.nearby || []).map(n =>
+        `<div class="hl-item"><span class="pill" style="background:#0aa06e;color:#fff;border-radius:5px;font-size:.7rem;font-weight:600;padding:2px 8px;font-family:var(--font-display)">ใกล้</span> ${TD.esc(n.label)} <span style="color:var(--muted)">(${TD.esc(n.dist)})</span></div>`).join('');
+      const highlights = (l.highlights || []).map(h =>
+        `<div class="hl-item">${TD.icons.check} ${TD.esc(h)}</div>`).join('');
+
+      document.getElementById('wrap').innerHTML = `
+      <div>
+        <div class="gallery">
+          <div class="main"><img id="mainImg" src="${TD.esc(imgs[0] || '')}" alt="${TD.esc(l.title)}"></div>
+          ${imgs.length > 1 ? `<div class="thumbs" id="thumbs">${imgs.map((im, i) =>
+            `<img src="${TD.esc(im)}" class="${i === 0 ? 'active' : ''}" data-src="${TD.esc(im)}" alt="รูปที่ ${i + 1}">`).join('')}</div>` : ''}
+        </div>
+        <div class="detail-title">
+          <h1>${TD.esc(l.title)}</h1>
+          <div class="loc">${TD.icons.pin} ${TD.esc(l.location_text)}${l.province && !String(l.location_text).includes(l.province) ? ' · ' + TD.esc(l.province) : ''}</div>
+        </div>
+        <div class="detail-specs">${specs.join('')}</div>
+        <div class="detail-section">
+          <h2>รายละเอียด</h2>
+          <p class="desc">${TD.esc(l.description)}</p>
+        </div>
+        ${highlights ? `<div class="detail-section"><h2>จุดเด่น</h2><div class="hl-list">${highlights}</div></div>` : ''}
+        ${nearby ? `<div class="detail-section"><h2>สถานที่ใกล้เคียง</h2><div class="hl-list">${nearby}</div></div>` : ''}
+      </div>
+
+      <div class="sidebar">
+        <div class="price-card">
+          <div class="lbl">${l.listing_type === 'rent' ? 'ค่าเช่า' : 'ราคาขาย'}</div>
+          <div class="p">${TD.price(l.price, l.listing_type)}${l.listing_type === 'rent' ? '<span class="per"> /เดือน</span>' : ''}</div>
+          ${l.listing_type === 'sale' ? `<div class="per">≈ ฿${Number(l.price).toLocaleString('th-TH')}</div>` : ''}
+        </div>
+        <div class="contact-card">
+          <h3>สนใจประกาศนี้? ทักหาเราเลย</h3>
+          <div class="frm">
+            <input id="c-name" placeholder="ชื่อของคุณ *">
+            <input id="c-phone" placeholder="เบอร์โทร">
+            <input id="c-line" placeholder="LINE ID">
+            <textarea id="c-msg" placeholder="ข้อความ เช่น ขอนัดดูห้องวันเสาร์นี้"></textarea>
+            <div class="form-msg" id="formMsg"></div>
+            <button class="btn btn-primary" id="sendBtn" style="justify-content:center">${TD.icons.phone} ส่งข้อความติดต่อ</button>
+            <p style="font-size:.78rem;color:var(--muted);text-align:center">ทีมงานจะส่งต่อให้ผู้ดูแลทรัพย์ติดต่อกลับโดยเร็ว</p>
+          </div>
+        </div>
+      </div>`;
+
+      // Gallery switch
+      const thumbs = document.getElementById('thumbs');
+      if (thumbs) thumbs.addEventListener('click', e => {
+        const im = e.target.closest('img[data-src]'); if (!im) return;
+        document.getElementById('mainImg').src = im.dataset.src;
+        thumbs.querySelectorAll('img').forEach(x => x.classList.remove('active'));
+        im.classList.add('active');
+      });
+
+      // Contact form
+      document.getElementById('sendBtn').addEventListener('click', async () => {
+        const msg = document.getElementById('formMsg');
+        msg.className = 'form-msg';
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        try {
+          await TD.post('/api/inquiries', {
+            listing_id: l.id,
+            name: document.getElementById('c-name').value.trim(),
+            phone: document.getElementById('c-phone').value.trim(),
+            line_id: document.getElementById('c-line').value.trim(),
+            message: document.getElementById('c-msg').value.trim()
+          });
+          msg.textContent = 'ส่งข้อความเรียบร้อย รอการติดต่อกลับได้เลยครับ';
+          msg.classList.add('ok');
+          ['c-name', 'c-phone', 'c-line', 'c-msg'].forEach(i => document.getElementById(i).value = '');
+        } catch (e2) {
+          msg.textContent = e2.message;
+          msg.classList.add('err');
+        } finally { btn.disabled = false; }
+      });
+
+      // Similar
+      if (data.similar?.length) {
+        document.getElementById('similarSec').style.display = 'block';
+        document.getElementById('similar').innerHTML = data.similar.map(s => TD.card(s)).join('');
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

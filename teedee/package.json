@@ -1,0 +1,16 @@
+{
+  "name": "teedee-property",
+  "version": "1.0.0",
+  "description": "TeeDee (ที่ดี) — เว็บอสังหาริมทรัพย์ครบวงจร บ้านเช่า บ้านขาย ที่ดิน พร้อมระบบหลังบ้าน + AI ช่วยเขียนคอนเทนต์",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}
