@@ -1119,6 +1119,7 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
     align-items: center;
     padding: 6px 6px 4px 14px;
     gap: 0 8px;
+    border-radius: 24px; /* บาร์ 2 ชั้น ใช้มุมโค้งพอดี ไม่ใช่แคปซูล */
   }
   .search-bar .s-icon { grid-area: icon; }
   .search-bar input { grid-area: input; width: 100%; min-width: 0; font-size: var(--fs-base); padding: 12px 0; }
@@ -1133,6 +1134,8 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   .s-select + .s-div + .s-select { border-left: 1px solid var(--line); }
   .s-select select { width: 100%; max-width: none; padding: 11px 30px 9px 12px; font-size: var(--fs-xs); }
   .s-select::after { right: 14px; top: 55%; }
-  .ai-hint { font-size: .7rem; padding: 0 8px; }
+  /* ไอคอน ✨ ให้อยู่ในบรรทัดเดียวกับข้อความ ไม่ลอยแยก */
+  .ai-hint { display: block; text-align: center; font-size: .7rem; padding: 0 14px; }
+  .ai-hint > span { display: inline-block; vertical-align: -2px; margin-right: 4px; }
   .quick-chips { margin-top: 16px; }
 }
