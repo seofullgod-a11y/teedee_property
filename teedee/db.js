@@ -55,6 +55,10 @@ async function migrate() {
 
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS latitude NUMERIC;
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS longitude NUMERIC;
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS amenities JSONB DEFAULT '[]';
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS furnishings JSONB DEFAULT '[]';
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS common_fee_text TEXT DEFAULT '';
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS year_built INT;
 
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
@@ -84,6 +88,9 @@ const SEED = [
     highlights: ['เฟอร์นิเจอร์ครบ พร้อมอยู่', 'สระว่ายน้ำ + ฟิตเนส', 'เดินถึง BTS 5 นาที'],
     images: [U('photo-1522708323590-d24dbb6b0267'), U('photo-1502672260266-1c1ef2d93688'), U('photo-1560448204-e02f11c3d0e2')],
     nearby: [{ label: 'BTS พญาไท', dist: '440 ม.' }, { label: 'ARL พญาไท', dist: '500 ม.' }],
+    amenities: ['สระว่ายน้ำ', 'ฟิตเนส / ยิม', 'รปภ. 24 ชม.', 'ลิฟต์', 'คีย์การ์ด', 'ที่จอดรถ'],
+    furnishings: ['เครื่องปรับอากาศ', 'ตู้เย็น', 'เครื่องซักผ้า', 'เตียง + ที่นอน', 'ตู้เสื้อผ้า', 'เครื่องทำน้ำอุ่น'],
+    common_fee_text: '50 บาท/ตร.ม./เดือน', year_built: 2019,
     pets_allowed: false, featured: true
   },
   {
@@ -216,13 +223,14 @@ async function seed() {
       `INSERT INTO listings
         (title, listing_type, category, price, location_text, province, bedrooms, bathrooms,
          area_sqm, land_area_sqwah, floor_text, description, highlights, images, nearby,
-         pets_allowed, featured, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'active')`,
+         pets_allowed, featured, amenities, furnishings, common_fee_text, year_built, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,'active')`,
       [s.title, s.listing_type, s.category, s.price, s.location_text, s.province,
        s.bedrooms || 0, s.bathrooms || 0, s.area_sqm || 0, s.land_area_sqwah || 0,
        s.floor_text || '', s.description, JSON.stringify(s.highlights || []),
        JSON.stringify(s.images || []), JSON.stringify(s.nearby || []),
-       !!s.pets_allowed, !!s.featured]
+       !!s.pets_allowed, !!s.featured, JSON.stringify(s.amenities || []),
+       JSON.stringify(s.furnishings || []), s.common_fee_text || '', s.year_built || null]
     );
   }
   console.log(`Seeded ${SEED.length} listings`);

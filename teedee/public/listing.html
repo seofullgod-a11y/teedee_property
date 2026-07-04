@@ -54,6 +54,33 @@
       return `<span class="spec" style="font-size:.9rem;padding:8px 13px">${TD.icons[ic]} ${text}</span>`;
     }
 
+    function factsSection(l) {
+      const rows = [];
+      const add = (k, v) => v && rows.push(`<div class="fact-row"><span class="k">${k}</span><span class="v">${v}</span></div>`);
+      add('รหัสประกาศ', 'YJ-' + String(l.id).padStart(5, '0'));
+      add('ประเภททรัพย์', TD.catLabel[l.category]);
+      add('รูปแบบ', l.listing_type === 'rent' ? 'ให้เช่า' : 'ขาย');
+      if (Number(l.area_sqm) > 0) add('พื้นที่ใช้สอย', Number(l.area_sqm) + ' ตร.ม.');
+      if (Number(l.land_area_sqwah) > 0) add('ขนาดที่ดิน', Number(l.land_area_sqwah) + ' ตร.ว.');
+      if (l.floor_text) add('ชั้น', TD.esc(l.floor_text));
+      if (l.year_built) add('ปีที่สร้างเสร็จ', l.year_built + ' (อายุ ' + Math.max(0, new Date().getFullYear() - l.year_built) + ' ปี)');
+      if (l.common_fee_text) add('ค่าส่วนกลาง', TD.esc(l.common_fee_text));
+      if (l.listing_type === 'rent' && Number(l.area_sqm) > 0)
+        add('ราคาต่อ ตร.ม.', '฿' + Math.round(l.price / Number(l.area_sqm)).toLocaleString('th-TH') + '/เดือน');
+      if (l.listing_type === 'sale' && Number(l.area_sqm) > 0)
+        add('ราคาต่อ ตร.ม.', '฿' + Math.round(l.price / Number(l.area_sqm)).toLocaleString('th-TH'));
+      add('สัตว์เลี้ยง', l.pets_allowed ? 'เลี้ยงได้' : 'ไม่อนุญาต');
+      add('ลงประกาศเมื่อ', new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }));
+      if (!rows.length) return '';
+      return `<div class="detail-section reveal"><h2>ข้อมูลทรัพย์</h2><div class="facts-grid">${rows.join('')}</div></div>`;
+    }
+    function checkSection(title, items) {
+      if (!items || !items.length) return '';
+      return `<div class="detail-section reveal"><h2>${title}</h2><div class="amen-grid">
+        ${items.map(x => `<div class="amen-item"><span class="ai-check">${TD.icons.check}</span>${TD.esc(x)}</div>`).join('')}
+      </div></div>`;
+    }
+
     function mapSection(l) {
       const hasCoord = Number(l.latitude) && Number(l.longitude);
       const mapQ = hasCoord
@@ -157,7 +184,10 @@
             <h2>รายละเอียด</h2>
             <p class="desc">${TD.esc(l.description)}</p>
           </div>
+          ${factsSection(l)}
           ${highlights ? `<div class="detail-section reveal"><h2>จุดเด่น</h2><div class="hl-list">${highlights}</div></div>` : ''}
+          ${checkSection('เฟอร์นิเจอร์และเครื่องใช้ที่ให้', l.furnishings)}
+          ${checkSection('สิ่งอำนวยความสะดวกส่วนกลาง', l.amenities)}
           ${nearby ? `<div class="detail-section reveal"><h2>สถานที่ใกล้เคียง</h2><div class="hl-list">${nearby}</div></div>` : ''}
           ${mapSection(l)}
         </div>

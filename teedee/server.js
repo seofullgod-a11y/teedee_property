@@ -50,7 +50,7 @@ const brandName = (s) => `${s.site_name_main || 'อยู่'}${s.site_name_acc
 const LISTING_FIELDS = `id, title, listing_type, category, price, location_text, province,
   bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
   images, nearby, pets_allowed, featured, status, contact_line, contact_phone, views,
-  latitude, longitude, created_at, updated_at`;
+  latitude, longitude, amenities, furnishings, common_fee_text, year_built, created_at, updated_at`;
 
 // ---------- Public API ----------
 
@@ -221,7 +221,11 @@ function listingParams(b) {
     String(b.contact_line || '').slice(0, 80),
     String(b.contact_phone || '').slice(0, 40),
     Number.isFinite(Number(b.latitude)) && b.latitude !== '' && b.latitude !== null ? Number(b.latitude) : null,
-    Number.isFinite(Number(b.longitude)) && b.longitude !== '' && b.longitude !== null ? Number(b.longitude) : null
+    Number.isFinite(Number(b.longitude)) && b.longitude !== '' && b.longitude !== null ? Number(b.longitude) : null,
+    JSON.stringify(Array.isArray(b.amenities) ? b.amenities.slice(0, 30).map(x => String(x).slice(0, 60)) : []),
+    JSON.stringify(Array.isArray(b.furnishings) ? b.furnishings.slice(0, 30).map(x => String(x).slice(0, 60)) : []),
+    String(b.common_fee_text || '').slice(0, 120),
+    Number.isInteger(Number(b.year_built)) && Number(b.year_built) > 1900 ? Number(b.year_built) : null
   ];
 }
 
@@ -232,8 +236,9 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
-        images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+        images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
+        amenities, furnishings, common_fee_text, year_built)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
        RETURNING id`, p);
     res.json({ ok: true, id: rows[0].id });
   } catch (e) {
@@ -250,8 +255,9 @@ app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
       `UPDATE listings SET title=$1, listing_type=$2, category=$3, price=$4, location_text=$5,
         province=$6, bedrooms=$7, bathrooms=$8, area_sqm=$9, land_area_sqwah=$10, floor_text=$11,
         description=$12, highlights=$13, images=$14, nearby=$15, pets_allowed=$16, featured=$17,
-        status=$18, contact_line=$19, contact_phone=$20, latitude=$21, longitude=$22, updated_at=now()
-       WHERE id=$23`, [...p, id]);
+        status=$18, contact_line=$19, contact_phone=$20, latitude=$21, longitude=$22,
+        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, updated_at=now()
+       WHERE id=$27`, [...p, id]);
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -306,10 +312,12 @@ app.post('/api/admin/listings/:id/duplicate', requireAdmin, async (req, res) => 
     const { rows } = await pool.query(
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
-        images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude)
+        images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
+        amenities, furnishings, common_fee_text, year_built)
        SELECT title || ' (สำเนา)', listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
-        images, nearby, pets_allowed, false, 'draft', contact_line, contact_phone, latitude, longitude
+        images, nearby, pets_allowed, false, 'draft', contact_line, contact_phone, latitude, longitude,
+        amenities, furnishings, common_fee_text, year_built
        FROM listings WHERE id = $1 RETURNING id`, [Number(req.params.id)]);
     if (!rows[0]) return res.status(404).json({ error: 'not found' });
     res.json({ ok: true, id: rows[0].id });
@@ -413,6 +421,10 @@ function listingFacts(l) {
     Number(l.land_area_sqwah) > 0 && `ที่ดิน: ${Number(l.land_area_sqwah)} ตร.ว.`,
     l.floor_text && `ชั้น: ${l.floor_text}`,
     `สัตว์เลี้ยง: ${l.pets_allowed ? 'เลี้ยงได้' : 'ไม่อนุญาต'}`,
+    l.year_built && `ปีที่สร้างเสร็จ: ${l.year_built}`,
+    l.common_fee_text && `ค่าส่วนกลาง: ${l.common_fee_text}`,
+    (l.amenities || []).length && `สิ่งอำนวยความสะดวกส่วนกลาง: ${(l.amenities || []).join(', ')}`,
+    (l.furnishings || []).length && `เฟอร์นิเจอร์/เครื่องใช้ที่ให้: ${(l.furnishings || []).join(', ')}`,
     (l.highlights || []).length && `จุดเด่น: ${(l.highlights || []).join(', ')}`,
     (l.nearby || []).length && `สถานที่ใกล้เคียง: ${(l.nearby || []).map(n => `${n.label} (${n.dist})`).join(', ')}`,
     l.description && `รายละเอียด: ${String(l.description).slice(0, 900)}`
@@ -499,6 +511,10 @@ app.post('/api/admin/ai/generate', requireAdmin, async (req, res) => {
       d.land_area_sqwah > 0 && `ที่ดิน: ${d.land_area_sqwah} ตร.ว.`,
       d.floor_text && `ชั้น: ${d.floor_text}`,
       d.nearby?.length && `สถานที่ใกล้เคียง: ${d.nearby.map(n => `${n.label} (${n.dist})`).join(', ')}`,
+      d.year_built && `ปีที่สร้าง: ${d.year_built}`,
+      d.common_fee_text && `ค่าส่วนกลาง: ${d.common_fee_text}`,
+      d.amenities?.length && `ส่วนกลาง: ${d.amenities.join(', ')}`,
+      d.furnishings?.length && `ของที่ให้: ${d.furnishings.join(', ')}`,
       d.pets_allowed && 'เลี้ยงสัตว์ได้',
       d.notes && `ข้อมูลเพิ่มเติมจากแอดมิน: ${d.notes}`
     ].filter(Boolean).join('\n');

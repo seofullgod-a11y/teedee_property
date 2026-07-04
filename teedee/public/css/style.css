@@ -297,11 +297,11 @@ p  { font-size: var(--fs-base); }
 .card .loc { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: var(--fs-sm); }
 .card .loc svg { width: 15px; height: 15px; flex-shrink: 0; }
 .spec-row { display: flex; flex-wrap: wrap; gap: 7px; }
-.spec-row .spec {
+.spec {
   background: var(--soft); border-radius: 8px; padding: 5px 11px;
   font-size: var(--fs-xs); color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px;
 }
-.spec-row .spec svg { width: 14px; height: 14px; color: var(--gold); }
+.spec svg { width: 15px; height: 15px; color: var(--gold); flex-shrink: 0; }
 .nearby-row { display: flex; flex-direction: column; gap: 6px; margin-top: auto; padding-top: 4px; border-top: 1px dashed var(--line); }
 .nearby-row .nb { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--muted); }
 .nb .pill, .pill-near {
@@ -852,4 +852,33 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
     bottom: calc(92px + env(safe-area-inset-bottom, 0px));
     height: min(66vh, 520px);
   }
+}
+
+
+/* ---------- Property facts table ---------- */
+.facts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
+.fact-row {
+  display: flex; justify-content: space-between; gap: 14px;
+  padding: 11px 2px; border-bottom: 1px dashed var(--line);
+  font-size: var(--fs-sm);
+}
+.fact-row .k { color: var(--muted); flex-shrink: 0; }
+.fact-row .v { color: var(--ink); text-align: right; font-weight: 500; }
+
+/* ---------- Amenity / furnishing checklist ---------- */
+.amen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.amen-item {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 12px;
+  padding: 11px 15px; font-size: var(--fs-sm); color: var(--ink-2);
+}
+.amen-item .ai-check {
+  width: 22px; height: 22px; border-radius: 999px; flex-shrink: 0;
+  background: var(--gold-soft); color: var(--gold);
+  display: grid; place-items: center;
+}
+.amen-item .ai-check svg { width: 13px; height: 13px; }
+@media (max-width: 640px) {
+  .facts-grid { grid-template-columns: 1fr; gap: 0; }
+  .amen-grid { grid-template-columns: 1fr; gap: 8px; }
 }
