@@ -1139,3 +1139,44 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   .ai-hint > span { display: inline-block; vertical-align: -2px; margin-right: 4px; }
   .quick-chips { margin-top: 16px; }
 }
+
+/* ============ Custom filter dropdown (แทน native select — หน้าตาเดียวกันทุกเครื่อง) ============ */
+.search-bar { position: relative; }
+.s-select-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 0; background: transparent; cursor: pointer; outline: none;
+  font-family: inherit; font-size: var(--fs-sm); color: var(--ink-2);
+  padding: 10px 22px 10px 4px; position: relative; white-space: nowrap;
+  transition: color .15s;
+}
+.s-select-btn:hover, .s-select-btn[aria-expanded="true"] { color: var(--ink); }
+.s-select-btn.has-val { color: var(--gold); font-weight: 500; }
+.s-select-btn::after {
+  content: ''; position: absolute; right: 7px; top: 50%;
+  width: 6px; height: 6px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg); transition: transform .18s;
+}
+.s-select-btn[aria-expanded="true"]::after { transform: translateY(-30%) rotate(225deg); }
+.ssb-lbl { overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.s-panel {
+  position: absolute; left: 10px; right: 10px; top: calc(100% + 10px); z-index: 40;
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 18px 44px rgba(28, 28, 26, .16);
+  padding: 6px; max-height: 288px; overflow: auto;
+}
+:root[data-theme="dark"] .s-panel { box-shadow: 0 18px 44px rgba(0, 0, 0, .55); }
+.sp-opt {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; border: 0; background: transparent; cursor: pointer;
+  font-family: inherit; font-size: var(--fs-sm); color: var(--ink-2); text-align: left;
+  padding: 12px 14px; border-radius: 11px; transition: background .12s, color .12s;
+}
+.sp-opt:hover { background: var(--soft); color: var(--ink); }
+.sp-opt.on { color: var(--gold); font-weight: 500; background: var(--gold-soft); }
+.sp-check { color: var(--gold); font-weight: 600; }
+@media (max-width: 640px) {
+  .s-select-btn { flex: 1 1 50%; min-width: 0; justify-content: center; padding: 11px 24px 9px 10px; font-size: var(--fs-xs); }
+  .s-select-btn + .s-div + .s-select-btn { border-left: 1px solid var(--line); }
+  .ssb-lbl { max-width: none; }
+  .s-panel { left: 4px; right: 4px; }
+}

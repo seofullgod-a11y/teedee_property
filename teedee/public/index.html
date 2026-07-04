@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=9">
+  <link rel="stylesheet" href="/css/style.css?v=10">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -36,29 +36,17 @@
           <input type="text" name="q" id="qInput" autocomplete="off" aria-label="คำค้นหา" placeholder="">
           <div class="s-filters">
             <span class="s-div" aria-hidden="true"></span>
-            <label class="s-select">
-              <select name="category" aria-label="ประเภททรัพย์">
-                <option value="">ทุกประเภท</option>
-                <option value="condo">คอนโด</option>
-                <option value="house">บ้านเดี่ยว</option>
-                <option value="townhouse">ทาวน์เฮาส์</option>
-                <option value="land">ที่ดิน</option>
-                <option value="commercial">อาคารพาณิชย์</option>
-              </select>
-            </label>
+            <button type="button" class="s-select-btn" id="fCategory" data-filter="category" aria-haspopup="listbox" aria-expanded="false">
+              <span class="ssb-lbl">ทุกประเภท</span>
+            </button>
             <span class="s-div" aria-hidden="true"></span>
-            <label class="s-select">
-              <select name="budget" aria-label="งบประมาณ">
-                <option value="">ทุกช่วงราคา</option>
-                <option value="0-15000">เช่า · ไม่เกิน 15,000</option>
-                <option value="15000-30000">เช่า · 15,000 – 30,000</option>
-                <option value="30000-60000">เช่า · 30,000 – 60,000</option>
-                <option value="0-3000000">ซื้อ · ไม่เกิน 3 ล้าน</option>
-                <option value="3000000-6000000">ซื้อ · 3 – 6 ล้าน</option>
-                <option value="6000000-999999999">ซื้อ · 6 ล้านขึ้นไป</option>
-              </select>
-            </label>
+            <button type="button" class="s-select-btn" id="fBudget" data-filter="budget" aria-haspopup="listbox" aria-expanded="false">
+              <span class="ssb-lbl">ทุกช่วงราคา</span>
+            </button>
           </div>
+          <input type="hidden" name="category" id="hCategory" value="">
+          <input type="hidden" name="budget" id="hBudget" value="">
+          <div class="s-panel" id="sPanel" role="listbox" hidden></div>
           <button class="s-btn" type="submit" aria-label="ค้นหา"><span id="ic-search2"></span><span class="t">ค้นหา</span></button>
         </form>
         <p class="ai-hint">
@@ -194,7 +182,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=9"></script>
+  <script src="/js/shared.js?v=10"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
@@ -245,6 +233,60 @@
     window.addEventListener('resize', initPill);
     if (document.fonts?.ready) document.fonts.ready.then(initPill);
     initPill(); setTimeout(initPill, 250);
+
+    // ---- Custom filter dropdowns (แผงตัวเลือกของเราเอง หน้าตาเหมือนกันทุกเครื่อง) ----
+    const FILTER_OPTS = {
+      category: [
+        ['', 'ทุกประเภท'], ['condo', 'คอนโด'], ['house', 'บ้านเดี่ยว'],
+        ['townhouse', 'ทาวน์เฮาส์'], ['land', 'ที่ดิน'], ['commercial', 'อาคารพาณิชย์']
+      ],
+      budget: [
+        ['', 'ทุกช่วงราคา'],
+        ['0-15000', 'เช่า · ไม่เกิน 15,000'], ['15000-30000', 'เช่า · 15,000 – 30,000'],
+        ['30000-60000', 'เช่า · 30,000 – 60,000'],
+        ['0-3000000', 'ซื้อ · ไม่เกิน 3 ล้าน'], ['3000000-6000000', 'ซื้อ · 3 – 6 ล้าน'],
+        ['6000000-999999999', 'ซื้อ · 6 ล้านขึ้นไป']
+      ]
+    };
+    const sPanel = document.getElementById('sPanel');
+    const hidden = { category: document.getElementById('hCategory'), budget: document.getElementById('hBudget') };
+    const fBtns = { category: document.getElementById('fCategory'), budget: document.getElementById('fBudget') };
+    let openFilter = null;
+
+    function closePanel() {
+      if (!openFilter) return;
+      sPanel.hidden = true;
+      fBtns[openFilter].setAttribute('aria-expanded', 'false');
+      openFilter = null;
+    }
+    function openPanel(key) {
+      if (openFilter === key) return closePanel();
+      closePanel();
+      openFilter = key;
+      const cur = hidden[key].value;
+      sPanel.innerHTML = FILTER_OPTS[key].map(([v, t]) => `
+        <button type="button" class="sp-opt ${v === cur ? 'on' : ''}" role="option" aria-selected="${v === cur}" data-v="${v}">
+          <span>${t}</span>${v === cur ? '<span class="sp-check">✓</span>' : ''}
+        </button>`).join('');
+      sPanel.hidden = false;
+      fBtns[key].setAttribute('aria-expanded', 'true');
+    }
+    Object.keys(fBtns).forEach(key => {
+      fBtns[key].addEventListener('click', e => { e.stopPropagation(); openPanel(key); });
+    });
+    sPanel.addEventListener('click', e => {
+      const opt = e.target.closest('.sp-opt');
+      if (!opt || !openFilter) return;
+      e.stopPropagation();
+      const v = opt.dataset.v;
+      hidden[openFilter].value = v;
+      const lbl = fBtns[openFilter].querySelector('.ssb-lbl');
+      lbl.textContent = FILTER_OPTS[openFilter].find(o => o[0] === v)[1];
+      fBtns[openFilter].classList.toggle('has-val', v !== '');
+      closePanel();
+    });
+    document.addEventListener('click', closePanel);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
     // ---- Search: animated typing placeholder (ตามภาษาที่เลือก) ----
     const qInput = document.getElementById('qInput');
@@ -366,12 +408,12 @@
           latest.items.slice(0, 6).map(l => TD.card(l)).join('');
 
         const total = latest.total || 0;
-        const rentCount = await fetch('/api/listings?type=rent').then(r => r.json());
-        const saleCount = await fetch('/api/listings?type=sale').then(r => r.json());
+        const rentCount = await fetch('/api/listings?type=rent').then(r => r.json()).catch(() => ({}));
+        const saleCount = await fetch('/api/listings?type=sale').then(r => r.json()).catch(() => ({}));
         document.getElementById('stats').innerHTML = `
           <div class="stat"><div class="num">${total.toLocaleString()}</div><div class="lbl">ประกาศทั้งหมด</div></div>
-          <div class="stat"><div class="num">${rentCount.total.toLocaleString()}</div><div class="lbl">สำหรับเช่า</div></div>
-          <div class="stat"><div class="num">${saleCount.total.toLocaleString()}</div><div class="lbl">สำหรับขาย</div></div>`;
+          <div class="stat"><div class="num">${(rentCount.total || 0).toLocaleString()}</div><div class="lbl">สำหรับเช่า</div></div>
+          <div class="stat"><div class="num">${(saleCount.total || 0).toLocaleString()}</div><div class="lbl">สำหรับขาย</div></div>`;
 
         // ดูล่าสุด
         const recentIds = TD.recent();
