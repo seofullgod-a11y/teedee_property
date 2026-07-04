@@ -1026,3 +1026,45 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .pref-btn svg { width: 18px; height: 18px; }
 .pref-btn .lang-code { letter-spacing: .04em; }
 .bn-pref { cursor: pointer; }
+
+/* ============ Navbar v2 — จัดกลุ่มปุ่มขวา สูงเท่ากันทุกตัว ============ */
+.nav-inner { gap: 26px; }
+.nav-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.pref-group {
+  display: inline-flex; align-items: stretch; height: 40px;
+  border: 1px solid var(--line-strong); border-radius: 999px;
+  background: transparent; overflow: hidden;
+}
+.pref-group .pref-btn {
+  border: 0; border-radius: 0; height: 100%; min-width: 42px; padding: 0 13px;
+  background: transparent; color: var(--ink); font-size: var(--fs-xs); font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: color .15s, background .15s;
+}
+.pref-group .pref-btn:hover { color: var(--gold); background: var(--gold-soft); }
+.pref-group .pref-btn + .pref-btn { border-left: 1px solid var(--line); }
+.pref-group .pref-btn svg { width: 18px; height: 18px; }
+.pref-group .lang-code { letter-spacing: .05em; font-family: var(--font-display); }
+.nav-actions .icon-btn { width: 40px; height: 40px; }
+.nav-cta { height: 40px; padding: 0 20px; display: inline-flex; align-items: center; border-radius: 999px; }
+
+/* nav พื้นหลังตามธีม (เดิม hardcode สีสว่าง) */
+:root[data-theme="dark"] .nav { background: rgba(20, 19, 15, .88); border-bottom-color: var(--line); }
+
+/* iPad / จอกลาง */
+@media (max-width: 1024px) {
+  .nav-inner { gap: 18px; }
+  .nav-links { gap: 18px; }
+}
+/* มือถือ */
+@media (max-width: 640px) {
+  .nav-actions { gap: 7px; }
+  .pref-group { height: 36px; }
+  .pref-group .pref-btn { min-width: 38px; padding: 0 11px; }
+  .pref-group .pref-btn svg { width: 17px; height: 17px; }
+  .nav-cta { height: 36px; padding: 0 14px; font-size: var(--fs-xs); }
+}
+/* จอแคบมาก (iPhone SE/mini) — ตัดปุ่มลงประกาศออก เหลือใน bottom-nav + หน้าแรก */
+@media (max-width: 375px) {
+  .nav-cta { display: none; }
+}

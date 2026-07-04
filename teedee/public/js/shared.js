@@ -194,10 +194,14 @@ const TD = {
         <a href="/#categories">ประเภททั้งหมด</a>
       </nav>
       <span class="nav-spacer"></span>
-      <button class="pref-btn" data-theme-toggle type="button" aria-label="สลับโหมดมืด/สว่าง" title="โหมดมืด/สว่าง">${TD.theme() === 'dark' ? this.icons.sun : this.icons.moon}</button>
-      <button class="pref-btn" data-lang-toggle type="button" aria-label="Switch language" title="ไทย / English">${this.icons.translate}<span class="lang-code">${TD.lang() === 'en' ? 'ไทย' : 'EN'}</span></button>
-      <a class="icon-btn" href="/saved" aria-label="รายการโปรด" title="รายการโปรด">${this.icons.heart}</a>
-      <a class="btn btn-ghost btn-sm" href="/#list-cta">ลงประกาศ</a>
+      <div class="nav-actions">
+        <div class="pref-group" role="group" aria-label="การแสดงผล">
+          <button class="pref-btn" data-theme-toggle type="button" aria-label="สลับโหมดมืด/สว่าง" title="โหมดมืด/สว่าง">${TD.theme() === 'dark' ? this.icons.sun : this.icons.moon}</button>
+          <button class="pref-btn" data-lang-toggle type="button" aria-label="Switch language" title="ไทย / English"><span class="lang-code">${TD.lang() === 'en' ? 'ไทย' : 'EN'}</span></button>
+        </div>
+        <a class="icon-btn" href="/saved" aria-label="รายการโปรด" title="รายการโปรด">${this.icons.heart}</a>
+        <a class="btn btn-primary btn-sm nav-cta" href="/#list-cta">ลงประกาศ</a>
+      </div>
     </div></div>`;
   },
 
@@ -295,7 +299,8 @@ TD.EN = {
   'ทำด้วยใจ เพื่อคนหาบ้าน 🏡': 'Made with care, for home seekers 🏡',
   // ---- Home hero ----
   'บ้านเช่า · บ้านขาย · ที่ดิน ทั่วไทย': 'Homes for rent · for sale · land — nationwide',
-  'หา': 'Find', 'ที่ที่ใช่': 'the right place', 'สำหรับชีวิตที่ดี': 'for a better life', 'เริ่มต้นได้ที่นี่': 'starts here',
+  'พิมพ์ภาษาคนได้เลย เช่น "คอนโดเลี้ยงแมวได้ ใกล้ BTS ไม่เกิน 2 หมื่น" — AI จะตีความให้':
+    'Type naturally, e.g. "cat-friendly condo near BTS under ฿20k" — AI will interpret it for you',
   'ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ติดต่อเจ้าของได้โดยตรง':
     'Search homes for rent, condos, properties for sale, and land nationwide — complete details, contact owners directly.',
   // ---- Search bar ----
@@ -428,6 +433,12 @@ TD.localizeNode = function (node) {
     return;
   }
   if (node.nodeType !== 1) return;
+  /* แปลระดับ element: ถ้ามี data-en ให้ใช้ HTML ที่กำหนดไว้ตรง ๆ (กันปัญหาแปลเป็นชิ้นแล้วติดกัน) */
+  if (node.hasAttribute && node.hasAttribute('data-en')) {
+    var enHtml = node.getAttribute('data-en');
+    if (enHtml && node.innerHTML !== enHtml) node.innerHTML = enHtml;
+    return;
+  }
   var attrs = ['placeholder', 'title', 'aria-label', 'alt'];
   for (var i = 0; i < attrs.length; i++) {
     if (node.hasAttribute && node.hasAttribute(attrs[i])) {

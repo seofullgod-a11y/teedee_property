@@ -19,7 +19,7 @@
   <header class="hero">
     <div class="container">
       <span class="eyebrow">บ้านเช่า · บ้านขาย · ที่ดิน ทั่วไทย</span>
-      <h1>หา<span class="hl">ที่ที่ใช่</span> สำหรับชีวิตที่ดี<br>เริ่มต้นได้ที่นี่</h1>
+      <h1 data-en='Find <span class="hl">the right place</span> for a better life.<br>It starts here.'>หา<span class="hl">ที่ที่ใช่</span> สำหรับชีวิตที่ดี<br>เริ่มต้นได้ที่นี่</h1>
       <p class="sub">ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ติดต่อเจ้าของได้โดยตรง</p>
 
       <!-- Signature Search -->
@@ -244,16 +244,23 @@
     if (document.fonts?.ready) document.fonts.ready.then(initPill);
     initPill(); setTimeout(initPill, 250);
 
-    // ---- Search: animated typing placeholder ----
+    // ---- Search: animated typing placeholder (ตามภาษาที่เลือก) ----
     const qInput = document.getElementById('qInput');
-    const phrases = [
+    const isEN = TD.lang && TD.lang() === 'en';
+    const phrases = isEN ? [
+      'condo near BTS Asok under ฿20,000',
+      'house in Nakhon Pathom',
+      'empty land for a café',
+      'pet-friendly townhome',
+      'riverside condo, Charoen Nakhon'
+    ] : [
       'คอนโดใกล้ BTS อโศก ไม่เกิน 20,000',
       'บ้านเดี่ยวโซนนครปฐม',
       'ที่ดินเปล่า เหมาะทำคาเฟ่',
       'ทาวน์โฮมเลี้ยงสัตว์ได้',
       'คอนโดวิวแม่น้ำ เจริญนคร'
     ];
-    const PREFIX = 'ลองค้นหา “';
+    const PREFIX = isEN ? 'Try “' : 'ลองค้นหา “';
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       qInput.placeholder = PREFIX + phrases[0] + '”';
     } else {
