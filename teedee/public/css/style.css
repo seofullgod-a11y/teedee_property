@@ -82,7 +82,10 @@ p  { font-size: var(--fs-base); }
   border-bottom: 1px solid var(--line);
 }
 .nav-inner { display: flex; align-items: center; gap: 30px; height: 66px; }
-.brand { display: flex; align-items: baseline; gap: 9px; font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; letter-spacing: .01em; white-space: nowrap; }
+.brand { display: flex; align-items: center; gap: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.22rem; letter-spacing: .01em; white-space: nowrap; }
+.brand .mark, .brand .logo-img { margin-right: 9px; }
+.brand em { margin: 0; font-style: normal; }
+.brand .sub-th { margin-left: 8px; }
 .brand .logo-img { height: 36px; width: auto; max-width: 150px; object-fit: contain; align-self: center; border-radius: 8px; }
 .btn-sm { padding: 9px 18px; font-size: .88rem; }
 .brand .mark {
@@ -91,7 +94,7 @@ p  { font-size: var(--fs-base); }
   display: grid; place-items: center;
 }
 .brand .mark svg { width: 19px; height: 19px; }
-.brand em { font-style: normal; color: var(--gold); }
+.brand em { font-style: normal; color: var(--gold); margin: 0; }
 .brand .sub-th { font-size: var(--fs-xs); color: var(--muted); font-weight: 400; letter-spacing: .06em; }
 .nav-links { display: flex; gap: 26px; font-size: var(--fs-sm); color: var(--muted); font-family: var(--font-display); font-weight: 400; }
 .nav-links a { padding: 4px 0; border-bottom: 1.5px solid transparent; transition: color .15s, border-color .15s; }

@@ -262,6 +262,24 @@ app.delete('/api/admin/listings/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/admin/upload-logo', requireAdmin, async (req, res) => {
+  try {
+    const dataUrl = String(req.body?.dataUrl || '');
+    const m = dataUrl.match(/^data:image\/(png|jpeg|jpg|webp|svg\+xml);base64,([A-Za-z0-9+/=]+)$/);
+    if (!m) return res.status(400).json({ error: 'ไฟล์ไม่ถูกต้อง (รองรับ PNG, JPG, WEBP, SVG)' });
+    // จำกัดขนาด ~1.5MB (base64 ยาวกว่าไฟล์จริง ~33%)
+    if (dataUrl.length > 2_000_000) return res.status(400).json({ error: 'ไฟล์ใหญ่เกินไป (ไม่เกิน ~1.5MB)' });
+    await pool.query(
+      `INSERT INTO settings (key, value) VALUES ('logo_url', $1)
+       ON CONFLICT (key) DO UPDATE SET value = $1`, [dataUrl]);
+    settingsCache = null;
+    res.json({ ok: true, logo_url: dataUrl });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
 app.put('/api/admin/settings', requireAdmin, async (req, res) => {
   try {
     const body = req.body || {};

@@ -88,6 +88,24 @@
     .nb-row { display: flex; gap: 8px; }
     .add-row-btn { background: none; border: 1.5px dashed var(--line); border-radius: 10px; padding: 9px; width: 100%; color: var(--muted); font-size: .86rem; }
     .add-row-btn:hover { border-color: var(--pine); color: var(--pine); }
+    .logo-drop {
+      border: 1.5px dashed var(--line-strong); border-radius: 14px;
+      padding: 22px; text-align: center; cursor: pointer;
+      transition: border-color .18s, background .18s;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .logo-drop:hover, .logo-drop.drag { border-color: var(--gold); background: var(--gold-soft); }
+    .logo-drop .lp-ico { width: 40px; height: 40px; color: var(--muted); }
+    .logo-drop .lp-ico svg { width: 40px; height: 40px; }
+    .logo-drop .lp-text { font-size: .9rem; color: var(--ink-2); font-family: var(--font-display); }
+    .logo-drop .lp-hint { font-size: .78rem; color: var(--muted); }
+    .logo-preview-box {
+      display: none; align-items: center; gap: 14px;
+      background: var(--sand); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+    }
+    .logo-preview-box.show { display: flex; }
+    .logo-preview-box img { height: 46px; max-width: 160px; object-fit: contain; }
+    .logo-preview-box .lpb-actions { margin-left: auto; display: flex; gap: 8px; }
     .toast {
       position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: #fff;
       padding: 13px 20px; border-radius: 12px; font-size: .92rem; z-index: 99;
@@ -251,12 +269,22 @@
         <div class="editor" style="max-width:640px">
           <div class="frm-grid">
             <div class="full">
-              <label>โลโก้ (ลิงก์รูป URL) — เว้นว่างเพื่อใช้ไอคอนบ้านเริ่มต้น</label>
-              <div class="img-row">
-                <img id="s-logoPrev" style="width:auto;max-width:120px;height:40px;object-fit:contain" onerror="this.style.visibility='hidden'">
-                <input id="s-logo" placeholder="https://.../logo.png">
+              <label>โลโก้เว็บไซต์</label>
+              <input type="file" id="s-logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+              <div class="logo-drop" id="logoDrop">
+                <span class="lp-ico" id="lpIco"></span>
+                <span class="lp-text">คลิกเพื่อเลือกไฟล์ หรือลากรูปมาวางตรงนี้</span>
+                <span class="lp-hint">PNG · JPG · WEBP · SVG — พื้นหลังโปร่งจะสวยที่สุด (ไม่เกิน ~1.5MB)</span>
               </div>
-              <p style="font-size:.78rem;color:var(--muted);margin-top:6px">แนะนำไฟล์ PNG พื้นหลังโปร่ง สูงประมาณ 60-120px — โลโก้จะแสดงบน navbar และ footer แทนไอคอนบ้าน</p>
+              <div class="logo-preview-box" id="logoPreviewBox" style="margin-top:10px">
+                <img id="s-logoPrev" alt="โลโก้">
+                <div class="lpb-actions">
+                  <button class="mini-btn" id="logoChange" type="button">เปลี่ยนรูป</button>
+                  <button class="mini-btn danger" id="logoRemove" type="button">ลบโลโก้</button>
+                </div>
+              </div>
+              <input type="hidden" id="s-logo">
+              <p style="font-size:.78rem;color:var(--muted);margin-top:8px">โลโก้จะแสดงบน navbar และ footer แทนไอคอนบ้าน — เว้นว่างเพื่อกลับไปใช้ไอคอนเริ่มต้น</p>
             </div>
             <div><label>ชื่อเว็บ (ส่วนหน้า)</label><input id="s-main" placeholder="อยู่"></div>
             <div><label>ชื่อเว็บ (ส่วนเน้นสีทอง)</label><input id="s-accent" placeholder="ใจ"></div>
@@ -575,16 +603,51 @@
     });
 
     // ---------- Settings ----------
+    $('lpIco').innerHTML = TD.icons.share; // placeholder icon (จะใช้ image icon)
+    $('lpIco').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8h.01"/><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"/><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"/><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"/></svg>';
+
+    const logoDrop = $('logoDrop'), logoFile = $('s-logoFile');
+    logoDrop.onclick = () => logoFile.click();
+    $('logoChange').onclick = () => logoFile.click();
+    $('logoRemove').onclick = () => { $('s-logo').value = ''; logoFile.value = ''; paintSettingsPreview(); toast('ลบโลโก้แล้ว — กดบันทึกเพื่อยืนยัน'); };
+
+    logoDrop.addEventListener('dragover', e => { e.preventDefault(); logoDrop.classList.add('drag'); });
+    logoDrop.addEventListener('dragleave', () => logoDrop.classList.remove('drag'));
+    logoDrop.addEventListener('drop', e => {
+      e.preventDefault(); logoDrop.classList.remove('drag');
+      if (e.dataTransfer.files[0]) handleLogoFile(e.dataTransfer.files[0]);
+    });
+    logoFile.onchange = () => { if (logoFile.files[0]) handleLogoFile(logoFile.files[0]); };
+
+    async function handleLogoFile(file) {
+      if (!/^image\/(png|jpeg|jpg|webp|svg\+xml)$/.test(file.type))
+        return toast('รองรับเฉพาะ PNG, JPG, WEBP, SVG', true);
+      if (file.size > 1_500_000) return toast('ไฟล์ใหญ่เกินไป (ไม่เกิน 1.5MB)', true);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          toast('กำลังอัปโหลดโลโก้...');
+          const j = await api('/api/admin/upload-logo', { method: 'POST', body: JSON.stringify({ dataUrl: reader.result }) });
+          $('s-logo').value = j.logo_url;
+          localStorage.removeItem('yj_settings');
+          paintSettingsPreview();
+          toast('อัปโหลดโลโก้แล้ว ✓ กดบันทึกเพื่อยืนยัน');
+        } catch (e) { toast(e.message, true); }
+      };
+      reader.readAsDataURL(file);
+    }
+
     function paintSettingsPreview() {
       const logo = $('s-logo').value.trim();
       const prev = $('s-logoPrev');
       prev.style.visibility = logo ? 'visible' : 'hidden';
       if (logo) prev.src = logo;
+      const box = $('logoPreviewBox');
+      if (logo) { box.classList.add('show'); prev.src = logo; } else { box.classList.remove('show'); }
       $('s-preview').innerHTML =
-        (logo ? `<img src="${TD.esc(logo)}" style="height:30px;vertical-align:middle;margin-right:8px" onerror="this.style.display='none'">` : '') +
-        TD.esc($('s-main').value || 'อยู่') +
-        `<span style="color:var(--gold)">${TD.esc($('s-accent').value || 'ใจ')}</span>` +
-        (($('s-sub').value || '') ? ` <span style="font-size:.8rem;color:var(--muted);font-weight:400">${TD.esc($('s-sub').value)}</span>` : '');
+        (logo ? `<img src="${TD.esc(logo)}" style="height:30px;vertical-align:middle;margin-right:9px" onerror="this.style.display='none'">` : '') +
+        `<span>${TD.esc($('s-main').value || 'อยู่')}<span style="color:var(--gold)">${TD.esc($('s-accent').value || 'ใจ')}</span></span>` +
+        (($('s-sub').value || '') ? `<span style="font-size:.8rem;color:var(--muted);font-weight:400;margin-left:8px">${TD.esc($('s-sub').value)}</span>` : '');
     }
     async function loadSettings() {
       try {
@@ -596,7 +659,7 @@
         paintSettingsPreview();
       } catch { toast('โหลดการตั้งค่าไม่สำเร็จ', true); }
     }
-    ['s-logo', 's-main', 's-accent', 's-sub'].forEach(id =>
+    ['s-main', 's-accent', 's-sub'].forEach(id =>
       document.addEventListener('input', e => { if (e.target.id === id) paintSettingsPreview(); }));
     $('saveSettings').onclick = async () => {
       $('saveSettings').disabled = true;

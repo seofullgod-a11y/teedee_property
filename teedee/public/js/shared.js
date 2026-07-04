@@ -39,7 +39,7 @@ const TD = {
     const logo = b.logo
       ? `<img class="logo-img" src="${this.esc(b.logo)}" alt="${this.esc(b.main + b.accent)}">`
       : `<span class="mark">${this.icons.home}</span>`;
-    return `<a class="brand" ${dark ? 'style="color:#fff"' : ''} href="/">${logo}${this.esc(b.main)}<em>${this.esc(b.accent)}</em>${b.sub ? ` <span class="sub-th">${this.esc(b.sub)}</span>` : ''}</a>`;
+    return `<a class="brand" ${dark ? 'style="color:#fff"' : ''} href="/">${logo}${this.esc(b.main)}<em>${this.esc(b.accent)}</em>${b.sub ? `<span class="sub-th">${this.esc(b.sub)}</span>` : ''}</a>`;
   },
 
   chrome(active) {
