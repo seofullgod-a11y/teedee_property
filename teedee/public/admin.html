@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
     .admin-shell { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
@@ -216,7 +217,13 @@
             <div><label>ที่ดิน (ตร.ว.)</label><input id="f-wah" type="number" min="0" step="0.1"></div>
             <div><label>ชั้น (สำหรับคอนโด)</label><input id="f-floor" placeholder="18"></div>
             <div><label>เบอร์โทรติดต่อ (แสดงปุ่มโทรบนหน้าประกาศ)</label><input id="f-phone" placeholder="081-234-5678"></div>
-            <div><label>LINE ID (แสดงปุ่มแอด LINE)</label><input id="f-line" placeholder="teedee.property"></div>
+            <div><label>LINE ID (แสดงปุ่มแอด LINE)</label><input id="f-line" placeholder="yoojai.property"></div>
+            <div class="full">
+              <label>ตำแหน่ง Google Maps — วางลิงก์จากแอป Google Maps หรือพิมพ์พิกัด lat,lng</label>
+              <input id="f-map" placeholder='เช่น https://maps.app.goo.gl/... หรือ https://www.google.com/maps/@13.75,100.50,17z หรือ 13.7563, 100.5018'>
+              <p id="f-mapHint" style="font-size:.78rem;color:var(--muted);margin-top:5px">ระบบจะแกะพิกัดให้อัตโนมัติ — ถ้าเว้นว่าง แผนที่จะใช้ชื่อทำเลแทน (แม่นน้อยกว่า)</p>
+              <input type="hidden" id="f-lat"><input type="hidden" id="f-lng">
+            </div>
             <div style="display:flex;align-items:end;gap:20px;padding-bottom:8px">
               <label class="chk"><input type="checkbox" id="f-pets"> เลี้ยงสัตว์ได้</label>
               <label class="chk"><input type="checkbox" id="f-feat"> ⭐ ประกาศแนะนำ</label>
@@ -484,10 +491,45 @@
     $('addImg').onclick = () => $('imgList').appendChild(imgRow());
     $('addNb').onclick = () => $('nbList').appendChild(nbRow());
 
+    // แกะพิกัดจากลิงก์ Google Maps หรือข้อความ lat,lng
+    function parseLatLng(str) {
+      const s = String(str || '').trim();
+      if (!s) return null;
+      let m = s.match(/@(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/)          // .../maps/@13.75,100.50,17z
+           || s.match(/[?&](?:q|query|ll|destination)=(-?\d{1,2}\.\d+),(-?\d{1,3}\.\d+)/)  // ?q=13.75,100.50
+           || s.match(/!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/)        // ...!3d13.75!4d100.50
+           || s.match(/^\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/); // "13.75, 100.50"
+      if (!m) return null;
+      const lat = Number(m[1]), lng = Number(m[2]);
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+      return { lat, lng };
+    }
+    function applyMapInput() {
+      const v = $('f-map').value.trim();
+      const hint = $('f-mapHint');
+      if (!v) {
+        $('f-lat').value = ''; $('f-lng').value = '';
+        hint.textContent = 'ระบบจะแกะพิกัดให้อัตโนมัติ — ถ้าเว้นว่าง แผนที่จะใช้ชื่อทำเลแทน (แม่นน้อยกว่า)';
+        hint.style.color = 'var(--muted)';
+        return;
+      }
+      const p = parseLatLng(v);
+      if (p) {
+        $('f-lat').value = p.lat; $('f-lng').value = p.lng;
+        hint.textContent = `✓ พิกัด: ${p.lat}, ${p.lng} — แผนที่จะปักหมุดตรงจุดนี้`;
+        hint.style.color = 'var(--pine)';
+      } else {
+        $('f-lat').value = ''; $('f-lng').value = '';
+        hint.textContent = '⚠ ยังแกะพิกัดไม่ได้ — ลิงก์แบบย่อ (maps.app.goo.gl) ให้เปิดในเบราว์เซอร์ก่อนแล้วคัดลอกลิงก์ยาวจากแถบที่อยู่ หรือพิมพ์ lat,lng ตรง ๆ';
+        hint.style.color = 'var(--danger)';
+      }
+    }
+    $('f-map').addEventListener('input', applyMapInput);
+
     function resetEditor() {
       editingId = null;
       $('editorTitle').textContent = 'เพิ่มประกาศใหม่';
-      ['f-title', 'f-price', 'f-loc', 'f-prov', 'f-bed', 'f-bath', 'f-sqm', 'f-wah', 'f-floor', 'f-phone', 'f-line', 'f-desc', 'f-hl', 'f-ainotes']
+      ['f-title', 'f-price', 'f-loc', 'f-prov', 'f-bed', 'f-bath', 'f-sqm', 'f-wah', 'f-floor', 'f-phone', 'f-line', 'f-map', 'f-lat', 'f-lng', 'f-desc', 'f-hl', 'f-ainotes']
         .forEach(id => $(id).value = '');
       $('f-type').value = 'rent'; $('f-cat').value = 'condo'; $('f-status').value = 'active';
       $('f-pets').checked = false; $('f-feat').checked = false;
@@ -505,6 +547,10 @@
       $('f-sqm').value = Number(l.area_sqm) || ''; $('f-wah').value = Number(l.land_area_sqwah) || '';
       $('f-floor').value = l.floor_text; $('f-desc').value = l.description;
       $('f-phone').value = l.contact_phone || ''; $('f-line').value = l.contact_line || '';
+      if (Number(l.latitude) && Number(l.longitude)) {
+        $('f-map').value = `${Number(l.latitude)}, ${Number(l.longitude)}`;
+        applyMapInput();
+      } else { $('f-map').value = ''; applyMapInput(); }
       $('f-hl').value = (l.highlights || []).join('\n');
       $('f-pets').checked = l.pets_allowed; $('f-feat').checked = l.featured;
       $('f-ainotes').value = '';
@@ -538,7 +584,9 @@
         pets_allowed: $('f-pets').checked,
         featured: $('f-feat').checked,
         contact_phone: $('f-phone').value.trim(),
-        contact_line: $('f-line').value.trim()
+        contact_line: $('f-line').value.trim(),
+        latitude: $('f-lat').value !== '' ? Number($('f-lat').value) : null,
+        longitude: $('f-lng').value !== '' ? Number($('f-lng').value) : null
       };
     }
     $('saveBtn').onclick = async () => {

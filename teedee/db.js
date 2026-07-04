@@ -53,6 +53,9 @@ async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_listings_search
       ON listings (status, listing_type, category, price);
 
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS latitude NUMERIC;
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS longitude NUMERIC;
+
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL DEFAULT ''

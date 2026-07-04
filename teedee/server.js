@@ -50,7 +50,7 @@ const brandName = (s) => `${s.site_name_main || 'อยู่'}${s.site_name_acc
 const LISTING_FIELDS = `id, title, listing_type, category, price, location_text, province,
   bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
   images, nearby, pets_allowed, featured, status, contact_line, contact_phone, views,
-  created_at, updated_at`;
+  latitude, longitude, created_at, updated_at`;
 
 // ---------- Public API ----------
 
@@ -219,7 +219,9 @@ function listingParams(b) {
     !!b.featured,
     ['active', 'draft', 'closed'].includes(b.status) ? b.status : 'draft',
     String(b.contact_line || '').slice(0, 80),
-    String(b.contact_phone || '').slice(0, 40)
+    String(b.contact_phone || '').slice(0, 40),
+    Number.isFinite(Number(b.latitude)) && b.latitude !== '' && b.latitude !== null ? Number(b.latitude) : null,
+    Number.isFinite(Number(b.longitude)) && b.longitude !== '' && b.longitude !== null ? Number(b.longitude) : null
   ];
 }
 
@@ -230,8 +232,8 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
-        images, nearby, pets_allowed, featured, status, contact_line, contact_phone)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+        images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
        RETURNING id`, p);
     res.json({ ok: true, id: rows[0].id });
   } catch (e) {
@@ -248,8 +250,8 @@ app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
       `UPDATE listings SET title=$1, listing_type=$2, category=$3, price=$4, location_text=$5,
         province=$6, bedrooms=$7, bathrooms=$8, area_sqm=$9, land_area_sqwah=$10, floor_text=$11,
         description=$12, highlights=$13, images=$14, nearby=$15, pets_allowed=$16, featured=$17,
-        status=$18, contact_line=$19, contact_phone=$20, updated_at=now()
-       WHERE id=$21`, [...p, id]);
+        status=$18, contact_line=$19, contact_phone=$20, latitude=$21, longitude=$22, updated_at=now()
+       WHERE id=$23`, [...p, id]);
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -304,10 +306,10 @@ app.post('/api/admin/listings/:id/duplicate', requireAdmin, async (req, res) => 
     const { rows } = await pool.query(
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
-        images, nearby, pets_allowed, featured, status, contact_line, contact_phone)
+        images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude)
        SELECT title || ' (สำเนา)', listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
-        images, nearby, pets_allowed, false, 'draft', contact_line, contact_phone
+        images, nearby, pets_allowed, false, 'draft', contact_line, contact_phone, latitude, longitude
        FROM listings WHERE id = $1 RETURNING id`, [Number(req.params.id)]);
     if (!rows[0]) return res.status(404).json({ error: 'not found' });
     res.json({ ok: true, id: rows[0].id });
@@ -337,6 +339,141 @@ app.get('/api/admin/inquiries', requireAdmin, async (req, res) => {
 app.put('/api/admin/inquiries/:id/read', requireAdmin, async (req, res) => {
   await pool.query('UPDATE inquiries SET is_read = true WHERE id = $1', [Number(req.params.id)]);
   res.json({ ok: true });
+});
+
+// ---------- AI Search (พิมพ์ภาษาคน -> ฟิลเตอร์) ----------
+const aiSearchHits = new Map();
+app.post('/api/ai-search', async (req, res) => {
+  try {
+    if (!ANTHROPIC_API_KEY) return res.json({ fallback: true });
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+    const now = Date.now();
+    const h = aiSearchHits.get(ip) || { c: 0, t: now };
+    if (now - h.t > 3600e3) { h.c = 0; h.t = now; }
+    h.c++;
+    aiSearchHits.set(ip, h);
+    if (h.c > 40) return res.json({ fallback: true });
+
+    const q = String(req.body?.q || '').slice(0, 200).trim();
+    if (q.length < 4) return res.json({ fallback: true });
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 250,
+        messages: [{
+          role: 'user',
+          content: `แปลงคำค้นหาอสังหาริมทรัพย์ภาษาไทยนี้เป็น JSON เท่านั้น ห้ามมีข้อความอื่น:\n"${q}"\n\nรูปแบบ: {"type":"rent"|"sale"|null,"category":"condo"|"house"|"townhouse"|"land"|"commercial"|null,"min":ตัวเลข|null,"max":ตัวเลข|null,"beds":ตัวเลข|null,"q":"คีย์เวิร์ดทำเล/สถานที่/ชื่อโครงการ หรือ string ว่าง"}\n\nกติกา: "เช่า"=rent "ซื้อ/ขาย"=sale, "หมื่น"=10000 "แสน"=100000 "ล้าน"=1000000, "ไม่เกิน X"=max, "เลี้ยงสัตว์/เลี้ยงแมว/เลี้ยงหมา ได้" ให้ใส่คำว่า "เลี้ยงสัตว์" ต่อท้าย q, เอาเฉพาะชื่อสถานที่/ทำเลลง q ไม่ใส่คำว่าเช่า ซื้อ คอนโด ราคา`
+        }]
+      })
+    });
+    const out = await r.json();
+    if (!r.ok) return res.json({ fallback: true });
+    const text = (out.content || []).filter(c => c.type === 'text').map(c => c.text).join('').replace(/```json|```/g, '').trim();
+    const f = JSON.parse(text);
+    const filters = {
+      type: ['rent', 'sale'].includes(f.type) ? f.type : null,
+      category: ['condo', 'house', 'townhouse', 'land', 'commercial'].includes(f.category) ? f.category : null,
+      min: Number.isFinite(Number(f.min)) && f.min > 0 ? Number(f.min) : null,
+      max: Number.isFinite(Number(f.max)) && f.max > 0 ? Number(f.max) : null,
+      beds: Number.isFinite(Number(f.beds)) && f.beds > 0 ? Math.min(Number(f.beds), 10) : null,
+      q: String(f.q || '').slice(0, 100)
+    };
+    res.json({ filters });
+  } catch (e) {
+    console.error('ai-search:', e.message);
+    res.json({ fallback: true });
+  }
+});
+
+// ---------- Public AI Chat (ถาม-ตอบเกี่ยวกับประกาศ) ----------
+const chatHits = new Map(); // ip -> { c, t }
+setInterval(() => { // เคลียร์ทุกชั่วโมง กัน memory โต
+  const now = Date.now();
+  for (const [k, v] of chatHits) if (now - v.t > 3600e3) chatHits.delete(k);
+}, 600e3).unref();
+
+function listingFacts(l) {
+  const typeTh = l.listing_type === 'sale' ? 'ขาย' : 'เช่า';
+  const catTh = { house: 'บ้านเดี่ยว', condo: 'คอนโด', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' }[l.category] || 'อสังหาริมทรัพย์';
+  return [
+    `ชื่อประกาศ: ${l.title}`,
+    `ประเภท: ${catTh} (${typeTh})`,
+    `ราคา: ${Number(l.price).toLocaleString('th-TH')} บาท${l.listing_type === 'rent' ? '/เดือน' : ''}`,
+    l.location_text && `ทำเล: ${l.location_text}${l.province ? ' จ.' + l.province : ''}`,
+    l.bedrooms > 0 && `ห้องนอน: ${l.bedrooms}`,
+    l.bathrooms > 0 && `ห้องน้ำ: ${l.bathrooms}`,
+    Number(l.area_sqm) > 0 && `พื้นที่ใช้สอย: ${Number(l.area_sqm)} ตร.ม.`,
+    Number(l.land_area_sqwah) > 0 && `ที่ดิน: ${Number(l.land_area_sqwah)} ตร.ว.`,
+    l.floor_text && `ชั้น: ${l.floor_text}`,
+    `สัตว์เลี้ยง: ${l.pets_allowed ? 'เลี้ยงได้' : 'ไม่อนุญาต'}`,
+    (l.highlights || []).length && `จุดเด่น: ${(l.highlights || []).join(', ')}`,
+    (l.nearby || []).length && `สถานที่ใกล้เคียง: ${(l.nearby || []).map(n => `${n.label} (${n.dist})`).join(', ')}`,
+    l.description && `รายละเอียด: ${String(l.description).slice(0, 900)}`
+  ].filter(Boolean).join('\n');
+}
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    if (!ANTHROPIC_API_KEY) return res.json({ fallback: true });
+
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+    const now = Date.now();
+    const h = chatHits.get(ip) || { c: 0, t: now };
+    if (now - h.t > 3600e3) { h.c = 0; h.t = now; }
+    h.c++;
+    chatHits.set(ip, h);
+    if (h.c > 30) return res.status(429).json({ error: 'ถามได้สูงสุด 30 ข้อความ/ชั่วโมง — ฝากข้อมูลติดต่อไว้ได้เลยครับ เดี๋ยวทีมงานตอบทุกคำถาม' });
+
+    const { listing_id, messages } = req.body || {};
+    const msgs = (Array.isArray(messages) ? messages : [])
+      .slice(-10)
+      .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content || '').slice(0, 600) }))
+      .filter(m => m.content);
+    if (!msgs.length || msgs[msgs.length - 1].role !== 'user')
+      return res.status(400).json({ error: 'bad messages' });
+
+    let facts = 'ไม่มีข้อมูลประกาศเฉพาะ (ผู้ใช้อาจถามภาพรวมเว็บไซต์)';
+    if (listing_id) {
+      const { rows } = await pool.query(
+        `SELECT ${LISTING_FIELDS} FROM listings WHERE id = $1 AND status = 'active'`, [Number(listing_id)]);
+      if (rows[0]) facts = listingFacts(rows[0]);
+    }
+    const st = await getSettings().catch(() => ({}));
+    const bn = brandName(st);
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 400,
+        system: `คุณคือผู้ช่วยแชทของเว็บอสังหาริมทรัพย์ "${bn}" กำลังคุยกับผู้สนใจประกาศนี้:\n\n${facts}\n\nกติกา:\n- ตอบภาษาไทย สุภาพ เป็นกันเอง กระชับ 1-3 ประโยค\n- ตอบจากข้อมูลประกาศเท่านั้น ถ้าไม่มีข้อมูล (เช่น ค่าส่วนกลาง เงื่อนไขสัญญา ส่วนลด) ให้บอกตรง ๆ ว่าไม่ทราบ และแนะนำให้กด "ฝากข้อมูลติดต่อ" เพื่อให้ทีมงานตอบ\n- ห้ามแต่งราคา โปรโมชัน หรือข้อเท็จจริงที่ไม่มีในข้อมูล\n- ห้ามให้คำมั่นสัญญาแทนเจ้าของทรัพย์ และห้ามให้คำแนะนำกฎหมาย/สินเชื่อแบบเฉพาะเจาะจง\n- ถ้าผู้ใช้อยากนัดดูทรัพย์หรือต่อรอง ให้ชวนฝากชื่อ+เบอร์/LINE ผ่านปุ่มในแชท`,
+        messages: msgs
+      })
+    });
+
+    const out = await r.json();
+    if (!r.ok) {
+      console.error('chat AI error:', out?.error?.message);
+      return res.json({ fallback: true });
+    }
+    const text = (out.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
+    res.json({ reply: text || '...' });
+  } catch (e) {
+    console.error(e);
+    res.json({ fallback: true });
+  }
 });
 
 // ---------- AI Content Assistant ----------
@@ -464,6 +601,19 @@ app.get('/robots.txt', (req, res) =>
   res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: ${baseUrl(req)}/sitemap.xml`));
 
 app.get('/saved', (req, res) => res.sendFile(path.join(__dirname, 'public/saved.html')));
+
+// Favicon เชื่อมกับโลโก้ที่อัปโหลด (fallback = ไอคอนบ้านโทนเข้ม)
+app.get('/favicon', async (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300');
+  try {
+    const st = await getSettings();
+    const m = String(st.logo_url || '').match(/^data:(image\/[\w.+-]+)(?:;charset=[\w-]+)?;base64,([A-Za-z0-9+/=\s]+)$/);
+    if (m) return res.type(m[1]).send(Buffer.from(m[2].replace(/\s/g, ''), 'base64'));
+  } catch (e) { /* ใช้ default */ }
+  res.type('image/svg+xml').send(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#191917"/><path d="M50 24 L78 48 L72 48 L72 74 L58 74 L58 58 L42 58 L42 74 L28 74 L28 48 L22 48 Z" fill="#b08d57"/></svg>`);
+});
+app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon'));
 app.get('/search', (req, res) => res.sendFile(path.join(__dirname, 'public/listings.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
 app.get('/healthz', (req, res) => res.json({ ok: true }));

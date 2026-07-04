@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230d5c4a'/><text x='50' y='68' font-size='42' text-anchor='middle' fill='white' font-family='sans-serif'>ใจ</text></svg>">
+  <link rel="icon" href="/favicon">
 </head>
 <body>
   <div id="nav"></div>
@@ -35,7 +35,10 @@
           <input type="text" name="q" id="qInput" autocomplete="off" aria-label="คำค้นหา" placeholder="">
           <button class="s-btn" type="submit" aria-label="ค้นหา"><span id="ic-search2"></span><span class="t">ค้นหา</span></button>
         </form>
-
+        <p style="font-size:.76rem;color:var(--muted);margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span id="ic-spark" style="color:var(--gold);display:inline-flex;width:14px;height:14px"></span>
+          พิมพ์ภาษาคนได้เลย เช่น "คอนโดเลี้ยงแมวได้ ใกล้ BTS ไม่เกิน 2 หมื่น" — AI จะตีความให้
+        </p>
         <div class="search-filters">
           <label class="pill-select">
             <select name="category" form="searchForm" aria-label="ประเภททรัพย์">
@@ -193,6 +196,7 @@
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
     ['ic-arrow', 'ic-arrow2', 'ic-arrow3'].forEach(id => document.getElementById(id).innerHTML = TD.icons.arrowRight);
+    document.getElementById('ic-spark').innerHTML = TD.icons.sparkles;
 
     // Category tiles
     const cats = [
@@ -271,15 +275,63 @@
         setTimeout(type, 16);
       })();
     }
-    document.getElementById('searchForm').addEventListener('submit', e => {
+    document.getElementById('searchForm').addEventListener('submit', async e => {
       e.preventDefault();
       const f = new FormData(e.target);
+      const q = (f.get('q') || '').trim();
       const p = new URLSearchParams();
-      if (currentType) p.set('type', currentType);
-      if (f.get('q')) p.set('q', f.get('q'));
-      if (f.get('category')) p.set('category', f.get('category'));
-      const budget = f.get('budget');
-      if (budget) { const [min, max] = budget.split('-'); p.set('min', min); p.set('max', max); }
+      // ค่าที่ผู้ใช้เลือกเองชนะ AI เสมอ
+      const explicit = {
+        type: currentType || '',
+        category: f.get('category') || '',
+        budget: f.get('budget') || ''
+      };
+
+      // ลองให้ AI ตีความก่อน (ถ้าพิมพ์ยาวพอ)
+      if (q.length >= 6) {
+        const btn = e.target.querySelector('.s-btn');
+        const t = btn.querySelector('.t');
+        btn.classList.add('loading');
+        const oldTxt = t ? t.textContent : '';
+        if (t) t.textContent = 'AI กำลังอ่าน...';
+        try {
+          const r = await fetch('/api/ai-search', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ q })
+          });
+          const j = await r.json();
+          if (j.filters) {
+            const fl = j.filters;
+            p.set('q', fl.q || q);
+            if (explicit.type) p.set('type', explicit.type);
+            else if (fl.type) p.set('type', fl.type);
+            if (explicit.category) p.set('category', explicit.category);
+            else if (fl.category) p.set('category', fl.category);
+            if (explicit.budget) {
+              const [min, max] = explicit.budget.split('-');
+              p.set('min', min); p.set('max', max);
+            } else {
+              if (fl.min) p.set('min', fl.min);
+              if (fl.max) p.set('max', fl.max);
+            }
+            if (fl.beds) p.set('beds', fl.beds);
+            if (!p.get('q')) p.delete('q');
+            location.href = '/search?' + p.toString();
+            return;
+          }
+        } catch { /* fallback ด้านล่าง */ }
+        finally {
+          btn.classList.remove('loading');
+          if (t) t.textContent = oldTxt;
+        }
+      }
+
+      // ค้นหาแบบปกติ
+      if (explicit.type) p.set('type', explicit.type);
+      if (q) p.set('q', q);
+      if (explicit.category) p.set('category', explicit.category);
+      if (explicit.budget) { const [min, max] = explicit.budget.split('-'); p.set('min', min); p.set('max', max); }
       location.href = '/search?' + p.toString();
     });
     document.getElementById('chips').addEventListener('click', e => {

@@ -8,20 +8,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="/favicon">
 </head>
 <body>
   <div id="nav"></div>
 
   <div class="container">
     <div class="breadcrumb" id="crumb"></div>
-    <div class="detail-wrap" id="wrap">
-      <div class="skeleton" style="height:460px"></div>
-      <div class="skeleton" style="height:300px"></div>
+    <div id="page">
+      <div class="detail-wrap">
+        <div class="skeleton" style="height:460px"></div>
+        <div class="skeleton" style="height:300px"></div>
+      </div>
     </div>
 
     <section class="section" id="similarSec" style="display:none;padding-top:0">
       <div class="section-head">
-        <div><h2>ประกาศใกล้เคียง</h2><p>ที่คุณอาจสนใจ</p></div>
+        <div>
+          <span class="eyebrow-text">You May Also Like</span>
+          <h2>ประกาศใกล้เคียง</h2>
+        </div>
       </div>
       <div class="grid" id="similar"></div>
     </section>
@@ -29,16 +35,47 @@
 
   <div id="footer"></div>
 
+  <!-- Lightbox -->
+  <div class="lb" id="lb" hidden>
+    <button class="lb-close" id="lbClose" aria-label="ปิด">✕</button>
+    <button class="lb-nav lb-prev" id="lbPrev" aria-label="รูปก่อนหน้า">‹</button>
+    <img id="lbImg" alt="">
+    <button class="lb-nav lb-next" id="lbNext" aria-label="รูปถัดไป">›</button>
+    <div class="lb-count" id="lbCount"></div>
+  </div>
+
   <script src="/js/shared.js"></script>
   <script>
     TD.chrome('');
-
     const id = Number(location.pathname.split('/').pop());
+    const $ = (x) => document.getElementById(x);
 
     function specChip(ic, text) {
       return `<span class="spec" style="font-size:.9rem;padding:8px 13px">${TD.icons[ic]} ${text}</span>`;
     }
 
+    function mapSection(l) {
+      const hasCoord = Number(l.latitude) && Number(l.longitude);
+      const mapQ = hasCoord
+        ? `${Number(l.latitude)},${Number(l.longitude)}`
+        : [l.location_text, l.province].filter(Boolean).join(' ');
+      if (!mapQ) return '';
+      const embed = `https://www.google.com/maps?q=${encodeURIComponent(mapQ)}&z=${hasCoord ? 16 : 14}&output=embed`;
+      const navUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQ)}`;
+      return `
+      <div class="detail-section reveal">
+        <h2>ตำแหน่งที่ตั้ง</h2>
+        <div class="map-wrap"><iframe src="${embed}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen title="แผนที่"></iframe></div>
+        <div class="map-actions">
+          <a href="${navUrl}" target="_blank" rel="noopener">${TD.icons.pin} เปิดใน Google Maps</a>
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapQ)}" target="_blank" rel="noopener">${TD.icons.arrowRight} นำทางไปที่นี่</a>
+        </div>
+        ${!hasCoord ? '<p style="font-size:.78rem;color:var(--muted);margin-top:10px">* ตำแหน่งโดยประมาณจากชื่อทำเล</p>' : ''}
+      </div>`;
+    }
+
+    // ================= Load & Render =================
+    let L = null;
     async function load() {
       let data;
       try {
@@ -46,23 +83,23 @@
         if (!r.ok) throw new Error();
         data = await r.json();
       } catch {
-        document.getElementById('wrap').innerHTML = `
-          <div class="empty-state" style="grid-column:1/-1">${TD.icons.mapSearch}
+        $('page').innerHTML = `
+          <div class="empty-state">${TD.icons.mapSearch}
             <h3 style="font-family:var(--font-display)">ไม่พบประกาศนี้</h3>
             <p>ประกาศอาจถูกปิดไปแล้ว</p>
             <a class="btn btn-primary" href="/search" style="margin-top:16px">ดูประกาศอื่น</a>
           </div>`;
         return;
       }
-      const l = data.item;
+      const l = L = data.item;
       document.title = `${l.title} — ${TD.brand.main}${TD.brand.accent}`;
       TD.pushRecent(l.id);
 
-      document.getElementById('crumb').innerHTML = `
+      $('crumb').innerHTML = `
         <a href="/">หน้าแรก</a> › <a href="/search?type=${l.listing_type}">${TD.typeLabel[l.listing_type]}</a>
         › <a href="/search?category=${l.category}">${TD.catLabel[l.category]}</a> › <span>${TD.esc(l.title)}</span>`;
 
-      const imgs = l.images || [];
+      const imgs = (l.images || []).filter(Boolean);
       const specs = [];
       if (l.bedrooms > 0) specs.push(specChip('bed', `${l.bedrooms} ห้องนอน`));
       if (l.bathrooms > 0) specs.push(specChip('bath', `${l.bathrooms} ห้องน้ำ`));
@@ -76,157 +113,415 @@
       const highlights = (l.highlights || []).map(h =>
         `<div class="hl-item">${TD.icons.check} ${TD.esc(h)}</div>`).join('');
 
-      document.getElementById('wrap').innerHTML = `
-      <div>
-        <div class="gallery">
-          <div class="main" style="position:relative">
-            <img id="mainImg" src="${TD.esc(imgs[0] || '')}" alt="${TD.esc(l.title)}">
-            <button class="fav-btn ${TD.favs().includes(Number(l.id)) ? 'on' : ''}" data-fav="${l.id}" type="button" aria-label="บันทึกรายการโปรด" style="width:42px;height:42px">${TD.icons.heart}</button>
+      // ---- Gallery (grid สไตล์ Airbnb) ----
+      const faved = TD.favs().includes(Number(l.id));
+      let galleryHtml;
+      if (imgs.length >= 3) {
+        galleryHtml = `
+        <div class="g-grid" id="gallery">
+          <div class="g-item g-main" data-i="0"><img src="${TD.esc(imgs[0])}" alt="${TD.esc(l.title)}"></div>
+          <div class="g-item" data-i="1"><img src="${TD.esc(imgs[1])}" alt="รูปที่ 2" loading="lazy"></div>
+          <div class="g-item" data-i="2">
+            <img src="${TD.esc(imgs[2])}" alt="รูปที่ 3" loading="lazy">
+            ${imgs.length > 3 ? `<div class="g-more">+${imgs.length - 3} รูป</div>` : ''}
           </div>
-          ${imgs.length > 1 ? `<div class="thumbs" id="thumbs">${imgs.map((im, i) =>
-            `<img src="${TD.esc(im)}" class="${i === 0 ? 'active' : ''}" data-src="${TD.esc(im)}" alt="รูปที่ ${i + 1}">`).join('')}</div>` : ''}
-        </div>
-        <div class="detail-title">
-          <h1>${TD.esc(l.title)}</h1>
-          <div class="loc">${TD.icons.pin} ${TD.esc(l.location_text)}${l.province && !String(l.location_text).includes(l.province) ? ' · ' + TD.esc(l.province) : ''}</div>
-          <div class="meta-line">เปิดดู ${Number(l.views).toLocaleString('th-TH')} ครั้ง · ลงประกาศเมื่อ ${new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
-        </div>
-        <div class="detail-specs">${specs.join('')}</div>
-        <div class="detail-section">
-          <h2>รายละเอียด</h2>
-          <p class="desc">${TD.esc(l.description)}</p>
-        </div>
-        ${highlights ? `<div class="detail-section"><h2>จุดเด่น</h2><div class="hl-list">${highlights}</div></div>` : ''}
-        ${nearby ? `<div class="detail-section"><h2>สถานที่ใกล้เคียง</h2><div class="hl-list">${nearby}</div></div>` : ''}
-      </div>
+          <button class="fav-btn ${faved ? 'on' : ''}" data-fav="${l.id}" type="button" aria-label="บันทึกรายการโปรด" style="width:42px;height:42px">${TD.icons.heart}</button>
+          <button class="g-all" id="gAll" type="button">${TD.icons.copy} ดูรูปทั้งหมด (${imgs.length})</button>
+        </div>`;
+      } else {
+        galleryHtml = `
+        <div class="g-grid g-single" id="gallery">
+          <div class="g-item g-main" data-i="0"><img src="${TD.esc(imgs[0] || '')}" alt="${TD.esc(l.title)}"></div>
+          ${imgs[1] ? `<div class="g-item" data-i="1" style="grid-row:1/3"><img src="${TD.esc(imgs[1])}" alt="รูปที่ 2" loading="lazy"></div>` : ''}
+          <button class="fav-btn ${faved ? 'on' : ''}" data-fav="${l.id}" type="button" aria-label="บันทึกรายการโปรด" style="width:42px;height:42px">${TD.icons.heart}</button>
+          ${imgs.length > 1 ? `<button class="g-all" id="gAll" type="button">${TD.icons.copy} ดูรูปทั้งหมด (${imgs.length})</button>` : ''}
+        </div>`;
+      }
 
-      <div class="sidebar">
-        <div class="price-card">
-          <div class="lbl">${l.listing_type === 'rent' ? 'ค่าเช่า' : 'ราคาขาย'}</div>
-          <div class="p">${TD.price(l.price, l.listing_type)}${l.listing_type === 'rent' ? '<span class="per"> /เดือน</span>' : ''}</div>
-          ${l.listing_type === 'sale' ? `<div class="per">≈ ฿${Number(l.price).toLocaleString('th-TH')}</div>` : ''}
+      $('page').innerHTML = `
+      ${galleryHtml}
+      <div class="detail-wrap" style="padding-top:26px">
+        <div>
+          <div class="detail-title reveal">
+            <div class="d-badges">
+              <span class="d-badge ${l.listing_type}">${TD.typeLabel[l.listing_type]}</span>
+              <span class="d-badge cat">${TD.catLabel[l.category]}</span>
+              ${l.featured ? '<span class="d-badge feat">⭐ แนะนำ</span>' : ''}
+            </div>
+            <h1>${TD.esc(l.title)}</h1>
+            <div class="loc">${TD.icons.pin} ${TD.esc(l.location_text)}${l.province && !String(l.location_text).includes(l.province) ? ' · ' + TD.esc(l.province) : ''}</div>
+            <div class="meta-line">เปิดดู ${Number(l.views).toLocaleString('th-TH')} ครั้ง · ลงประกาศเมื่อ ${new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+          </div>
+          <div class="detail-specs reveal">${specs.join('')}</div>
+          <div class="detail-section reveal">
+            <h2>รายละเอียด</h2>
+            <p class="desc">${TD.esc(l.description)}</p>
+          </div>
+          ${highlights ? `<div class="detail-section reveal"><h2>จุดเด่น</h2><div class="hl-list">${highlights}</div></div>` : ''}
+          ${nearby ? `<div class="detail-section reveal"><h2>สถานที่ใกล้เคียง</h2><div class="hl-list">${nearby}</div></div>` : ''}
+          ${mapSection(l)}
         </div>
-        ${l.listing_type === 'sale' ? `
-        <div class="calc-card">
-          <h3 style="display:flex;align-items:center;gap:8px">${TD.icons.calc} คำนวณผ่อนต่อเดือน</h3>
-          <p class="note">ประเมินเบื้องต้นจากราคาประกาศ ${TD.price(l.price, 'sale')}</p>
-          <div class="calc-row">
-            <div class="lbl"><span>เงินดาวน์</span><b id="dpVal"></b></div>
-            <input type="range" id="dpRange" min="0" max="50" step="5" value="10">
+
+        <div class="sidebar">
+          <div class="price-card reveal">
+            <div class="lbl">${l.listing_type === 'rent' ? 'ค่าเช่า' : 'ราคาขาย'}</div>
+            <div class="p">${TD.price(l.price, l.listing_type)}${l.listing_type === 'rent' ? '<span class="per"> /เดือน</span>' : ''}</div>
+            ${l.listing_type === 'sale' ? `<div class="per">≈ ฿${Number(l.price).toLocaleString('th-TH')}</div>` : ''}
           </div>
-          <div class="calc-row">
-            <div class="lbl"><span>ดอกเบี้ยต่อปี</span><b id="irVal"></b></div>
-            <input type="range" id="irRange" min="2" max="9" step="0.25" value="6">
-          </div>
-          <div class="calc-row">
-            <div class="lbl"><span>ระยะเวลากู้</span><b id="yrVal"></b></div>
-            <input type="range" id="yrRange" min="5" max="40" step="5" value="30">
-          </div>
-          <div class="calc-result"><span class="t">ผ่อนประมาณ</span><span class="v" id="monthly"></span></div>
-          <p class="calc-sub">ตัวเลขโดยประมาณเพื่อการตัดสินใจเบื้องต้นเท่านั้น เงื่อนไขจริงขึ้นอยู่กับธนาคารและผู้กู้แต่ละราย</p>
-        </div>` : ''}
-        <div class="contact-card">
-          <h3>สนใจประกาศนี้? ทักหาเราเลย</h3>
-          ${(l.contact_phone || l.contact_line) ? `
-          <div class="direct-contact">
-            ${l.contact_phone ? `<a class="dc-phone" href="tel:${TD.esc(l.contact_phone)}">${TD.icons.phone} โทร ${TD.esc(l.contact_phone)}</a>` : ''}
-            ${l.contact_line ? `<a class="dc-line" href="https://line.me/R/ti/p/~${encodeURIComponent(l.contact_line)}" target="_blank" rel="noopener">💬 แอด LINE: ${TD.esc(l.contact_line)}</a>` : ''}
-          </div>
-          <div class="or-sep">หรือฝากข้อความไว้</div>` : ''}
-          <div class="frm">
-            <input id="c-name" placeholder="ชื่อของคุณ *">
-            <input id="c-phone" placeholder="เบอร์โทร">
-            <input id="c-line" placeholder="LINE ID">
-            <textarea id="c-msg" placeholder="ข้อความ เช่น ขอนัดดูห้องวันเสาร์นี้"></textarea>
-            <div class="form-msg" id="formMsg"></div>
-            <button class="btn btn-primary" id="sendBtn" style="justify-content:center">${TD.icons.phone} ส่งข้อความติดต่อ</button>
-            <p style="font-size:.78rem;color:var(--muted);text-align:center">ทีมงานจะส่งต่อให้ผู้ดูแลทรัพย์ติดต่อกลับโดยเร็ว</p>
-          </div>
-          <div class="share-row">
-            <button type="button" id="copyLink">${TD.icons.copy} คัดลอกลิงก์</button>
-            <a href="https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener">💬 แชร์ LINE</a>
-            <button type="button" id="shareBtn">${TD.icons.share} แชร์</button>
+
+          ${l.listing_type === 'sale' ? `
+          <div class="calc-card reveal">
+            <h3 style="display:flex;align-items:center;gap:8px">${TD.icons.calc} คำนวณผ่อนต่อเดือน</h3>
+            <p class="note">ประเมินเบื้องต้นจากราคาประกาศ ${TD.price(l.price, 'sale')}</p>
+            <div class="calc-row">
+              <div class="lbl"><span>เงินดาวน์</span><b id="dpVal"></b></div>
+              <input type="range" id="dpRange" min="0" max="50" step="5" value="10">
+            </div>
+            <div class="calc-row">
+              <div class="lbl"><span>ดอกเบี้ยต่อปี</span><b id="irVal"></b></div>
+              <input type="range" id="irRange" min="2" max="9" step="0.25" value="6">
+            </div>
+            <div class="calc-row">
+              <div class="lbl"><span>ระยะเวลากู้</span><b id="yrVal"></b></div>
+              <input type="range" id="yrRange" min="5" max="40" step="5" value="30">
+            </div>
+            <div class="calc-result"><span class="t">ผ่อนประมาณ</span><span class="v" id="monthly"></span></div>
+            <p class="calc-sub">ตัวเลขโดยประมาณเพื่อการตัดสินใจเบื้องต้นเท่านั้น เงื่อนไขจริงขึ้นอยู่กับธนาคารและผู้กู้แต่ละราย</p>
+          </div>` : ''}
+
+          <div class="contact-card reveal">
+            <h3>สนใจประกาศนี้? ทักหาเราเลย</h3>
+            ${(l.contact_phone || l.contact_line) ? `
+            <div class="direct-contact">
+              ${l.contact_phone ? `<a class="dc-phone" href="tel:${TD.esc(l.contact_phone)}">${TD.icons.phone} โทร ${TD.esc(l.contact_phone)}</a>` : ''}
+              ${l.contact_line ? `<a class="dc-line" href="https://line.me/R/ti/p/~${encodeURIComponent(l.contact_line)}" target="_blank" rel="noopener">💬 แอด LINE: ${TD.esc(l.contact_line)}</a>` : ''}
+            </div>
+            <div class="or-sep">หรือฝากข้อความไว้</div>` : ''}
+            <div class="frm">
+              <input id="c-name" placeholder="ชื่อของคุณ *">
+              <input id="c-phone" placeholder="เบอร์โทร">
+              <input id="c-line" placeholder="LINE ID">
+              <textarea id="c-msg" placeholder="ข้อความ เช่น ขอนัดดูห้องวันเสาร์นี้"></textarea>
+              <div class="form-msg" id="formMsg"></div>
+              <button class="btn btn-primary" id="sendBtn" style="justify-content:center">${TD.icons.phone} ส่งข้อความติดต่อ</button>
+              <p style="font-size:.78rem;color:var(--muted);text-align:center">ทีมงานจะส่งต่อให้ผู้ดูแลทรัพย์ติดต่อกลับโดยเร็ว</p>
+            </div>
+            <div class="share-row">
+              <button type="button" id="copyLink">${TD.icons.copy} คัดลอกลิงก์</button>
+              <a href="https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener">💬 แชร์ LINE</a>
+              <button type="button" id="shareBtn">${TD.icons.share} แชร์</button>
+            </div>
           </div>
         </div>
       </div>`;
 
-      // ---- Loan calculator ----
-      if (l.listing_type === 'sale') {
-        const P = Number(l.price) || 0;
-        const fmt = (n) => '฿' + Math.round(n).toLocaleString('th-TH');
-        function paintRange(el) {
-          const pct = (el.value - el.min) / (el.max - el.min) * 100;
-          el.style.setProperty('--fill', pct + '%');
-        }
-        function calc() {
-          const dp = Number(dpRange.value), ir = Number(irRange.value), yr = Number(yrRange.value);
-          document.getElementById('dpVal').textContent = dp + '% (' + fmt(P * dp / 100) + ')';
-          document.getElementById('irVal').textContent = ir.toFixed(2) + '%';
-          document.getElementById('yrVal').textContent = yr + ' ปี';
-          const loan = P * (1 - dp / 100), r = ir / 100 / 12, n = yr * 12;
-          const m = r === 0 ? loan / n : loan * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-          document.getElementById('monthly').textContent = fmt(m) + '/เดือน';
-          [dpRange, irRange, yrRange].forEach(paintRange);
-        }
-        const dpRange = document.getElementById('dpRange'),
-              irRange = document.getElementById('irRange'),
-              yrRange = document.getElementById('yrRange');
-        [dpRange, irRange, yrRange].forEach(el => el.addEventListener('input', calc));
-        calc();
-      }
+      initGallery(imgs);
+      initCalc(l);
+      initContact(l);
+      initReveal();
+      initChat(l);
 
-      // ---- Share ----
-      document.getElementById('copyLink').addEventListener('click', async () => {
-        const btn = document.getElementById('copyLink');
+      if (data.similar?.length) {
+        $('similarSec').style.display = 'block';
+        $('similar').innerHTML = data.similar.map(s => TD.card(s)).join('');
+      }
+    }
+
+    // ================= Gallery + Lightbox =================
+    let lbImgs = [], lbIdx = 0;
+    function initGallery(imgs) {
+      lbImgs = imgs;
+      const g = $('gallery');
+      if (!g) return;
+      g.addEventListener('click', e => {
+        if (e.target.closest('[data-fav]')) return;
+        const all = e.target.closest('#gAll');
+        const item = e.target.closest('.g-item');
+        if (all) return openLb(0);
+        if (item) openLb(Number(item.dataset.i) || 0);
+      });
+      $('lbClose').onclick = closeLb;
+      $('lbPrev').onclick = () => stepLb(-1);
+      $('lbNext').onclick = () => stepLb(1);
+      $('lb').addEventListener('click', e => { if (e.target === $('lb')) closeLb(); });
+      document.addEventListener('keydown', e => {
+        if ($('lb').hidden) return;
+        if (e.key === 'Escape') closeLb();
+        if (e.key === 'ArrowLeft') stepLb(-1);
+        if (e.key === 'ArrowRight') stepLb(1);
+      });
+      // swipe บนมือถือ
+      let tx = null;
+      $('lb').addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+      $('lb').addEventListener('touchend', e => {
+        if (tx === null) return;
+        const dx = e.changedTouches[0].clientX - tx;
+        if (Math.abs(dx) > 50) stepLb(dx > 0 ? -1 : 1);
+        tx = null;
+      }, { passive: true });
+    }
+    function openLb(i) {
+      if (!lbImgs.length) return;
+      lbIdx = i;
+      $('lbImg').src = lbImgs[lbIdx];
+      $('lbCount').textContent = `${lbIdx + 1} / ${lbImgs.length}`;
+      $('lb').hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+    function stepLb(d) {
+      lbIdx = (lbIdx + d + lbImgs.length) % lbImgs.length;
+      const im = $('lbImg');
+      im.style.opacity = '0';
+      setTimeout(() => {
+        im.src = lbImgs[lbIdx];
+        $('lbCount').textContent = `${lbIdx + 1} / ${lbImgs.length}`;
+        im.onload = () => im.style.opacity = '1';
+        im.style.opacity = '1';
+      }, 130);
+    }
+    function closeLb() { $('lb').hidden = true; document.body.style.overflow = ''; }
+
+    // ================= Loan calc =================
+    function initCalc(l) {
+      if (l.listing_type !== 'sale') return;
+      const P = Number(l.price) || 0;
+      const fmt = (n) => '฿' + Math.round(n).toLocaleString('th-TH');
+      const dpRange = $('dpRange'), irRange = $('irRange'), yrRange = $('yrRange');
+      function paintRange(el) {
+        const pct = (el.value - el.min) / (el.max - el.min) * 100;
+        el.style.setProperty('--fill', pct + '%');
+      }
+      function calc() {
+        const dp = Number(dpRange.value), ir = Number(irRange.value), yr = Number(yrRange.value);
+        $('dpVal').textContent = dp + '% (' + fmt(P * dp / 100) + ')';
+        $('irVal').textContent = ir.toFixed(2) + '%';
+        $('yrVal').textContent = yr + ' ปี';
+        const loan = P * (1 - dp / 100), r = ir / 100 / 12, n = yr * 12;
+        const m = r === 0 ? loan / n : loan * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+        $('monthly').textContent = fmt(m) + '/เดือน';
+        [dpRange, irRange, yrRange].forEach(paintRange);
+      }
+      [dpRange, irRange, yrRange].forEach(el => el.addEventListener('input', calc));
+      calc();
+    }
+
+    // ================= Contact + Share =================
+    function initContact(l) {
+      $('sendBtn').addEventListener('click', async () => {
+        const msg = $('formMsg');
+        msg.className = 'form-msg';
+        $('sendBtn').disabled = true;
+        try {
+          await TD.post('/api/inquiries', {
+            listing_id: l.id,
+            name: $('c-name').value.trim(),
+            phone: $('c-phone').value.trim(),
+            line_id: $('c-line').value.trim(),
+            message: $('c-msg').value.trim()
+          });
+          msg.textContent = 'ส่งข้อความเรียบร้อย รอการติดต่อกลับได้เลยครับ';
+          msg.classList.add('ok');
+          ['c-name', 'c-phone', 'c-line', 'c-msg'].forEach(i => $(i).value = '');
+        } catch (e2) {
+          msg.textContent = e2.message;
+          msg.classList.add('err');
+        } finally { $('sendBtn').disabled = false; }
+      });
+
+      $('copyLink').addEventListener('click', async () => {
+        const btn = $('copyLink');
         try {
           await navigator.clipboard.writeText(location.href);
           btn.textContent = '✓ คัดลอกแล้ว';
           setTimeout(() => { btn.innerHTML = TD.icons.copy + ' คัดลอกลิงก์'; }, 1800);
         } catch { prompt('คัดลอกลิงก์นี้:', location.href); }
       });
-      document.getElementById('shareBtn').addEventListener('click', () => {
+      $('shareBtn').addEventListener('click', () => {
         if (navigator.share) navigator.share({ title: l.title, url: location.href }).catch(() => {});
-        else document.getElementById('copyLink').click();
+        else $('copyLink').click();
       });
+    }
 
-      // Gallery switch
-      const thumbs = document.getElementById('thumbs');
-      if (thumbs) thumbs.addEventListener('click', e => {
-        const im = e.target.closest('img[data-src]'); if (!im) return;
-        document.getElementById('mainImg').src = im.dataset.src;
-        thumbs.querySelectorAll('img').forEach(x => x.classList.remove('active'));
-        im.classList.add('active');
-      });
+    // ================= Scroll reveal =================
+    function initReveal() {
+      const els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) { els.forEach(el => el.classList.add('in')); return; }
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+      }, { threshold: .1 });
+      els.forEach(el => io.observe(el));
+    }
 
-      // Contact form
-      document.getElementById('sendBtn').addEventListener('click', async () => {
-        const msg = document.getElementById('formMsg');
-        msg.className = 'form-msg';
-        const btn = document.getElementById('sendBtn');
-        btn.disabled = true;
-        try {
-          await TD.post('/api/inquiries', {
-            listing_id: l.id,
-            name: document.getElementById('c-name').value.trim(),
-            phone: document.getElementById('c-phone').value.trim(),
-            line_id: document.getElementById('c-line').value.trim(),
-            message: document.getElementById('c-msg').value.trim()
-          });
-          msg.textContent = 'ส่งข้อความเรียบร้อย รอการติดต่อกลับได้เลยครับ';
-          msg.classList.add('ok');
-          ['c-name', 'c-phone', 'c-line', 'c-msg'].forEach(i => document.getElementById(i).value = '');
-        } catch (e2) {
-          msg.textContent = e2.message;
-          msg.classList.add('err');
-        } finally { btn.disabled = false; }
-      });
+    // ================= Chat widget =================
+    let chatMsgs = [], aiMode = true, leadStep = null, lead = {};
+    function initChat(l) {
+      document.body.insertAdjacentHTML('beforeend', `
+      <button class="chat-fab" id="chatFab" aria-label="แชทสอบถาม">
+        <span class="cf-ring"></span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9h8"/><path d="M8 13h6"/><path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z"/></svg>
+        <span class="cf-label">สอบถาม</span>
+      </button>
+      <div class="chat-panel" id="chatPanel" hidden>
+        <div class="cp-head">
+          <div class="cp-ava">${TD.icons.home}</div>
+          <div>
+            <div class="cp-name">ผู้ช่วย ${TD.esc(TD.brand.main + TD.brand.accent)}</div>
+            <div class="cp-sub"><span class="cp-dot"></span> ตอบทันที · ถามได้ทุกเรื่องเกี่ยวกับทรัพย์นี้</div>
+          </div>
+          <button class="cp-close" id="cpClose" aria-label="ปิดแชท">✕</button>
+        </div>
+        <div class="cp-body" id="cpBody"></div>
+        <div class="cp-chips" id="cpChips"></div>
+        <div class="cp-foot">
+          <input id="cpInput" placeholder="พิมพ์คำถาม..." autocomplete="off">
+          <button id="cpSend" aria-label="ส่ง">${TD.icons.arrowRight}</button>
+        </div>
+      </div>`);
 
-      // Similar
-      if (data.similar?.length) {
-        document.getElementById('similarSec').style.display = 'block';
-        document.getElementById('similar').innerHTML = data.similar.map(s => TD.card(s)).join('');
+      $('chatFab').onclick = () => {
+        const p = $('chatPanel');
+        if (p.hidden) {
+          p.hidden = false;
+          requestAnimationFrame(() => p.classList.add('open'));
+          $('chatFab').classList.add('hide');
+          if (!chatMsgs.length) greet(l);
+          setTimeout(() => $('cpInput').focus(), 350);
+        }
+      };
+      $('cpClose').onclick = () => {
+        const p = $('chatPanel');
+        p.classList.remove('open');
+        $('chatFab').classList.remove('hide');
+        setTimeout(() => p.hidden = true, 280);
+      };
+      $('cpSend').onclick = sendChat;
+      $('cpInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendChat(); });
+    }
+
+    function greet(l) {
+      botSay(`สวัสดีครับ 👋 ยินดีต้อนรับสู่ประกาศ "${l.title}" — สงสัยอะไรถามได้เลยครับ หรือกดปุ่มด้านล่างเพื่อฝากข้อมูลให้ทีมงานติดต่อกลับ`);
+      renderChips([
+        { t: '💰 ค่าใช้จ่ายมีอะไรบ้าง', q: 'ค่าใช้จ่ายมีอะไรบ้าง' },
+        { t: '🚉 เดินทางสะดวกไหม', q: 'การเดินทางเป็นอย่างไรบ้าง' },
+        { t: '🐶 เลี้ยงสัตว์ได้ไหม', q: 'เลี้ยงสัตว์ได้ไหม' },
+        { t: '📞 ฝากข้อมูลติดต่อ', lead: true }
+      ]);
+    }
+    function renderChips(chips) {
+      $('cpChips').innerHTML = chips.map((c, i) =>
+        `<button data-ci="${i}">${TD.esc(c.t)}</button>`).join('');
+      $('cpChips').onclick = e => {
+        const b = e.target.closest('[data-ci]'); if (!b) return;
+        const c = chips[Number(b.dataset.ci)];
+        if (c.lead) return startLead();
+        $('cpInput').value = c.q;
+        sendChat();
+      };
+    }
+    function addMsg(role, text) {
+      const el = document.createElement('div');
+      el.className = 'msg ' + role;
+      el.textContent = text;
+      $('cpBody').appendChild(el);
+      $('cpBody').scrollTop = $('cpBody').scrollHeight;
+      return el;
+    }
+    function botSay(t) { addMsg('bot', t); chatMsgs.push({ role: 'assistant', content: t }); }
+    function typing(on) {
+      let t = $('cpTyping');
+      if (on) {
+        if (t) return;
+        t = document.createElement('div');
+        t.className = 'msg bot typing'; t.id = 'cpTyping';
+        t.innerHTML = '<span></span><span></span><span></span>';
+        $('cpBody').appendChild(t);
+        $('cpBody').scrollTop = $('cpBody').scrollHeight;
+      } else if (t) t.remove();
+    }
+
+    async function sendChat() {
+      const inp = $('cpInput');
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = '';
+      addMsg('user', text);
+
+      // อยู่ในขั้นตอนฝากข้อมูล
+      if (leadStep) return leadNext(text);
+
+      chatMsgs.push({ role: 'user', content: text });
+      if (!aiMode) { // ไม่มี AI -> ชวนฝากข้อมูล
+        botSay('ขอบคุณสำหรับคำถามครับ เพื่อให้ได้คำตอบที่ถูกต้องที่สุด รบกวนฝากข้อมูลติดต่อไว้ เดี๋ยวทีมงานตอบทุกคำถามเลยครับ');
+        return startLead();
+      }
+      typing(true);
+      try {
+        const r = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ listing_id: L.id, messages: chatMsgs })
+        });
+        const j = await r.json();
+        typing(false);
+        if (j.reply) {
+          botSay(j.reply);
+        } else if (j.error) {
+          botSay(j.error);
+        } else { // fallback
+          aiMode = false;
+          botSay('ตอนนี้ผู้ช่วย AI ไม่พร้อมใช้งานชั่วคราว รบกวนฝากข้อมูลติดต่อไว้ เดี๋ยวทีมงานตอบทุกคำถามครับ');
+          startLead();
+        }
+      } catch {
+        typing(false);
+        botSay('เครือข่ายขัดข้องชั่วคราว ลองอีกครั้ง หรือฝากข้อมูลติดต่อไว้ได้เลยครับ');
       }
     }
+
+    // ---- Lead capture ในแชท ----
+    function startLead() {
+      leadStep = 'name'; lead = {};
+      $('cpChips').innerHTML = '';
+      botSay('ยินดีครับ 🙌 ขอทราบชื่อของคุณก่อนครับ');
+      $('cpInput').placeholder = 'พิมพ์ชื่อของคุณ...';
+      $('cpInput').focus();
+    }
+    async function leadNext(text) {
+      if (leadStep === 'name') {
+        lead.name = text.slice(0, 100);
+        leadStep = 'contact';
+        botSay(`ขอบคุณครับคุณ${lead.name} 😊 ขอเบอร์โทรหรือ LINE ID สำหรับติดต่อกลับครับ`);
+        $('cpInput').placeholder = 'เบอร์โทร หรือ LINE ID...';
+      } else if (leadStep === 'contact') {
+        const v = text.slice(0, 80);
+        if (/^[\d\s\-+()]{8,}$/.test(v)) lead.phone = v.replace(/\s/g, '');
+        else lead.line_id = v;
+        leadStep = 'note';
+        botSay('รับทราบครับ มีอะไรอยากฝากถึงทีมงานเพิ่มไหมครับ เช่น เวลาที่สะดวกให้ติดต่อ หรือพิมพ์ "ไม่มี" เพื่อส่งเลย');
+        $('cpInput').placeholder = 'ข้อความเพิ่มเติม หรือพิมพ์ ไม่มี...';
+      } else if (leadStep === 'note') {
+        lead.note = /^(ไม่มี|ไม่|no|-)\s*$/i.test(text) ? '' : text.slice(0, 500);
+        leadStep = null;
+        $('cpInput').placeholder = 'พิมพ์คำถาม...';
+        typing(true);
+        try {
+          await TD.post('/api/inquiries', {
+            listing_id: L.id,
+            name: lead.name,
+            phone: lead.phone || '',
+            line_id: lead.line_id || '',
+            message: '[จากแชท] ' + (lead.note || 'สนใจประกาศนี้ ขอให้ติดต่อกลับ')
+          });
+          typing(false);
+          botSay(`เรียบร้อยครับ ✅ ทีมงานได้รับข้อมูลแล้ว จะรีบติดต่อกลับคุณ${lead.name} โดยเร็วที่สุดครับ ระหว่างนี้ถามอะไรเพิ่มได้เลย`);
+        } catch (e) {
+          typing(false);
+          botSay('ขออภัยครับ ส่งข้อมูลไม่สำเร็จ (' + e.message + ') ลองใหม่อีกครั้ง หรือใช้ฟอร์มติดต่อด้านข้างได้ครับ');
+        }
+        renderChips([{ t: '📞 ฝากข้อมูลอีกครั้ง', lead: true }]);
+      }
+    }
+
     load();
   </script>
 </body>
