@@ -24,7 +24,7 @@ async function notifyTelegram(text) {
 }
 const tgEsc = (s) => String(s || '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '6mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------- Helpers ----------
@@ -264,11 +264,10 @@ app.delete('/api/admin/listings/:id', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/upload-logo', requireAdmin, async (req, res) => {
   try {
-    const dataUrl = String(req.body?.dataUrl || '');
-    const m = dataUrl.match(/^data:image\/(png|jpeg|jpg|webp|svg\+xml);base64,([A-Za-z0-9+/=]+)$/);
+    const dataUrl = String(req.body?.dataUrl || '').trim();
+    if (dataUrl.length > 5_000_000) return res.status(400).json({ error: 'ไฟล์ใหญ่เกินไป (ไม่เกิน ~1.5MB)' });
+    const m = dataUrl.match(/^data:image\/(png|jpe?g|webp|svg\+xml)(;charset=[\w-]+)?;base64,[A-Za-z0-9+/=\s]+$/i);
     if (!m) return res.status(400).json({ error: 'ไฟล์ไม่ถูกต้อง (รองรับ PNG, JPG, WEBP, SVG)' });
-    // จำกัดขนาด ~1.5MB (base64 ยาวกว่าไฟล์จริง ~33%)
-    if (dataUrl.length > 2_000_000) return res.status(400).json({ error: 'ไฟล์ใหญ่เกินไป (ไม่เกิน ~1.5MB)' });
     await pool.query(
       `INSERT INTO settings (key, value) VALUES ('logo_url', $1)
        ON CONFLICT (key) DO UPDATE SET value = $1`, [dataUrl]);

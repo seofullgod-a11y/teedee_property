@@ -609,7 +609,15 @@
     const logoDrop = $('logoDrop'), logoFile = $('s-logoFile');
     logoDrop.onclick = () => logoFile.click();
     $('logoChange').onclick = () => logoFile.click();
-    $('logoRemove').onclick = () => { $('s-logo').value = ''; logoFile.value = ''; paintSettingsPreview(); toast('ลบโลโก้แล้ว — กดบันทึกเพื่อยืนยัน'); };
+    $('logoRemove').onclick = async () => {
+      try {
+        await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({ logo_url: '' }) });
+        $('s-logo').value = ''; logoFile.value = '';
+        localStorage.removeItem('yj_settings');
+        paintSettingsPreview();
+        toast('ลบโลโก้แล้ว ✓ กลับไปใช้ไอคอนเริ่มต้น');
+      } catch (e) { toast(e.message, true); }
+    };
 
     logoDrop.addEventListener('dragover', e => { e.preventDefault(); logoDrop.classList.add('drag'); });
     logoDrop.addEventListener('dragleave', () => logoDrop.classList.remove('drag'));
@@ -631,7 +639,7 @@
           $('s-logo').value = j.logo_url;
           localStorage.removeItem('yj_settings');
           paintSettingsPreview();
-          toast('อัปโหลดโลโก้แล้ว ✓ กดบันทึกเพื่อยืนยัน');
+          toast('อัปโหลดโลโก้เรียบร้อย ✓ หน้าเว็บอัปเดตแล้ว');
         } catch (e) { toast(e.message, true); }
       };
       reader.readAsDataURL(file);
@@ -664,10 +672,10 @@
     $('saveSettings').onclick = async () => {
       $('saveSettings').disabled = true;
       try {
+        // โลโก้ถูกบันทึกทันทีตอนอัปโหลด/ลบแล้ว ที่นี่ส่งเฉพาะชื่อและข้อความรอง
         await api('/api/admin/settings', {
           method: 'PUT',
           body: JSON.stringify({
-            logo_url: $('s-logo').value.trim(),
             site_name_main: $('s-main').value.trim(),
             site_name_accent: $('s-accent').value.trim(),
             site_subtitle: $('s-sub').value.trim()
