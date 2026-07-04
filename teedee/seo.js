@@ -85,6 +85,7 @@ function pageShell({ title, description, canonical, ogImage, robots, headExtra, 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var d=document.documentElement,t=localStorage.getItem("yj_theme");d.dataset.theme=t==="dark"?"dark":"light";var l=localStorage.getItem("yj_lang");d.lang=l==="en"?"en":"th";d.dataset.lang=d.lang;}catch(e){}})();</script>
   <title>${esc(title)}</title>
   <meta name="description" content="${esc(description)}">
   ${robots ? `<meta name="robots" content="${esc(robots)}">` : ''}

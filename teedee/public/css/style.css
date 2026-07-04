@@ -982,3 +982,47 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   .cm-custom { flex-direction: column; }
   .cm-custom .btn { justify-content: center; }
 }
+
+/* ============ DARK MODE ============ */
+:root { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #14130f;
+  --card: #1e1c17;
+  --ink: #f0eee6;
+  --ink-2: #c7c4b8;
+  --muted: #8f8d81;
+  --line: #322f28;
+  --line-strong: #46423a;
+  --soft: #26241d;
+  --gold: #c6a367;
+  --gold-soft: #2a2418;
+  --dark: #34322a;
+  --danger: #e0654f;
+  --ok-bg: #23291c; --ok-tx: #b7c79a;
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, .35);
+  --shadow: 0 14px 38px rgba(0, 0, 0, .5);
+}
+/* patch จุดที่ hardcode สีสว่างไว้ ให้เข้ากับ dark */
+:root[data-theme="dark"] .btn-primary:hover,
+:root[data-theme="dark"] .search-bar .s-btn:hover { background: #47443b; }
+:root[data-theme="dark"] .form-msg.err { background: #3a201b; color: #eba393; }
+:root[data-theme="dark"] .skeleton { background: linear-gradient(90deg, #24231d 25%, #2d2b22 50%, #24231d 75%); }
+:root[data-theme="dark"] .bottom-nav { background: rgba(22, 21, 16, .92); }
+:root[data-theme="dark"] .search-bar input::placeholder,
+:root[data-theme="dark"] .cm-custom input::placeholder,
+:root[data-theme="dark"] .vw-grid input::placeholder { color: #6f6d63; }
+:root[data-theme="dark"] .g-all,
+:root[data-theme="dark"] .map-fs { background: rgba(30, 28, 23, .92); color: var(--ink); }
+:root[data-theme="dark"] .map-wrap iframe { filter: brightness(.86) contrast(1.02); }
+:root[data-theme="dark"] img.logo-img { filter: brightness(1.06); }
+
+/* ปุ่มสลับธีม/ภาษา บนแถบเมนู */
+.pref-btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  height: 38px; min-width: 38px; padding: 0 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink-2);
+  font-size: var(--fs-xs); font-weight: 500; cursor: pointer; transition: border-color .18s, color .18s; }
+.pref-btn:hover { border-color: var(--gold); color: var(--gold); }
+.pref-btn svg { width: 18px; height: 18px; }
+.pref-btn .lang-code { letter-spacing: .04em; }
+.bn-pref { cursor: pointer; }

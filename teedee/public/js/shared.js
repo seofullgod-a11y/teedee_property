@@ -34,7 +34,10 @@ const TD = {
     edu: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 9l-10 -4l-10 4l10 4l10 -4v6"/><path d="M6 10.6v5.4a6 3 0 0 0 12 0v-5.4"/></svg>',
     leisure: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-13"/><path d="M9.824 16a3 3 0 0 1 -2.743 -3.69a3 3 0 0 1 .304 -4.833a3 3 0 0 1 4.615 -3.707a3 3 0 0 1 4.614 3.707a3 3 0 0 1 .305 4.833a3 3 0 0 1 -2.919 3.695h-4z"/></svg>',
     calendar: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3l0 4"/><path d="M8 3l0 4"/><path d="M4 11l16 0"/><path d="M11 15l1 0"/><path d="M12 15l0 3"/></svg>',
-    route: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"/><path d="M17 17m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"/><path d="M5 17v-4a4 4 0 0 1 4 -4h6a4 4 0 0 0 4 -4"/></svg>'
+    route: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"/><path d="M17 17m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"/><path d="M5 17v-4a4 4 0 0 1 4 -4h6a4 4 0 0 0 4 -4"/></svg>',
+    sun: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/></svg>',
+    moon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/></svg>',
+    translate: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7"/><path d="M9 3v2c0 4.418 -2.239 8 -5 8"/><path d="M5 9c0 2.144 2.952 3.908 6.7 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/></svg>'
   },
 
   brand: { main: 'อยู่', accent: 'ใจ', sub: 'yoojai.com', logo: '' },
@@ -100,6 +103,16 @@ const TD = {
     if (rerender) this.renderChrome();
   },
 
+  _labels: {
+    cat: {
+      th: { house: 'บ้านเดี่ยว', condo: 'คอนโด', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' },
+      en: { house: 'House', condo: 'Condo', townhouse: 'Townhouse', land: 'Land', commercial: 'Commercial' }
+    },
+    type: {
+      th: { rent: 'เช่า', sale: 'ขาย' },
+      en: { rent: 'Rent', sale: 'Sale' }
+    }
+  },
   catLabel: { house: 'บ้านเดี่ยว', condo: 'คอนโด', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' },
   catIcon: { house: 'home', condo: 'building', townhouse: 'townhouse', land: 'land', commercial: 'store' },
   typeLabel: { rent: 'เช่า', sale: 'ขาย' },
@@ -181,6 +194,8 @@ const TD = {
         <a href="/#categories">ประเภททั้งหมด</a>
       </nav>
       <span class="nav-spacer"></span>
+      <button class="pref-btn" data-theme-toggle type="button" aria-label="สลับโหมดมืด/สว่าง" title="โหมดมืด/สว่าง">${TD.theme() === 'dark' ? this.icons.sun : this.icons.moon}</button>
+      <button class="pref-btn" data-lang-toggle type="button" aria-label="Switch language" title="ไทย / English">${this.icons.translate}<span class="lang-code">${TD.lang() === 'en' ? 'ไทย' : 'EN'}</span></button>
       <a class="icon-btn" href="/saved" aria-label="รายการโปรด" title="รายการโปรด">${this.icons.heart}</a>
       <a class="btn btn-ghost btn-sm" href="/#list-cta">ลงประกาศ</a>
     </div></div>`;
@@ -242,5 +257,219 @@ if (typeof document !== 'undefined') {
     const on = TD.toggleFav(b.dataset.fav);
     b.classList.toggle('on', on);
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+  });
+}
+
+
+/* ============ Theme (Dark Mode) + Bilingual (TH/EN) engine ============ */
+TD.THEME_KEY = 'yj_theme';
+TD.LANG_KEY = 'yj_lang';
+TD.theme = function () { try { return localStorage.getItem(this.THEME_KEY) === 'dark' ? 'dark' : 'light'; } catch (e) { return 'light'; } };
+TD.lang = function () { try { return localStorage.getItem(this.LANG_KEY) === 'en' ? 'en' : 'th'; } catch (e) { return 'th'; } };
+TD.setTheme = function (t) {
+  t = t === 'dark' ? 'dark' : 'light';
+  try { localStorage.setItem(this.THEME_KEY, t); } catch (e) {}
+  document.documentElement.dataset.theme = t;
+  if (this.renderChrome) this.renderChrome();
+};
+TD.toggleTheme = function () { this.setTheme(this.theme() === 'dark' ? 'light' : 'dark'); };
+TD.setLang = function (l) {
+  l = l === 'en' ? 'en' : 'th';
+  try { localStorage.setItem(this.LANG_KEY, l); } catch (e) {}
+  location.reload();
+};
+
+/* พจนานุกรม ไทย → อังกฤษ (แปล UI เท่านั้น เนื้อหาที่เจ้าของกรอกคงเดิม) */
+TD.EN = {
+  // ---- Navbar / chrome ----
+  'เช่า': 'Rent', 'ซื้อ': 'Buy', 'ขาย': 'Sale', 'ที่ดิน': 'Land', 'ประเภททั้งหมด': 'All Types',
+  'ลงประกาศ': 'List Property', 'รายการโปรด': 'Saved', 'หน้าแรก': 'Home', 'โปรด': 'Saved',
+  // ---- Footer ----
+  'ค้นหา': 'Search', 'บ้าน/คอนโดให้เช่า': 'Homes & condos for rent', 'บ้าน/คอนโดขาย': 'Homes & condos for sale',
+  'อาคารพาณิชย์': 'Commercial', 'ทำเลยอดนิยม': 'Popular Areas', 'เมนูลัด': 'Quick Links',
+  'รายการโปรดของฉัน': 'My Saved List', 'ลงประกาศฟรี': 'List for free', 'เข้าสู่ระบบผู้ดูแล': 'Admin login',
+  'กรุงเทพมหานคร': 'Bangkok', 'นครปฐม': 'Nakhon Pathom', 'เชียงใหม่': 'Chiang Mai', 'หัวหิน': 'Hua Hin',
+  'ดูทำเลทั้งหมด →': 'View all areas →', 'ดูทำเลทั้งหมด': 'View all areas', 'ทุกจังหวัด': 'All provinces',
+  'แพลตฟอร์มอสังหาริมทรัพย์ที่รวมบ้านเช่า บ้านขาย และที่ดินไว้ในที่เดียว ค้นหาง่าย ข้อมูลครบ ติดต่อตรงถึงเจ้าของ':
+    'A property platform bringing homes for rent, homes for sale, and land together in one place — easy to search, full details, and direct contact with owners.',
+  'ทำด้วยใจ เพื่อคนหาบ้าน 🏡': 'Made with care, for home seekers 🏡',
+  // ---- Home hero ----
+  'บ้านเช่า · บ้านขาย · ที่ดิน ทั่วไทย': 'Homes for rent · for sale · land — nationwide',
+  'หา': 'Find', 'ที่ที่ใช่': 'the right place', 'สำหรับชีวิตที่ดี': 'for a better life', 'เริ่มต้นได้ที่นี่': 'starts here',
+  'ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ติดต่อเจ้าของได้โดยตรง':
+    'Search homes for rent, condos, properties for sale, and land nationwide — complete details, contact owners directly.',
+  // ---- Search bar ----
+  'ทั้งหมด': 'All', 'ทุกประเภททรัพย์': 'All property types', 'คอนโด': 'Condo', 'บ้านเดี่ยว': 'House',
+  'ทาวน์เฮาส์': 'Townhouse', 'ทุกช่วงราคา': 'Any price',
+  'เช่า · ไม่เกิน 15,000': 'Rent · up to ฿15,000', 'เช่า · 15,000 – 30,000': 'Rent · ฿15,000–30,000',
+  'เช่า · 30,000 – 60,000': 'Rent · ฿30,000–60,000', 'ซื้อ · ไม่เกิน 3 ล้าน': 'Buy · up to ฿3M',
+  'ซื้อ · 3 – 6 ล้าน': 'Buy · ฿3M–6M', 'ซื้อ · 6 ล้านขึ้นไป': 'Buy · ฿6M+',
+  'ยอดนิยม': 'Popular', 'คอนโดใกล้ BTS': 'Condos near BTS', 'บ้านนครปฐม': 'Houses in Nakhon Pathom',
+  'บ้านเช่าเชียงใหม่': 'Rentals in Chiang Mai', 'ที่ดินทั้งหมด': 'All land', 'เลี้ยงสัตว์ได้': 'Pet-friendly',
+  // ---- Home sections ----
+  'ประกาศแนะนำ': 'Featured Listings', 'คัดมาให้เฉพาะประกาศเด่น ข้อมูลครบ พร้อมติดต่อ': 'Hand-picked standout listings, full details, ready to contact',
+  'ดูทั้งหมด': 'View all', 'ดูล่าสุด': 'Recently Viewed', 'ประกาศที่คุณเพิ่งเปิดดู': 'Listings you viewed recently',
+  'เลือกดูตามประเภท': 'Browse by Type', 'อยากได้แบบไหน เข้าดูได้ตรงหมวดเลย': 'Jump straight to the category you want',
+  'ประกาศมาใหม่': 'New Listings', 'อัปเดตล่าสุดจากเจ้าของทั่วประเทศ': 'The latest updates from owners nationwide',
+  'เลือกดูตามจังหวัดที่มีประกาศมากที่สุด': 'Browse the provinces with the most listings',
+  'ทำไมต้องอยู่ใจ': 'Why Yoojai', 'เราตั้งใจให้การหาบ้านเป็นเรื่องง่ายและโปร่งใสที่สุด': 'We make finding a home as simple and transparent as possible',
+  'มีบ้านหรือที่ดินอยากปล่อยเช่า/ขาย?': 'Have a home or land to rent or sell?',
+  'ลงประกาศกับเราฟรี ทีมงานช่วยตรวจสอบข้อมูลและเขียนคอนเทนต์ให้น่าสนใจด้วย AI':
+    'List with us for free — our team verifies your details and writes engaging content with AI.',
+  'ติดต่อลงประกาศ': 'List your property', 'ฝากข้อมูลไว้ ทีมงานติดต่อกลับ': 'Leave your details and we\u2019ll get back to you',
+  'ส่งข้อมูล': 'Submit', 'ยังไม่มีประกาศแนะนำ': 'No featured listings yet',
+  'ประกาศทั้งหมด': 'All listings', 'สำหรับเช่า': 'For rent', 'สำหรับขาย': 'For sale',
+  'ใกล้รถไฟฟ้า พร้อมอยู่': 'Near transit, move-in ready', 'พื้นที่กว้าง เป็นส่วนตัว': 'Spacious & private',
+  'คุ้มค่า ทำเลดี': 'Great value, prime spot', 'ปลูกสร้าง / ลงทุน': 'Build / invest', 'ทำเลค้าขาย': 'Prime for business',
+  'ข้อมูลตรวจสอบแล้ว': 'Verified information', 'ทุกประกาศผ่านการคัดกรองจากทีมงาน ราคาและรายละเอียดตรงตามจริง': 'Every listing is screened by our team — prices and details are accurate',
+  'ค้นหาตามไลฟ์สไตล์': 'Search by lifestyle', 'กรองได้ทั้งงบ ทำเล ขนาด และเงื่อนไขอย่างเลี้ยงสัตว์ได้': 'Filter by budget, location, size, and conditions like pet-friendly',
+  'ติดต่อตรง ไม่ผ่านคนกลาง': 'Contact directly, no middleman', 'คุยกับเจ้าของหรือผู้ดูแลทรัพย์ได้ทันที ไม่มีค่านายหน้าแอบแฝง': 'Talk to owners or property managers instantly — no hidden agent fees',
+  'ครบทั้งเช่า ซื้อ และที่ดิน': 'Rent, buy, and land — all in one', 'ไม่ต้องเปิดหลายเว็บ ที่นี่รวมทุกประเภททรัพย์ไว้ให้แล้ว': 'No need for multiple sites — every property type is here',
+  // ---- Search / listings page ----
+  'ค้นหาอสังหาริมทรัพย์': 'Search Properties', 'กรองตามประเภท งบประมาณ และทำเลที่ต้องการ': 'Filter by type, budget, and the location you want',
+  'กำลังโหลด...': 'Loading…', 'ทุกประเภท': 'All types', 'เรียงลำดับ': 'Sort by', 'แนะนำก่อน': 'Recommended',
+  'มาใหม่ล่าสุด': 'Newest', 'ราคาต่ำ → สูง': 'Price: low → high', 'ราคาสูง → ต่ำ': 'Price: high → low',
+  'ราคาต่ำสุด': 'Min price', 'ราคาสูงสุด': 'Max price', 'ห้องนอน': 'Bedrooms', 'เช่า + ขาย': 'Rent & Sale',
+  'ประกาศให้เช่า': 'Listings for Rent', 'ประกาศขาย': 'Listings for Sale', 'ดูประกาศทั้งหมด': 'View all listings',
+  'ลองปรับตัวกรอง เช่น ขยายช่วงราคา หรือลบคำค้นบางส่วน': 'Try adjusting filters — widen the price range or remove some keywords',
+  'ไม่พบประกาศที่ตรงเงื่อนไข': 'No listings match your filters',
+  'ทำเล, ชื่อโครงการ, คำค้น...': 'Location, project name, keyword…',
+  // ---- Saved page ----
+  'ยังไม่มีรายการโปรด': 'No saved listings yet', 'กดรูปหัวใจบนประกาศที่ถูกใจ แล้วกลับมาดูที่นี่ได้เลย': 'Tap the heart on listings you like, then come back here anytime',
+  'เริ่มค้นหา': 'Start searching',
+  // ---- Listing page: sections ----
+  'รายละเอียด': 'Description', 'ข้อมูลทรัพย์': 'Property Details', 'จุดเด่น': 'Highlights',
+  'สถานที่ใกล้เคียง': 'Nearby Places', 'ตำแหน่งที่ตั้ง': 'Location', 'สำรวจย่านนี้': 'Explore the Area',
+  'เวลา/ระยะเดินทางจากที่นี่': 'Travel Time & Distance', 'นัดชมสถานที่จริง': 'Schedule a Viewing',
+  'ประกาศใกล้เคียง': 'Similar Listings', 'เฟอร์นิเจอร์และเครื่องใช้ที่ให้': 'Furniture & Appliances Included',
+  'สิ่งอำนวยความสะดวกส่วนกลาง': 'Common Facilities', 'คำนวณผ่อนต่อเดือน': 'Monthly Payment Calculator',
+  'เงินดาวน์': 'Down payment', 'ดอกเบี้ยต่อปี': 'Interest rate / yr', 'ระยะเวลากู้': 'Loan term', 'ผ่อนประมาณ': 'Est. monthly',
+  'ราคาขาย': 'Sale price', 'ค่าเช่า': 'Rent',
+  'สนใจประกาศนี้? ทักหาเราเลย': 'Interested? Get in touch', 'หรือฝากข้อความไว้': 'Or leave a message',
+  'ชื่อของคุณ *': 'Your name *', 'เบอร์โทร': 'Phone number', 'LINE ID': 'LINE ID',
+  'ข้อความ เช่น ขอนัดดูห้องวันเสาร์นี้': 'Message, e.g. I\u2019d like to view this Saturday',
+  'ส่งข้อความติดต่อ': 'Send message', 'ทีมงานจะส่งต่อให้ผู้ดูแลทรัพย์ติดต่อกลับโดยเร็ว': 'We\u2019ll forward this to the property manager to contact you soon',
+  'คัดลอกลิงก์': 'Copy link', 'แชร์': 'Share', 'ดูเส้นทาง': 'Directions', 'คัดลอกลิงก์นี้:': 'Copy this link:', '✓ คัดลอกแล้ว': '✓ Copied',
+  // ---- Explore area categories ----
+  'การเดินทาง': 'Transport', 'ช้อปปิ้ง': 'Shopping', 'สุขภาพ': 'Health', 'การศึกษา': 'Education', 'ไลฟ์สไตล์': 'Lifestyle', 'ใกล้': 'Near',
+  // ---- Commute ----
+  'สนามบินสุวรรณภูมิ': 'Suvarnabhumi Airport', 'สนามบินดอนเมือง': 'Don Mueang Airport',
+  'สยาม / ใจกลางกรุงเทพฯ': 'Siam / central Bangkok', 'สถานีกลางกรุงเทพอภิวัฒน์': 'Krung Thep Aphiwat Central Station',
+  // ---- Viewing form ----
+  'เลือกวัน-เวลาที่สะดวก ทีมงานจะยืนยันนัดกลับโดยเร็ว': 'Pick a convenient date and time — we\u2019ll confirm your appointment soon',
+  'วันที่': 'Date', 'ช่วงเวลา': 'Time slot', 'ชื่อ': 'Name', 'เบอร์/LINE': 'Phone / LINE',
+  'ช่วงเช้า (09:00–12:00)': 'Morning (09:00–12:00)', 'ช่วงบ่าย (12:00–15:00)': 'Afternoon (12:00–15:00)',
+  'ช่วงเย็น (15:00–18:00)': 'Evening (15:00–18:00)', 'ยืดหยุ่นได้ / แล้วแต่สะดวก': 'Flexible / whenever suits',
+  'ชื่อของคุณ *': 'Your name *', 'เบอร์โทร หรือ LINE ID *': 'Phone or LINE ID *', 'ขอนัดเข้าชม': 'Request viewing',
+  'ส่งคำขอนัดชมแล้ว!': 'Viewing request sent!', 'กรุณาเลือกวันที่': 'Please choose a date',
+  'กรุณากรอกชื่อ และเบอร์/LINE': 'Please enter your name and phone/LINE', 'กำลังส่ง…': 'Sending…',
+  'ส่งไม่สำเร็จ ลองใหม่อีกครั้ง': 'Couldn\u2019t send. Please try again.',
+  'พิมพ์จุดหมาย เช่น ที่ทำงาน มหาวิทยาลัย…': 'Enter a destination, e.g. office, university…',
+  '* ระยะเป็นเส้นตรงโดยประมาณ — กด': '* Distances are approximate straight-line — tap',
+  'เพื่อดูเวลาจริงและเส้นทางขับรถใน Google Maps': 'to see real travel time and driving routes in Google Maps',
+  '* ตำแหน่งโดยประมาณจากชื่อทำเล': '* Approximate location based on the area name',
+  // ---- Property facts ----
+  'ประเภททรัพย์': 'Property type', 'พื้นที่ใช้สอย': 'Usable area', 'ขนาดที่ดิน': 'Land size', 'ชั้น': 'Floor',
+  'รูปแบบ': 'Type', 'ค่าส่วนกลาง': 'Common fee', 'ปีที่สร้างเสร็จ': 'Year built', 'รหัสประกาศ': 'Listing ID',
+  'ราคาต่อ ตร.ม.': 'Price per sqm', 'สัตว์เลี้ยง': 'Pets', 'เลี้ยงได้': 'Allowed', 'ไม่อนุญาต': 'Not allowed',
+  'ไม่อนุญาตสัตว์เลี้ยง': 'No pets', 'ให้เช่า': 'For Rent', 'แผนที่': 'Map',
+  'เปิดใน Google Maps': 'Open in Google Maps', 'นำทางไปที่นี่': 'Get directions',
+  '⭐ แนะนำ': '⭐ Featured', 'แนะนำ': 'Featured',
+  // ---- Listing states / gallery ----
+  'ไม่พบประกาศนี้': 'Listing not found', 'ประกาศอาจถูกปิดไปแล้ว': 'This listing may have been removed',
+  'ดูประกาศอื่น': 'Browse other listings', 'บันทึกรายการโปรด': 'Save to favorites',
+  'รูปก่อนหน้า': 'Previous image', 'รูปถัดไป': 'Next image', 'ปิด': 'Close',
+  // ---- Chat widget ----
+  'แชทสอบถาม': 'Ask a question', 'สอบถาม': 'Ask', 'ปิดแชท': 'Close chat',
+  'ตอบทันที · ถามได้ทุกเรื่องเกี่ยวกับทรัพย์นี้': 'Instant answers — ask anything about this property',
+  'พิมพ์คำถาม...': 'Type your question…', 'ส่ง': 'Send', 'พิมพ์ชื่อของคุณ...': 'Type your name…',
+  'เบอร์โทร หรือ LINE ID...': 'Phone or LINE ID…', 'ข้อความเพิ่มเติม หรือพิมพ์ ไม่มี...': 'Extra message, or type \u201cnone\u201d…',
+  '📞 ฝากข้อมูลติดต่อ': '📞 Leave contact info', '📞 ฝากข้อมูลอีกครั้ง': '📞 Leave info again',
+  '🐶 เลี้ยงสัตว์ได้ไหม': '🐶 Are pets allowed?', '🚉 เดินทางสะดวกไหม': '🚉 Is commuting easy?', '💬 แชร์ LINE': '💬 Share on LINE',
+  'ยินดีครับ 🙌 ขอทราบชื่อของคุณก่อนครับ': 'Happy to help! 🙌 May I have your name first?',
+  'ส่งข้อความเรียบร้อย รอการติดต่อกลับได้เลยครับ': 'Message sent — we\u2019ll get back to you shortly.',
+  // ---- Page titles ----
+  'ค้นหาอสังหาริมทรัพย์ — อยู่ใจ (yoojai.com)': 'Search Properties — Yoojai (yoojai.com)',
+  'รายการโปรดของฉัน — อยู่ใจ (yoojai.com)': 'My Saved List — Yoojai (yoojai.com)',
+  'รายละเอียดประกาศ — อยู่ใจ (yoojai.com)': 'Listing Details — Yoojai (yoojai.com)',
+  'อยู่ใจ (yoojai.com) — หาบ้านเช่า บ้านขาย ที่ดิน ครบจบในที่เดียว': 'Yoojai (yoojai.com) — homes for rent, for sale, and land, all in one place'
+};
+
+TD.EN_PATTERNS = [
+  [/^฿([\d.,]+)\s*ล้าน$/, '฿$1M'],
+  [/^ที่ดิน\s*([\d.,]+)\s*ตร\.ว\.$/, 'Land $1 sq.wah'],
+  [/^([\d.,]+)\s*ตร\.ม\.$/, '$1 sqm'],
+  [/^([\d.,]+)\s*ตร\.ว\.$/, '$1 sq.wah'],
+  [/^(\d+)\+\s*ห้องนอน$/, '$1+ Beds'],
+  [/^(\d+)\s*ห้องนอน$/, '$1 Bedrooms'],
+  [/^(\d+)\s*ห้องน้ำ$/, '$1 Bathrooms'],
+  [/^(\d+)\s*นอน$/, '$1 Bed'],
+  [/^(\d+)\s*น้ำ$/, '$1 Bath'],
+  [/^ชั้น\s*(.+)$/, 'Floor $1'],
+  [/^ดูรูปทั้งหมด\s*\((\d+)\)$/, 'View all photos ($1)'],
+  [/^\+(\d+)\s*รูป$/, '+$1 photos'],
+  [/^รูปที่\s*(\d+)$/, 'Photo $1'],
+  [/^\/เดือน$/, '/mo'],
+  [/^เปิดดู\s*([\d,]+)\s*ครั้ง$/, '$1 views']
+];
+
+TD.tr = function (s) {
+  if (Object.prototype.hasOwnProperty.call(this.EN, s)) return this.EN[s];
+  for (var i = 0; i < this.EN_PATTERNS.length; i++) {
+    if (this.EN_PATTERNS[i][0].test(s)) return s.replace(this.EN_PATTERNS[i][0], this.EN_PATTERNS[i][1]);
+  }
+  return null;
+};
+TD.localizeNode = function (node) {
+  if (!node) return;
+  if (node.nodeType === 3) {
+    var raw = node.nodeValue, t = raw.trim();
+    if (t) { var en = this.tr(t); if (en != null && en !== t) node.nodeValue = raw.split(t).join(en); }
+    return;
+  }
+  if (node.nodeType !== 1) return;
+  var attrs = ['placeholder', 'title', 'aria-label', 'alt'];
+  for (var i = 0; i < attrs.length; i++) {
+    if (node.hasAttribute && node.hasAttribute(attrs[i])) {
+      var v = (node.getAttribute(attrs[i]) || '').trim(), e2 = this.tr(v);
+      if (e2 != null && e2 !== v) node.setAttribute(attrs[i], e2);
+    }
+  }
+  for (var c = node.firstChild; c; c = c.nextSibling) this.localizeNode(c);
+};
+TD.localize = function (root) { if (this.lang() !== 'en') return; this.localizeNode(root || document.body); };
+
+/* init: apply theme+lang, choose label language, translate + observe */
+(function () {
+  var de = document.documentElement;
+  de.dataset.theme = TD.theme();
+  de.lang = TD.lang(); de.dataset.lang = TD.lang();
+  TD.catLabel = TD._labels.cat[TD.lang()];
+  TD.typeLabel = TD._labels.type[TD.lang()];
+  if (TD.lang() === 'en') {
+    var et = TD.tr((document.title || '').trim()); if (et) document.title = et;
+    var start = function () {
+      TD.localize(document.body);
+      if ('MutationObserver' in window) {
+        TD._obs = new MutationObserver(function (ms) {
+          for (var i = 0; i < ms.length; i++) {
+            var an = ms[i].addedNodes;
+            for (var j = 0; j < an.length; j++) TD.localizeNode(an[j]);
+          }
+        });
+        TD._obs.observe(document.body, { childList: true, subtree: true });
+      }
+    };
+    if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+  }
+})();
+
+/* คลิกปุ่มสลับธีม/ภาษา */
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', function (e) {
+    var th = e.target.closest && e.target.closest('[data-theme-toggle]');
+    if (th) { e.preventDefault(); TD.toggleTheme(); return; }
+    var lg = e.target.closest && e.target.closest('[data-lang-toggle]');
+    if (lg) { e.preventDefault(); TD.setLang(TD.lang() === 'en' ? 'th' : 'en'); return; }
   });
 }
