@@ -37,6 +37,16 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+const SETTING_KEYS = ['site_name_main', 'site_name_accent', 'site_subtitle', 'logo_url'];
+let settingsCache = null;
+async function getSettings() {
+  if (settingsCache) return settingsCache;
+  const { rows } = await pool.query('SELECT key, value FROM settings');
+  settingsCache = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  return settingsCache;
+}
+const brandName = (s) => `${s.site_name_main || 'อยู่'}${s.site_name_accent || 'ใจ'}`;
+
 const LISTING_FIELDS = `id, title, listing_type, category, price, location_text, province,
   bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
   images, nearby, pets_allowed, featured, status, contact_line, contact_phone, views,
@@ -110,6 +120,13 @@ app.get('/api/listings/:id', async (req, res) => {
   }
 });
 
+app.get('/api/settings', async (req, res) => {
+  try {
+    const s = await getSettings();
+    res.json(Object.fromEntries(SETTING_KEYS.map(k => [k, s[k] || ''])));
+  } catch (e) { res.status(500).json({ error: 'server error' }); }
+});
+
 app.post('/api/inquiries', async (req, res) => {
   try {
     const { listing_id, name, phone, line_id, message } = req.body || {};
@@ -129,8 +146,9 @@ app.post('/api/inquiries', async (req, res) => {
         const { rows } = await pool.query('SELECT title FROM listings WHERE id = $1', [Number(listing_id)]).catch(() => ({ rows: [] }));
         if (rows[0]) listingLine = `\n🏠 ประกาศ: ${tgEsc(rows[0].title)} (#${listing_id})`;
       }
+      const bn = brandName(await getSettings().catch(() => ({})));
       notifyTelegram(
-        `📩 <b>ข้อความติดต่อใหม่ — TeeDee</b>${listingLine}\n` +
+        `📩 <b>ข้อความติดต่อใหม่ — ${bn}</b>${listingLine}\n` +
         `👤 ${tgEsc(name)}\n` +
         (phone ? `📞 ${tgEsc(phone)}\n` : '') +
         (line_id ? `💬 LINE: ${tgEsc(line_id)}\n` : '') +
@@ -141,6 +159,17 @@ app.post('/api/inquiries', async (req, res) => {
     console.error(e);
     res.status(500).json({ error: 'server error' });
   }
+});
+
+// ทำเลยอดนิยม (จังหวัด + จำนวนประกาศ)
+app.get('/api/meta/provinces', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT province, COUNT(*)::int AS count FROM listings
+       WHERE status = 'active' AND province <> ''
+       GROUP BY province ORDER BY count DESC, province LIMIT 8`);
+    res.json({ items: rows });
+  } catch (e) { res.status(500).json({ error: 'server error' }); }
 });
 
 // ---------- Admin API ----------
@@ -230,6 +259,53 @@ app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
 
 app.delete('/api/admin/listings/:id', requireAdmin, async (req, res) => {
   await pool.query('DELETE FROM listings WHERE id = $1', [Number(req.params.id)]);
+  res.json({ ok: true });
+});
+
+app.put('/api/admin/settings', requireAdmin, async (req, res) => {
+  try {
+    const body = req.body || {};
+    for (const k of SETTING_KEYS) {
+      if (k in body) {
+        await pool.query(
+          `INSERT INTO settings (key, value) VALUES ($1, $2)
+           ON CONFLICT (key) DO UPDATE SET value = $2`,
+          [k, String(body[k] || '').slice(0, 500)]);
+      }
+    }
+    settingsCache = null;
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+// คัดลอกประกาศ (สร้างสำเนาเป็นฉบับร่าง)
+app.post('/api/admin/listings/:id/duplicate', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO listings (title, listing_type, category, price, location_text, province,
+        bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
+        images, nearby, pets_allowed, featured, status, contact_line, contact_phone)
+       SELECT title || ' (สำเนา)', listing_type, category, price, location_text, province,
+        bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
+        images, nearby, pets_allowed, false, 'draft', contact_line, contact_phone
+       FROM listings WHERE id = $1 RETURNING id`, [Number(req.params.id)]);
+    if (!rows[0]) return res.status(404).json({ error: 'not found' });
+    res.json({ ok: true, id: rows[0].id });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+// สลับสถานะเร็ว (เผยแพร่ <-> ปิด)
+app.patch('/api/admin/listings/:id/status', requireAdmin, async (req, res) => {
+  const st = req.body?.status;
+  if (!['active', 'draft', 'closed'].includes(st)) return res.status(400).json({ error: 'bad status' });
+  await pool.query('UPDATE listings SET status = $1, updated_at = now() WHERE id = $2',
+    [st, Number(req.params.id)]);
   res.json({ ok: true });
 });
 
@@ -337,7 +413,7 @@ app.get('/listing/:id', async (req, res) => {
       const priceTxt = l.listing_type === 'rent'
         ? `฿${Number(l.price).toLocaleString('th-TH')}/เดือน`
         : `฿${Number(l.price).toLocaleString('th-TH')}`;
-      const title = `${htmlEsc(l.title)} · ${priceTxt} — TeeDee`;
+      const title = `${htmlEsc(l.title)} · ${priceTxt} — ${htmlEsc(brandName(await getSettings().catch(() => ({}))))}`;
       const desc = htmlEsc(String(l.description || '').slice(0, 160));
       const img = htmlEsc((l.images || [])[0] || '');
       const og = `<title>${title}</title>
@@ -348,7 +424,7 @@ app.get('/listing/:id', async (req, res) => {
   ${img ? `<meta property="og:image" content="${img}">` : ''}
   <meta property="og:url" content="${baseUrl(req)}/listing/${id}">
   <meta name="twitter:card" content="summary_large_image">`;
-      return res.send(listingTpl.replace('<title>รายละเอียดประกาศ — TeeDee (ที่ดี)</title>', og));
+      return res.send(listingTpl.replace(/<title>[^<]*<\/title>/, og));
     }
   } catch (e) { console.error(e); }
   res.send(listingTpl);

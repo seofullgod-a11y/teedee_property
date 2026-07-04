@@ -26,7 +26,72 @@ const TD = {
     heart: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/></svg>',
     share: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M8.7 10.7l6.6 -3.4"/><path d="M8.7 13.3l6.6 3.4"/></svg>',
     copy: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"/><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/></svg>',
+    key: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z"/><path d="M15 9h.01"/></svg>',
+    settings: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/></svg>',
     calc: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"/><path d="M8 14l0 .01"/><path d="M12 14l0 .01"/><path d="M16 14l0 .01"/><path d="M8 17l0 .01"/><path d="M12 17l0 .01"/><path d="M16 17l0 .01"/></svg>'
+  },
+
+  brand: { main: 'อยู่', accent: 'ใจ', sub: 'yoojai.com', logo: '' },
+  _active: '',
+
+  brandHtml(dark) {
+    const b = this.brand;
+    const logo = b.logo
+      ? `<img class="logo-img" src="${this.esc(b.logo)}" alt="${this.esc(b.main + b.accent)}">`
+      : `<span class="mark">${this.icons.home}</span>`;
+    return `<a class="brand" ${dark ? 'style="color:#fff"' : ''} href="/">${logo}${this.esc(b.main)}<em>${this.esc(b.accent)}</em>${b.sub ? ` <span class="sub-th">${this.esc(b.sub)}</span>` : ''}</a>`;
+  },
+
+  chrome(active) {
+    this._active = active || '';
+    this.renderChrome();
+    this.initBrand();
+  },
+  renderChrome() {
+    const nav = document.getElementById('nav');
+    const foot = document.getElementById('footer');
+    if (nav) nav.innerHTML = this.navbar(this._active);
+    if (foot) foot.innerHTML = this.footer();
+    this.bottomNav(this._active);
+  },
+  bottomNav(active) {
+    let el = document.getElementById('bottomNav');
+    if (!el) {
+      el = document.createElement('nav');
+      el.id = 'bottomNav';
+      el.className = 'bottom-nav';
+      el.setAttribute('aria-label', 'เมนูหลัก');
+      document.body.appendChild(el);
+    }
+    const items = [
+      { k: 'home', href: '/', ic: 'home', t: 'หน้าแรก' },
+      { k: 'rent', href: '/search?type=rent', ic: 'key', t: 'เช่า' },
+      { k: 'sale', href: '/search?type=sale', ic: 'coin', t: 'ซื้อ' },
+      { k: 'land', href: '/search?category=land', ic: 'land', t: 'ที่ดิน' },
+      { k: 'saved', href: '/saved', ic: 'heart', t: 'โปรด' }
+    ];
+    el.innerHTML = items.map(i =>
+      `<a href="${i.href}" class="bn-item ${active === i.k ? 'on' : ''}" ${active === i.k ? 'aria-current="page"' : ''}>${this.icons[i.ic]}<span>${i.t}</span></a>`).join('');
+  },
+  async initBrand() {
+    try {
+      const cached = localStorage.getItem('yj_settings');
+      if (cached) this.applyBrandData(JSON.parse(cached), true);
+      const s = await fetch('/api/settings').then(r => r.json());
+      localStorage.setItem('yj_settings', JSON.stringify(s));
+      this.applyBrandData(s, true);
+    } catch { /* ใช้ค่า default */ }
+  },
+  applyBrandData(s, rerender) {
+    const next = {
+      main: s.site_name_main || 'อยู่',
+      accent: s.site_name_accent || 'ใจ',
+      sub: s.site_subtitle || '',
+      logo: s.logo_url || ''
+    };
+    if (JSON.stringify(next) === JSON.stringify(this.brand)) return;
+    this.brand = next;
+    if (rerender) this.renderChrome();
   },
 
   catLabel: { house: 'บ้านเดี่ยว', condo: 'คอนโด', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' },
@@ -102,7 +167,7 @@ const TD = {
   navbar(active) {
     return `
     <div class="nav"><div class="container nav-inner">
-      <a class="brand" href="/"><span class="mark">${this.icons.home}</span>Tee<em>Dee</em> <span class="sub-th">ที่ดี</span></a>
+      ${this.brandHtml(false)}
       <nav class="nav-links">
         <a href="/search?type=rent" class="${active === 'rent' ? 'on' : ''}">เช่า</a>
         <a href="/search?type=sale" class="${active === 'sale' ? 'on' : ''}">ซื้อ</a>
@@ -111,7 +176,7 @@ const TD = {
       </nav>
       <span class="nav-spacer"></span>
       <a class="icon-btn" href="/saved" aria-label="รายการโปรด" title="รายการโปรด">${this.icons.heart}</a>
-      <a class="btn btn-ghost" href="/#list-cta" style="padding:9px 18px;font-size:.88rem">ลงประกาศ</a>
+      <a class="btn btn-ghost btn-sm" href="/#list-cta">ลงประกาศ</a>
     </div></div>`;
   },
 
@@ -120,7 +185,7 @@ const TD = {
     <footer><div class="container">
       <div class="foot-inner">
         <div class="foot-brand">
-          <a class="brand" href="/" style="color:#fff"><span class="mark">${this.icons.home}</span>Tee<em style="color:#d6b988">Dee</em></a>
+          ${this.brandHtml(true)}
           <p>แพลตฟอร์มอสังหาริมทรัพย์ที่รวมบ้านเช่า บ้านขาย และที่ดินไว้ในที่เดียว ค้นหาง่าย ข้อมูลครบ ติดต่อตรงถึงเจ้าของ</p>
         </div>
         <div><h4>ค้นหา</h4>
@@ -142,7 +207,7 @@ const TD = {
         </div>
       </div>
       <div class="foot-bottom">
-        <span>© ${new Date().getFullYear()} TeeDee (ที่ดี) — All rights reserved</span>
+        <span>© ${new Date().getFullYear()} ${this.esc(this.brand.main + this.brand.accent)} · ${this.esc(this.brand.sub || '')} — All rights reserved</span>
         <span>ทำด้วยใจ เพื่อคนหาบ้าน 🏡</span>
       </div>
     </div></footer>`;

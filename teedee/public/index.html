@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TeeDee (ที่ดี) — หาบ้านเช่า บ้านขาย ที่ดิน ครบจบในที่เดียว</title>
+  <title>อยู่ใจ (yoojai.com) — หาบ้านเช่า บ้านขาย ที่ดิน ครบจบในที่เดียว</title>
   <meta name="description" content="แพลตฟอร์มอสังหาริมทรัพย์ รวมบ้านเช่า บ้าน-คอนโดขาย และที่ดินทั่วไทย ค้นหาง่าย ข้อมูลครบ ติดต่อตรง">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230d5c4a'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif'>ท</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230d5c4a'/><text x='50' y='68' font-size='42' text-anchor='middle' fill='white' font-family='sans-serif'>ใจ</text></svg>">
 </head>
 <body>
   <div id="nav"></div>
@@ -135,12 +135,26 @@
     </div>
   </section>
 
+  <!-- Popular areas -->
+  <section class="section" id="areaSec" style="display:none;padding-top:0">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow-text">Popular Areas</span>
+          <h2>ทำเลยอดนิยม</h2>
+          <p>เลือกดูตามจังหวัดที่มีประกาศมากที่สุด</p>
+        </div>
+      </div>
+      <div class="area-grid" id="areaGrid"></div>
+    </div>
+  </section>
+
   <!-- Why us -->
   <section class="section">
     <div class="container">
       <div class="why">
-        <span class="eyebrow-text">Why TeeDee</span>
-        <h2>ทำไมต้อง TeeDee</h2>
+        <span class="eyebrow-text">Why Us</span>
+        <h2>ทำไมต้องอยู่ใจ</h2>
         <p class="sub">เราตั้งใจให้การหาบ้านเป็นเรื่องง่ายและโปร่งใสที่สุด</p>
         <div class="why-grid" id="whyGrid"></div>
         <div class="why-stats" id="stats"></div>
@@ -176,8 +190,7 @@
 
   <script src="/js/shared.js"></script>
   <script>
-    document.getElementById('nav').innerHTML = TD.navbar();
-    document.getElementById('footer').innerHTML = TD.footer();
+    TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
     ['ic-arrow', 'ic-arrow2', 'ic-arrow3'].forEach(id => document.getElementById(id).innerHTML = TD.icons.arrowRight);
 
@@ -308,6 +321,16 @@
             document.getElementById('recentSec').style.display = 'block';
             document.getElementById('recentGrid').innerHTML = items.map(l => TD.card(l)).join('');
           }
+        }
+        // ทำเลยอดนิยม
+        const prov = await fetch('/api/meta/provinces').then(r => r.json());
+        if (prov.items?.length) {
+          document.getElementById('areaSec').style.display = 'block';
+          document.getElementById('areaGrid').innerHTML = prov.items.map(p => `
+            <a class="area-tile" href="/search?q=${encodeURIComponent(p.province)}">
+              <div><h3>${TD.esc(p.province)}</h3><span class="cnt">${p.count} ประกาศ</span></div>
+              <span class="arrow">${TD.icons.arrowRight}</span>
+            </a>`).join('');
         }
       } catch (err) { console.error(err); }
     })();

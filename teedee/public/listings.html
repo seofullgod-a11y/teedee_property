@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ค้นหาอสังหาริมทรัพย์ — TeeDee (ที่ดี)</title>
+  <title>ค้นหาอสังหาริมทรัพย์ — อยู่ใจ (yoojai.com)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
@@ -82,8 +82,7 @@
   <script src="/js/shared.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
-    document.getElementById('nav').innerHTML = TD.navbar(params.get('type') || (params.get('category') === 'land' ? 'land' : ''));
-    document.getElementById('footer').innerHTML = TD.footer();
+    TD.chrome(params.get('category') === 'land' ? 'land' : (params.get('type') || ''));
     document.querySelectorAll('[data-ic]').forEach(el => el.innerHTML = TD.icons[el.dataset.ic]);
 
     // Fill form from URL
@@ -101,7 +100,7 @@
     else if (t) title = typeTxt[t];
     if (params.get('q')) title += ` — "${params.get('q')}"`;
     document.getElementById('pageTitle').textContent = title;
-    document.title = title + ' — TeeDee (ที่ดี)';
+    document.title = title + ' — ' + TD.brand.main + TD.brand.accent;
 
     form.addEventListener('submit', e => {
       e.preventDefault();

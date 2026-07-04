@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบหลังบ้าน — TeeDee Admin</title>
+  <title>ระบบหลังบ้าน — อยู่ใจ Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
@@ -127,7 +127,7 @@
   <div class="login-wrap" id="loginView">
     <div class="login-card">
       <div class="mark" id="loginIcon"></div>
-      <h1>TeeDee Admin</h1>
+      <h1>อยู่ใจ Admin</h1>
       <p>ระบบจัดการประกาศอสังหาริมทรัพย์</p>
       <input type="password" id="pw" placeholder="รหัสผ่านผู้ดูแล" autocomplete="current-password">
       <div class="form-msg" id="loginMsg" style="margin-bottom:10px;text-align:left"></div>
@@ -138,11 +138,12 @@
   <!-- Shell -->
   <div class="admin-shell" id="shell" style="display:none">
     <aside class="side">
-      <a class="brand" href="/"><span class="mark" id="sideIcon"></span>Tee<em style="color:#d6b988">Dee</em></a>
+      <a class="brand" href="/"><span class="mark" id="sideIcon"></span>อยู่<em style="color:#d6b988">ใจ</em></a>
       <button data-view="dashboard" class="active"><span data-ic="home"></span> แดชบอร์ด</button>
       <button data-view="listings"><span data-ic="building"></span> ประกาศทั้งหมด</button>
       <button data-view="editor"><span data-ic="sparkles"></span> เพิ่มประกาศใหม่</button>
       <button data-view="inbox"><span data-ic="phone"></span> ข้อความติดต่อ <span class="unread-dot" id="unreadDot" style="display:none">0</span></button>
+      <button data-view="settings"><span data-ic="settings"></span> ตั้งค่าเว็บไซต์</button>
       <span class="spacer"></span>
       <a class="menu foot-link" href="/" target="_blank"><span data-ic="arrowRight"></span> ดูหน้าเว็บ</a>
       <button id="logoutBtn" class="foot-link">ออกจากระบบ</button>
@@ -244,6 +245,33 @@
         </div>
       </div>
 
+      <!-- Settings -->
+      <div data-panel="settings" style="display:none">
+        <h1>ตั้งค่าเว็บไซต์</h1>
+        <div class="editor" style="max-width:640px">
+          <div class="frm-grid">
+            <div class="full">
+              <label>โลโก้ (ลิงก์รูป URL) — เว้นว่างเพื่อใช้ไอคอนบ้านเริ่มต้น</label>
+              <div class="img-row">
+                <img id="s-logoPrev" style="width:auto;max-width:120px;height:40px;object-fit:contain" onerror="this.style.visibility='hidden'">
+                <input id="s-logo" placeholder="https://.../logo.png">
+              </div>
+              <p style="font-size:.78rem;color:var(--muted);margin-top:6px">แนะนำไฟล์ PNG พื้นหลังโปร่ง สูงประมาณ 60-120px — โลโก้จะแสดงบน navbar และ footer แทนไอคอนบ้าน</p>
+            </div>
+            <div><label>ชื่อเว็บ (ส่วนหน้า)</label><input id="s-main" placeholder="อยู่"></div>
+            <div><label>ชื่อเว็บ (ส่วนเน้นสีทอง)</label><input id="s-accent" placeholder="ใจ"></div>
+            <div class="full"><label>ข้อความรองข้างชื่อ (เช่นโดเมน)</label><input id="s-sub" placeholder="yoojai.com"></div>
+          </div>
+          <div style="background:var(--sand);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-top:16px">
+            <p style="font-size:.8rem;color:var(--muted);margin-bottom:6px">ตัวอย่าง:</p>
+            <span id="s-preview" style="font-family:var(--font-display);font-weight:600;font-size:1.3rem"></span>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button class="btn btn-primary" id="saveSettings">บันทึกการตั้งค่า</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Inbox -->
       <div data-panel="inbox" style="display:none">
         <h1>ข้อความติดต่อ</h1>
@@ -321,6 +349,7 @@
       if (view === 'dashboard') loadDash();
       if (view === 'listings') loadListings();
       if (view === 'inbox') loadInbox();
+      if (view === 'settings') loadSettings();
       if (view === 'editor' && !editingId) resetEditor();
     }
 
@@ -354,8 +383,10 @@
           <td>${TD.price(l.price, l.listing_type)}${l.listing_type === 'rent' ? '/ด.' : ''}</td>
           <td><span class="st ${l.status}">${stLabel[l.status]}</span></td>
           <td>${l.views}</td>
-          <td>
+          <td style="white-space:nowrap">
             <button class="mini-btn" data-edit="${l.id}">แก้ไข</button>
+            <button class="mini-btn" data-tog="${l.id}" data-st="${l.status}">${l.status === 'active' ? 'ปิด' : 'เปิด'}</button>
+            <button class="mini-btn" data-dup="${l.id}">สำเนา</button>
             <a class="mini-btn" href="/listing/${l.id}" target="_blank" style="display:inline-block;text-decoration:none">ดู</a>
             <button class="mini-btn danger" data-del="${l.id}">ลบ</button>
           </td>
@@ -380,6 +411,21 @@
         if (del && confirm('ยืนยันลบประกาศนี้? ลบแล้วกู้คืนไม่ได้')) {
           await api('/api/admin/listings/' + del.dataset.del, { method: 'DELETE' });
           toast('ลบประกาศแล้ว');
+          loadListings();
+        }
+        const dup = e.target.closest('[data-dup]');
+        if (dup) {
+          const j = await api(`/api/admin/listings/${dup.dataset.dup}/duplicate`, { method: 'POST' });
+          toast(`สร้างสำเนาแล้ว (#${j.id} — ฉบับร่าง)`);
+          loadListings();
+        }
+        const tog = e.target.closest('[data-tog]');
+        if (tog) {
+          const next = tog.dataset.st === 'active' ? 'closed' : 'active';
+          await api(`/api/admin/listings/${tog.dataset.tog}/status`, {
+            method: 'PATCH', body: JSON.stringify({ status: next })
+          });
+          toast(next === 'active' ? 'เปิดประกาศแล้ว ✓' : 'ปิดประกาศแล้ว');
           loadListings();
         }
       };
@@ -527,6 +573,48 @@
         toast('เพิ่มจุดเด่นแล้ว ✓');
       }
     });
+
+    // ---------- Settings ----------
+    function paintSettingsPreview() {
+      const logo = $('s-logo').value.trim();
+      const prev = $('s-logoPrev');
+      prev.style.visibility = logo ? 'visible' : 'hidden';
+      if (logo) prev.src = logo;
+      $('s-preview').innerHTML =
+        (logo ? `<img src="${TD.esc(logo)}" style="height:30px;vertical-align:middle;margin-right:8px" onerror="this.style.display='none'">` : '') +
+        TD.esc($('s-main').value || 'อยู่') +
+        `<span style="color:var(--gold)">${TD.esc($('s-accent').value || 'ใจ')}</span>` +
+        (($('s-sub').value || '') ? ` <span style="font-size:.8rem;color:var(--muted);font-weight:400">${TD.esc($('s-sub').value)}</span>` : '');
+    }
+    async function loadSettings() {
+      try {
+        const s = await fetch('/api/settings').then(r => r.json());
+        $('s-logo').value = s.logo_url || '';
+        $('s-main').value = s.site_name_main || '';
+        $('s-accent').value = s.site_name_accent || '';
+        $('s-sub').value = s.site_subtitle || '';
+        paintSettingsPreview();
+      } catch { toast('โหลดการตั้งค่าไม่สำเร็จ', true); }
+    }
+    ['s-logo', 's-main', 's-accent', 's-sub'].forEach(id =>
+      document.addEventListener('input', e => { if (e.target.id === id) paintSettingsPreview(); }));
+    $('saveSettings').onclick = async () => {
+      $('saveSettings').disabled = true;
+      try {
+        await api('/api/admin/settings', {
+          method: 'PUT',
+          body: JSON.stringify({
+            logo_url: $('s-logo').value.trim(),
+            site_name_main: $('s-main').value.trim(),
+            site_name_accent: $('s-accent').value.trim(),
+            site_subtitle: $('s-sub').value.trim()
+          })
+        });
+        localStorage.removeItem('yj_settings'); // ให้หน้าเว็บโหลดค่าใหม่
+        toast('บันทึกการตั้งค่าแล้ว ✓ หน้าเว็บอัปเดตทันที');
+      } catch (e) { toast(e.message, true); }
+      finally { $('saveSettings').disabled = false; }
+    };
 
     // ---------- Inbox ----------
     async function loadInbox() {

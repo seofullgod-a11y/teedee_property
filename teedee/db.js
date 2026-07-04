@@ -52,6 +52,21 @@ async function migrate() {
 
     CREATE INDEX IF NOT EXISTS idx_listings_search
       ON listings (status, listing_type, category, price);
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT ''
+    );
+  `);
+
+  // ค่าเริ่มต้นของแบรนด์ (แก้ได้ในหลังบ้าน)
+  await pool.query(`
+    INSERT INTO settings (key, value) VALUES
+      ('site_name_main', 'อยู่'),
+      ('site_name_accent', 'ใจ'),
+      ('site_subtitle', 'yoojai.com'),
+      ('logo_url', '')
+    ON CONFLICT (key) DO NOTHING;
   `);
 }
 
