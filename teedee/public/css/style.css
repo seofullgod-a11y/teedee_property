@@ -548,6 +548,9 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 /* ---------- Loan calculator ---------- */
 .calc-card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 26px; margin-top: 14px; }
 .calc-card h3 { font-size: var(--fs-md); font-weight: 500; margin-bottom: 4px; }
+.calc-card h3.calc-title { display: flex; align-items: center; gap: 10px; }
+.calc-ico { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; background: rgba(176,141,87,.13); color: var(--gold); flex-shrink: 0; }
+.calc-ico svg { width: 16px; height: 16px; }
 .calc-card .note { font-size: var(--fs-xs); color: var(--muted); margin-bottom: 16px; }
 .calc-row { margin-bottom: 14px; }
 .calc-row .lbl { display: flex; justify-content: space-between; font-size: var(--fs-sm); margin-bottom: 7px; color: var(--ink-2); }
