@@ -77,11 +77,11 @@ const TD = {
   navbar(active) {
     return `
     <div class="nav"><div class="container nav-inner">
-      <a class="brand" href="/"><span class="mark">${this.icons.home}</span>Tee<em>Dee</em> <span style="font-size:.85rem;color:var(--muted);font-weight:400;margin-left:2px">ที่ดี</span></a>
+      <a class="brand" href="/"><span class="mark">${this.icons.home}</span>Tee<em>Dee</em> <span class="sub-th">ที่ดี</span></a>
       <nav class="nav-links">
-        <a href="/search?type=rent" ${active === 'rent' ? 'style="color:var(--pine)"' : ''}>เช่า</a>
-        <a href="/search?type=sale" ${active === 'sale' ? 'style="color:var(--pine)"' : ''}>ซื้อ</a>
-        <a href="/search?category=land" ${active === 'land' ? 'style="color:var(--pine)"' : ''}>ที่ดิน</a>
+        <a href="/search?type=rent" class="${active === 'rent' ? 'on' : ''}">เช่า</a>
+        <a href="/search?type=sale" class="${active === 'sale' ? 'on' : ''}">ซื้อ</a>
+        <a href="/search?category=land" class="${active === 'land' ? 'on' : ''}">ที่ดิน</a>
         <a href="/#categories">ประเภททั้งหมด</a>
       </nav>
       <span class="nav-spacer"></span>
@@ -94,7 +94,7 @@ const TD = {
     <footer><div class="container">
       <div class="foot-inner">
         <div class="foot-brand">
-          <a class="brand" href="/" style="color:#fff"><span class="mark">${this.icons.home}</span>Tee<em style="color:#7ed0b4">Dee</em></a>
+          <a class="brand" href="/" style="color:#fff"><span class="mark">${this.icons.home}</span>Tee<em style="color:#d6b988">Dee</em></a>
           <p>แพลตฟอร์มอสังหาริมทรัพย์ที่รวมบ้านเช่า บ้านขาย และที่ดินไว้ในที่เดียว ค้นหาง่าย ข้อมูลครบ ติดต่อตรงถึงเจ้าของ</p>
         </div>
         <div><h4>ค้นหา</h4>

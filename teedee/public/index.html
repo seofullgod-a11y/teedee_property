@@ -17,49 +17,51 @@
   <!-- Hero -->
   <header class="hero">
     <div class="container">
-      <span class="eyebrow">🏡 รวมบ้านเช่า · บ้านขาย · ที่ดิน ทั่วไทย</span>
+      <span class="eyebrow">บ้านเช่า · บ้านขาย · ที่ดิน ทั่วไทย</span>
       <h1>หา<span class="hl">ที่ที่ใช่</span> สำหรับชีวิตที่ดี<br>เริ่มต้นได้ที่นี่</h1>
-      <p class="sub">ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ทั้งราคา ขนาด และสถานที่ใกล้เคียง — ติดต่อเจ้าของได้โดยตรง</p>
+      <p class="sub">ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ติดต่อเจ้าของได้โดยตรง</p>
 
       <!-- Signature Search -->
       <div class="searchbox">
-        <div class="search-tabs" role="tablist">
-          <button class="active" data-type="" role="tab">ทั้งหมด</button>
-          <button data-type="rent" role="tab">เช่า</button>
-          <button data-type="sale" role="tab">ซื้อ</button>
+        <div class="seg" id="segTabs" role="tablist" aria-label="ประเภทประกาศ">
+          <span class="seg-pill" id="segPill" aria-hidden="true"></span>
+          <button type="button" class="active" data-type="" role="tab" aria-selected="true">ทั้งหมด</button>
+          <button type="button" data-type="rent" role="tab" aria-selected="false">เช่า</button>
+          <button type="button" data-type="sale" role="tab" aria-selected="false">ซื้อ</button>
         </div>
-        <form class="search-panel" id="searchForm">
-          <div class="field" style="flex:2 1 240px">
-            <span id="ic-search"></span>
-            <input type="text" name="q" placeholder="ค้นหาทำเล โครงการ หรือคำที่คิด เช่น พญาไท, ใกล้ BTS..." aria-label="คำค้นหา">
-          </div>
-          <div class="field">
-            <span id="ic-home"></span>
-            <select name="category" aria-label="ประเภท">
-              <option value="">ทุกประเภท</option>
+
+        <form class="search-bar" id="searchForm" role="search">
+          <span class="s-icon" id="ic-search"></span>
+          <input type="text" name="q" id="qInput" autocomplete="off" aria-label="คำค้นหา" placeholder="">
+          <button class="s-btn" type="submit" aria-label="ค้นหา"><span id="ic-search2"></span><span class="t">ค้นหา</span></button>
+        </form>
+
+        <div class="search-filters">
+          <label class="pill-select">
+            <select name="category" form="searchForm" aria-label="ประเภททรัพย์">
+              <option value="">ทุกประเภททรัพย์</option>
               <option value="condo">คอนโด</option>
               <option value="house">บ้านเดี่ยว</option>
               <option value="townhouse">ทาวน์เฮาส์</option>
               <option value="land">ที่ดิน</option>
               <option value="commercial">อาคารพาณิชย์</option>
             </select>
-          </div>
-          <div class="field">
-            <span id="ic-coin"></span>
-            <select name="budget" aria-label="งบประมาณ">
+          </label>
+          <label class="pill-select">
+            <select name="budget" form="searchForm" aria-label="งบประมาณ">
               <option value="">ทุกช่วงราคา</option>
-              <option value="0-15000">ไม่เกิน 15,000</option>
-              <option value="15000-30000">15,000 – 30,000</option>
-              <option value="30000-60000">30,000 – 60,000</option>
-              <option value="0-3000000">ไม่เกิน 3 ล้าน</option>
-              <option value="3000000-6000000">3 – 6 ล้าน</option>
-              <option value="6000000-999999999">6 ล้านขึ้นไป</option>
+              <option value="0-15000">เช่า · ไม่เกิน 15,000</option>
+              <option value="15000-30000">เช่า · 15,000 – 30,000</option>
+              <option value="30000-60000">เช่า · 30,000 – 60,000</option>
+              <option value="0-3000000">ซื้อ · ไม่เกิน 3 ล้าน</option>
+              <option value="3000000-6000000">ซื้อ · 3 – 6 ล้าน</option>
+              <option value="6000000-999999999">ซื้อ · 6 ล้านขึ้นไป</option>
             </select>
-          </div>
-          <button class="btn btn-primary go" type="submit"><span id="ic-search2"></span> ค้นหา</button>
-        </form>
+          </label>
+        </div>
+
         <div class="quick-chips" id="chips">
-          <span>ลองค้น:</span>
+          <span class="lbl">ยอดนิยม</span>
           <button data-q="ใกล้ BTS">คอนโดใกล้ BTS</button>
           <button data-q="นครปฐม">บ้านนครปฐม</button>
           <button data-q="เชียงใหม่">บ้านเช่าเชียงใหม่</button>
@@ -77,6 +79,7 @@
     <div class="container">
       <div class="section-head">
         <div>
+          <span class="eyebrow-text">Curated</span>
           <h2>ประกาศแนะนำ</h2>
           <p>คัดมาให้เฉพาะประกาศเด่น ข้อมูลครบ พร้อมติดต่อ</p>
         </div>
@@ -95,6 +98,7 @@
     <div class="container">
       <div class="section-head">
         <div>
+          <span class="eyebrow-text">Categories</span>
           <h2>เลือกดูตามประเภท</h2>
           <p>อยากได้แบบไหน เข้าดูได้ตรงหมวดเลย</p>
         </div>
@@ -108,6 +112,7 @@
     <div class="container">
       <div class="section-head">
         <div>
+          <span class="eyebrow-text">New Arrivals</span>
           <h2>ประกาศมาใหม่</h2>
           <p>อัปเดตล่าสุดจากเจ้าของทั่วประเทศ</p>
         </div>
@@ -121,6 +126,7 @@
   <section class="section">
     <div class="container">
       <div class="why">
+        <span class="eyebrow-text">Why TeeDee</span>
         <h2>ทำไมต้อง TeeDee</h2>
         <p class="sub">เราตั้งใจให้การหาบ้านเป็นเรื่องง่ายและโปร่งใสที่สุด</p>
         <div class="why-grid" id="whyGrid"></div>
@@ -159,8 +165,6 @@
     document.getElementById('nav').innerHTML = TD.navbar();
     document.getElementById('footer').innerHTML = TD.footer();
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
-    document.getElementById('ic-home').innerHTML = TD.icons.home;
-    document.getElementById('ic-coin').innerHTML = TD.icons.coin;
     ['ic-arrow', 'ic-arrow2', 'ic-arrow3'].forEach(id => document.getElementById(id).innerHTML = TD.icons.arrowRight);
 
     // Category tiles
@@ -187,13 +191,59 @@
     document.getElementById('whyGrid').innerHTML = whys.map(w => `
       <div class="why-item"><div class="ico">${TD.icons[w.ic]}</div><h3>${w.h}</h3><p>${w.p}</p></div>`).join('');
 
-    // Search behavior
+    // ---- Search: sliding segmented tabs ----
     let currentType = '';
-    document.querySelectorAll('.search-tabs button').forEach(b => b.addEventListener('click', () => {
-      document.querySelectorAll('.search-tabs button').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
+    const seg = document.getElementById('segTabs');
+    const segPill = document.getElementById('segPill');
+    function movePill(btn) {
+      segPill.style.width = btn.offsetWidth + 'px';
+      segPill.style.transform = `translateX(${btn.offsetLeft}px)`;
+    }
+    seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      seg.querySelectorAll('button').forEach(x => {
+        x.classList.remove('active'); x.setAttribute('aria-selected', 'false');
+      });
+      b.classList.add('active'); b.setAttribute('aria-selected', 'true');
       currentType = b.dataset.type;
+      movePill(b);
     }));
+    const initPill = () => movePill(seg.querySelector('button.active'));
+    window.addEventListener('resize', initPill);
+    if (document.fonts?.ready) document.fonts.ready.then(initPill);
+    initPill(); setTimeout(initPill, 250);
+
+    // ---- Search: animated typing placeholder ----
+    const qInput = document.getElementById('qInput');
+    const phrases = [
+      'คอนโดใกล้ BTS อโศก ไม่เกิน 20,000',
+      'บ้านเดี่ยวโซนนครปฐม',
+      'ที่ดินเปล่า เหมาะทำคาเฟ่',
+      'ทาวน์โฮมเลี้ยงสัตว์ได้',
+      'คอนโดวิวแม่น้ำ เจริญนคร'
+    ];
+    const PREFIX = 'ลองค้นหา “';
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      qInput.placeholder = PREFIX + phrases[0] + '”';
+    } else {
+      let pi = 0, ci = 0, deleting = false;
+      (function type() {
+        const phrase = phrases[pi];
+        if (!deleting) {
+          ci++;
+          qInput.placeholder = PREFIX + phrase.slice(0, ci) + (ci < phrase.length ? '|' : '”');
+          if (ci >= phrase.length) { deleting = true; return setTimeout(type, 2100); }
+          return setTimeout(type, 42 + Math.random() * 45);
+        }
+        ci -= 2;
+        if (ci <= 0) {
+          ci = 0; deleting = false; pi = (pi + 1) % phrases.length;
+          qInput.placeholder = PREFIX + '”';
+          return setTimeout(type, 380);
+        }
+        qInput.placeholder = PREFIX + phrase.slice(0, ci) + '|';
+        setTimeout(type, 16);
+      })();
+    }
     document.getElementById('searchForm').addEventListener('submit', e => {
       e.preventDefault();
       const f = new FormData(e.target);

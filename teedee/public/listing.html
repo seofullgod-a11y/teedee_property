@@ -72,7 +72,7 @@
       specs.push(specChip(l.pets_allowed ? 'paw' : 'ban', l.pets_allowed ? 'เลี้ยงสัตว์ได้' : 'ไม่อนุญาตสัตว์เลี้ยง'));
 
       const nearby = (l.nearby || []).map(n =>
-        `<div class="hl-item"><span class="pill" style="background:#0aa06e;color:#fff;border-radius:5px;font-size:.7rem;font-weight:600;padding:2px 8px;font-family:var(--font-display)">ใกล้</span> ${TD.esc(n.label)} <span style="color:var(--muted)">(${TD.esc(n.dist)})</span></div>`).join('');
+        `<div class="hl-item"><span class="pill-near">ใกล้</span> ${TD.esc(n.label)} <span style="color:var(--muted)">(${TD.esc(n.dist)})</span></div>`).join('');
       const highlights = (l.highlights || []).map(h =>
         `<div class="hl-item">${TD.icons.check} ${TD.esc(h)}</div>`).join('');
 
