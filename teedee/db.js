@@ -64,6 +64,12 @@ async function migrate() {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL DEFAULT ''
     );
+
+    CREATE TABLE IF NOT EXISTS area_insights (
+      province TEXT PRIMARY KEY,
+      insight TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
   `);
 
   // ค่าเริ่มต้นของแบรนด์ (แก้ได้ในหลังบ้าน)

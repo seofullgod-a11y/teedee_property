@@ -379,10 +379,14 @@
         if (prov.items?.length) {
           document.getElementById('areaSec').style.display = 'block';
           document.getElementById('areaGrid').innerHTML = prov.items.map(p => `
-            <a class="area-tile" href="/search?q=${encodeURIComponent(p.province)}">
+            <a class="area-tile" href="/area/${encodeURIComponent(p.province)}">
               <div><h3>${TD.esc(p.province)}</h3><span class="cnt">${p.count} ประกาศ</span></div>
               <span class="arrow">${TD.icons.arrowRight}</span>
-            </a>`).join('');
+            </a>`).join('') + `
+            <a class="area-tile" href="/areas" style="border-style:dashed">
+              <div><h3>ดูทำเลทั้งหมด</h3><span class="cnt">ทุกจังหวัด</span></div>
+              <span class="arrow">${TD.icons.arrowRight}</span>
+            </a>`;
         }
       } catch (err) { console.error(err); }
     })();

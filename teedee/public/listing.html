@@ -101,6 +101,184 @@
       </div>`;
     }
 
+    // ================= ใต้แมพ: 4 ระบบ =================
+    const NB_CATS = [
+      { key: 'transport', label: 'การเดินทาง', ic: 'transit', re: /(BTS|MRT|ARL|รถไฟ|สถานี|แอร์พอร์ต|สนามบิน|ทางด่วน|มอเตอร์เวย์|ท่าเรือ|ขนส่ง|บขส|วิน|ป้ายรถ|bus|station|airport)/i },
+      { key: 'shopping', label: 'ช้อปปิ้ง', ic: 'store', re: /(ห้าง|เซ็นทรัล|central|โลตัส|lotus|บิ๊กซี|bigc|แม็คโคร|makro|ตลาด|มาร์เก็ต|market|mall|เทสโก้|ช้อป|community|พลาซ่า|plaza|ไอคอน|เดอะมอลล์|robinson|โรบินสัน)/i },
+      { key: 'health', label: 'สุขภาพ', ic: 'health', re: /(โรงพยาบาล|รพ\.|คลินิก|hospital|clinic|เภสัช|ร้านยา|ทันตกรรม|เมดิคอล|medical|health)/i },
+      { key: 'education', label: 'การศึกษา', ic: 'edu', re: /(โรงเรียน|มหาวิทยาลัย|มหา.?ลัย|วิทยาลัย|school|university|college|campus|สถาบัน|อนุบาล|เนอสเซอรี่|international)/i },
+      { key: 'lifestyle', label: 'ไลฟ์สไตล์', ic: 'leisure', re: /.*/ }
+    ];
+    function categorizeNearby(nearby) {
+      const groups = {};
+      for (const n of (nearby || [])) {
+        const cat = NB_CATS.find(c => c.key !== 'lifestyle' && c.re.test(n.label)) || NB_CATS[NB_CATS.length - 1];
+        (groups[cat.key] = groups[cat.key] || []).push(n);
+      }
+      return groups;
+    }
+
+    function exploreAreaSection(l) {
+      const hasNearby = (l.nearby || []).length > 0;
+      const prov = l.province || '';
+      if (!hasNearby && !prov) return '';
+      const groups = categorizeNearby(l.nearby);
+      const catHtml = NB_CATS.filter(c => groups[c.key]?.length).map(c => `
+        <div class="nb-cat">
+          <div class="nb-cat-head">${TD.icons[c.ic]} <span>${c.label}</span></div>
+          <div class="nb-cat-list">${groups[c.key].map(n =>
+            `<div class="nb-place"><span>${TD.esc(n.label)}</span><b>${TD.esc(n.dist)}</b></div>`).join('')}</div>
+        </div>`).join('');
+
+      return `
+      <div class="detail-section reveal explore-area">
+        <h2>สำรวจย่านนี้</h2>
+        ${prov ? `
+        <div class="area-insight" id="areaInsight" data-prov="${TD.esc(prov)}">
+          <span class="ai-badge">${TD.icons.sparkles} AI วิเคราะห์ทำเล</span>
+          <p id="areaInsightText" class="ai-loading">กำลังวิเคราะห์ย่าน${TD.esc(prov)}…</p>
+        </div>` : ''}
+        ${catHtml ? `<div class="nb-cats">${catHtml}</div>` : ''}
+        ${prov ? `<a class="area-cta" href="/area/${encodeURIComponent(prov)}">${TD.icons.mapSearch} ดูอสังหาฯ ทั้งหมดใน${TD.esc(prov)} <span class="ac-arrow">${TD.icons.arrowRight}</span></a>` : ''}
+      </div>`;
+    }
+
+    // ---- ฮับยอดนิยม (พิกัดคงที่) สำหรับประเมินระยะเส้นตรงแบบฟรี ----
+    const HUBS = [
+      { name: 'สนามบินสุวรรณภูมิ', lat: 13.6900, lng: 100.7501 },
+      { name: 'สนามบินดอนเมือง', lat: 13.9126, lng: 100.6068 },
+      { name: 'สยาม / ใจกลางกรุงเทพฯ', lat: 13.7460, lng: 100.5340 },
+      { name: 'สถานีกลางกรุงเทพอภิวัฒน์', lat: 13.8027, lng: 100.5397 }
+    ];
+    function haversineKm(la1, lo1, la2, lo2) {
+      const R = 6371, toR = x => x * Math.PI / 180;
+      const dLa = toR(la2 - la1), dLo = toR(lo2 - lo1);
+      const s = Math.sin(dLa / 2) ** 2 + Math.cos(toR(la1)) * Math.cos(toR(la2)) * Math.sin(dLo / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(s));
+    }
+    function commuteSection(l) {
+      const lat = Number(l.latitude), lng = Number(l.longitude);
+      if (!lat || !lng) return '';
+      const rows = HUBS.map(h => {
+        const km = haversineKm(lat, lng, h.lat, h.lng);
+        const dir = `https://www.google.com/maps/dir/?api=1&origin=${lat},${lng}&destination=${h.lat},${h.lng}`;
+        return `<div class="cm-row">
+          <span class="cm-name">${TD.icons.pin} ${TD.esc(h.name)}</span>
+          <span class="cm-dist">${km < 10 ? km.toFixed(1) : Math.round(km)} กม.</span>
+          <a class="cm-go" href="${dir}" target="_blank" rel="noopener">ดูเส้นทาง</a>
+        </div>`;
+      }).join('');
+      return `
+      <div class="detail-section reveal commute-sec">
+        <h2>เวลา/ระยะเดินทางจากที่นี่</h2>
+        <div class="cm-list">${rows}</div>
+        <div class="cm-custom">
+          <input id="cmInput" placeholder="พิมพ์จุดหมาย เช่น ที่ทำงาน มหาวิทยาลัย…">
+          <button class="btn" id="cmBtn" type="button">${TD.icons.route} ดูเส้นทาง</button>
+        </div>
+        <p class="cm-note">* ระยะเป็นเส้นตรงโดยประมาณ — กด "ดูเส้นทาง" เพื่อดูเวลาจริงและเส้นทางขับรถใน Google Maps</p>
+      </div>`;
+    }
+
+    function viewingSection(l) {
+      const today = new Date().toISOString().slice(0, 10);
+      return `
+      <div class="detail-section reveal viewing-sec">
+        <div class="vw-card">
+          <div class="vw-head">${TD.icons.calendar}<div><h2 style="border:0;padding:0;margin:0">นัดชมสถานที่จริง</h2><p>เลือกวัน-เวลาที่สะดวก ทีมงานจะยืนยันนัดกลับโดยเร็ว</p></div></div>
+          <div class="vw-grid">
+            <label>วันที่<input type="date" id="vwDate" min="${today}"></label>
+            <label>ช่วงเวลา<select id="vwTime">
+              <option value="ช่วงเช้า (09:00–12:00)">ช่วงเช้า (09:00–12:00)</option>
+              <option value="ช่วงบ่าย (12:00–15:00)">ช่วงบ่าย (12:00–15:00)</option>
+              <option value="ช่วงเย็น (15:00–18:00)">ช่วงเย็น (15:00–18:00)</option>
+              <option value="ยืดหยุ่นได้">ยืดหยุ่นได้ / แล้วแต่สะดวก</option>
+            </select></label>
+            <label>ชื่อ<input id="vwName" placeholder="ชื่อของคุณ *"></label>
+            <label>เบอร์/LINE<input id="vwContact" placeholder="เบอร์โทร หรือ LINE ID *"></label>
+          </div>
+          <div class="form-msg" id="vwMsg"></div>
+          <button class="btn btn-primary" id="vwBtn" style="justify-content:center;width:100%">${TD.icons.calendar} ขอนัดเข้าชม</button>
+        </div>
+      </div>`;
+    }
+
+    function sameAreaSection(l) {
+      if (!l.province) return '';
+      return `<div class="detail-section reveal same-area-sec" id="sameAreaSec" style="display:none">
+        <div class="sa-head"><h2>ทรัพย์อื่นใน${TD.esc(l.province)}</h2>
+          <a class="sa-all" href="/area/${encodeURIComponent(l.province)}">ดูทั้งหมด ${TD.icons.arrowRight}</a></div>
+        <div class="grid" id="sameAreaGrid"></div>
+      </div>`;
+    }
+
+    function initBelowMap(l) {
+      // 1) AI วิเคราะห์ย่าน
+      const ai = $('areaInsight');
+      if (ai && l.province) {
+        fetch('/api/area-insight?province=' + encodeURIComponent(l.province))
+          .then(r => r.json())
+          .then(d => {
+            const el = $('areaInsightText');
+            if (!el) return;
+            if (d.insight) { el.textContent = d.insight; el.classList.remove('ai-loading'); }
+            else { ai.style.display = 'none'; }
+          }).catch(() => { const el = $('areaInsightText'); if (el) el.parentElement.style.display = 'none'; });
+      }
+
+      // 3) เดินทาง — ปุ่มจุดหมายกำหนดเอง
+      const cmBtn = $('cmBtn'), cmInput = $('cmInput');
+      if (cmBtn && cmInput) {
+        const go = () => {
+          const q = cmInput.value.trim();
+          if (!q) { cmInput.focus(); return; }
+          const lat = Number(l.latitude), lng = Number(l.longitude);
+          window.open(`https://www.google.com/maps/dir/?api=1&origin=${lat},${lng}&destination=${encodeURIComponent(q)}`, '_blank', 'noopener');
+        };
+        cmBtn.addEventListener('click', go);
+        cmInput.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+      }
+
+      // 2) นัดชมสถานที่
+      const vwBtn = $('vwBtn');
+      if (vwBtn) {
+        vwBtn.addEventListener('click', async () => {
+          const date = $('vwDate').value, time = $('vwTime').value;
+          const name = $('vwName').value.trim(), contact = $('vwContact').value.trim();
+          const msg = $('vwMsg');
+          if (!date) { msg.textContent = 'กรุณาเลือกวันที่'; msg.className = 'form-msg err'; return; }
+          if (!name || !contact) { msg.textContent = 'กรุณากรอกชื่อ และเบอร์/LINE'; msg.className = 'form-msg err'; return; }
+          const isPhone = /[0-9]{6,}/.test(contact.replace(/[^0-9]/g, ''));
+          vwBtn.disabled = true; msg.textContent = 'กำลังส่ง…'; msg.className = 'form-msg';
+          try {
+            const dateTxt = new Date(date).toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            await TD.post('/api/inquiries', {
+              listing_id: l.id, name,
+              phone: isPhone ? contact : '', line_id: isPhone ? '' : contact,
+              message: `📅 ขอนัดเข้าชมสถานที่: ${dateTxt} · ${time}`
+            });
+            document.querySelector('.viewing-sec .vw-card').innerHTML =
+              `<div class="vw-success">${TD.icons.check}<h3>ส่งคำขอนัดชมแล้ว!</h3><p>ทีมงานจะติดต่อยืนยันนัด <b>${TD.esc(dateTxt)} · ${TD.esc(time)}</b> กลับโดยเร็วครับ</p></div>`;
+          } catch (e) {
+            vwBtn.disabled = false; msg.textContent = e.message || 'ส่งไม่สำเร็จ ลองใหม่อีกครั้ง'; msg.className = 'form-msg err';
+          }
+        });
+      }
+
+      // 4) ทรัพย์อื่นในทำเลเดียวกัน
+      if (l.province) {
+        fetch(`/api/listings-in-area?province=${encodeURIComponent(l.province)}&exclude=${l.id}`)
+          .then(r => r.json())
+          .then(d => {
+            const items = (d.items || []).slice(0, 3);
+            if (!items.length) return;
+            $('sameAreaGrid').innerHTML = items.map(s => TD.card(s)).join('');
+            $('sameAreaSec').style.display = 'block';
+            initReveal();
+          }).catch(() => {});
+      }
+    }
+
     // ================= Load & Render =================
     let L = null;
     async function load() {
@@ -190,6 +368,10 @@
           ${checkSection('สิ่งอำนวยความสะดวกส่วนกลาง', l.amenities)}
           ${nearby ? `<div class="detail-section reveal"><h2>สถานที่ใกล้เคียง</h2><div class="hl-list">${nearby}</div></div>` : ''}
           ${mapSection(l)}
+          ${exploreAreaSection(l)}
+          ${commuteSection(l)}
+          ${viewingSection(l)}
+          ${sameAreaSection(l)}
         </div>
 
         <div class="sidebar">
@@ -250,6 +432,7 @@
       initContact(l);
       initReveal();
       initChat(l);
+      initBelowMap(l);
 
       if (data.similar?.length) {
         $('similarSec').style.display = 'block';

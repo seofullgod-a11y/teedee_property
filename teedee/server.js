@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const { pool, migrate, seed } = require('./db');
+const seo = require('./seo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,7 +26,7 @@ async function notifyTelegram(text) {
 const tgEsc = (s) => String(s || '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
 app.use(express.json({ limit: '6mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // ---------- Helpers ----------
 const adminToken = () =>
@@ -170,6 +171,73 @@ app.get('/api/meta/provinces', async (req, res) => {
        GROUP BY province ORDER BY count DESC, province LIMIT 8`);
     res.json({ items: rows });
   } catch (e) { res.status(500).json({ error: 'server error' }); }
+});
+
+// ประกาศอื่นในทำเลเดียวกัน (จังหวัดตรงกัน ไม่รวมประกาศปัจจุบัน)
+app.get('/api/listings-in-area', async (req, res) => {
+  try {
+    const province = String(req.query.province || '').slice(0, 80);
+    const exclude = Number(req.query.exclude) || 0;
+    if (!province) return res.json({ items: [] });
+    const { rows } = await pool.query(
+      `SELECT ${LISTING_FIELDS} FROM listings
+       WHERE status='active' AND province = $1 AND id <> $2
+       ORDER BY featured DESC, created_at DESC LIMIT 6`, [province, exclude]);
+    res.json({ items: rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+// AI วิเคราะห์ย่าน (แคชต่อจังหวัด — สร้างครั้งเดียวแล้วใช้ซ้ำ ประหยัด API)
+const areaInsightFallback = (province, cats) => {
+  const has = (c) => cats.includes(c);
+  const kinds = [];
+  if (has('condo')) kinds.push('คอนโด');
+  if (has('house')) kinds.push('บ้านเดี่ยว');
+  if (has('townhouse')) kinds.push('ทาวน์เฮาส์');
+  if (has('land')) kinds.push('ที่ดิน');
+  const kindTxt = kinds.length ? `มีทั้ง${kinds.join(' ')}ให้เลือก ` : '';
+  return `${province}เป็นทำเลที่มีอสังหาริมทรัพย์หลากหลายให้เลือก ${kindTxt}เหมาะทั้งอยู่อาศัยเองและลงทุนปล่อยเช่า — ดูประกาศทั้งหมดในย่านนี้เพื่อเปรียบเทียบราคาและทำเลได้เลย`;
+};
+
+app.get('/api/area-insight', async (req, res) => {
+  try {
+    const province = String(req.query.province || '').slice(0, 80).trim();
+    if (!province) return res.json({ insight: '', cached: false });
+
+    const cached = await pool.query('SELECT insight FROM area_insights WHERE province = $1', [province]);
+    if (cached.rows[0]?.insight) return res.json({ insight: cached.rows[0].insight, cached: true });
+
+    // รวมหมวดที่มีในจังหวัด (ไว้ใช้ทั้ง AI และ fallback)
+    const catRows = await pool.query(
+      `SELECT DISTINCT category FROM listings WHERE status='active' AND province = $1`, [province]);
+    const cats = catRows.rows.map(r => r.category);
+
+    if (!ANTHROPIC_API_KEY) return res.json({ insight: areaInsightFallback(province, cats), cached: false });
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 260,
+        system: 'คุณคือผู้เชี่ยวชาญอสังหาริมทรัพย์ไทย เขียนบทวิเคราะห์ย่านแบบสั้น กระชับ เป็นกลาง เพื่อช่วยผู้ซื้อ/เช่าตัดสินใจ',
+        messages: [{
+          role: 'user',
+          content: `เขียนบทวิเคราะห์ทำเล "${province}" สำหรับคนกำลังหาที่อยู่ ความยาว 2-3 ประโยค ครอบคลุม: บรรยากาศ/จุดเด่นของย่าน, เหมาะกับใคร (ครอบครัว/คนทำงาน/นักลงทุน), และภาพรวมการใช้ชีวิต โทนกลาง ๆ ไม่โฆษณาเกินจริง ไม่ต้องขึ้นหัวข้อ ตอบเป็นภาษาไทยล้วน` }]
+      })
+    });
+    const out = await r.json();
+    if (!r.ok) { console.error('area-insight AI error:', out?.error?.message); return res.json({ insight: areaInsightFallback(province, cats), cached: false }); }
+    const text = (out.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
+    if (text) {
+      await pool.query(
+        `INSERT INTO area_insights (province, insight) VALUES ($1,$2)
+         ON CONFLICT (province) DO UPDATE SET insight = EXCLUDED.insight, created_at = now()`,
+        [province, text.slice(0, 1200)]).catch(() => {});
+      return res.json({ insight: text, cached: false });
+    }
+    res.json({ insight: areaInsightFallback(province, cats), cached: false });
+  } catch (e) { console.error(e); res.json({ insight: '', cached: false }); }
 });
 
 // ---------- Admin API ----------
@@ -570,6 +638,7 @@ app.post('/api/admin/ai/generate', requireAdmin, async (req, res) => {
 // ---------- Pages ----------
 const fs = require('fs');
 const listingTpl = fs.readFileSync(path.join(__dirname, 'public/listing.html'), 'utf8');
+const homeTpl = fs.readFileSync(path.join(__dirname, 'public/index.html'), 'utf8');
 const htmlEsc = (s) => String(s || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 const baseUrl = (req) => process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 
@@ -577,9 +646,11 @@ app.get('/listing/:id', async (req, res) => {
   const id = Number(req.params.id);
   try {
     const { rows } = await pool.query(
-      `SELECT title, description, images, price, listing_type FROM listings WHERE id = $1 AND status = 'active'`, [id]);
+      `SELECT id, title, description, images, price, listing_type, category, province
+       FROM listings WHERE id = $1 AND status = 'active'`, [id]);
     if (rows[0]) {
       const l = rows[0];
+      const base = baseUrl(req);
       const priceTxt = l.listing_type === 'rent'
         ? `฿${Number(l.price).toLocaleString('th-TH')}/เดือน`
         : `฿${Number(l.price).toLocaleString('th-TH')}`;
@@ -588,29 +659,120 @@ app.get('/listing/:id', async (req, res) => {
       const img = htmlEsc((l.images || [])[0] || '');
       const og = `<title>${title}</title>
   <meta name="description" content="${desc}">
+  <link rel="canonical" href="${base}/listing/${id}">
   <meta property="og:type" content="website">
+  <meta property="og:locale" content="th_TH">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${desc}">
   ${img ? `<meta property="og:image" content="${img}">` : ''}
-  <meta property="og:url" content="${baseUrl(req)}/listing/${id}">
-  <meta name="twitter:card" content="summary_large_image">`;
+  <meta property="og:url" content="${base}/listing/${id}">
+  <meta name="twitter:card" content="summary_large_image">
+  ${seo.listingLd(l, base)}`;
       return res.send(listingTpl.replace(/<title>[^<]*<\/title>/, og));
     }
   } catch (e) { console.error(e); }
   res.send(listingTpl);
 });
 
+// ---------- SEO: หน้าแรก (inject structured data) ----------
+app.get('/', async (req, res) => {
+  try {
+    const base = baseUrl(req);
+    const brand = brandName(await getSettings().catch(() => ({})));
+    const inject = `  <link rel="canonical" href="${base}/">\n  ${seo.homeLd(base, brand)}\n</head>`;
+    return res.send(homeTpl.replace('</head>', inject));
+  } catch (e) {
+    return res.sendFile(path.join(__dirname, 'public/index.html'));
+  }
+});
+
+// ---------- SEO: helpers สำหรับหน้าทำเล ----------
+async function areaProvinces(limit = 60) {
+  const { rows } = await pool.query(
+    `SELECT province, COUNT(*)::int AS count FROM listings
+     WHERE status='active' AND province <> ''
+     GROUP BY province ORDER BY count DESC, province LIMIT $1`, [limit]);
+  return rows;
+}
+
+async function areaData(location, type, category) {
+  const where = [`status='active'`, `province = $1`];
+  const params = [location];
+  if (type) { params.push(type); where.push(`listing_type = $${params.length}`); }
+  if (category) { params.push(category); where.push(`category = $${params.length}`); }
+  const { rows } = await pool.query(
+    `SELECT ${LISTING_FIELDS} FROM listings WHERE ${where.join(' AND ')}
+     ORDER BY featured DESC, created_at DESC LIMIT 60`, params);
+
+  // สถิติของทั้งทำเล (ไม่กรอง type/category) เอาไว้ทำชิป + intro
+  const agg = await pool.query(
+    `SELECT listing_type, category, price FROM listings WHERE status='active' AND province = $1`, [location]);
+  const stats = { types: {}, cats: {}, rentMin: null, saleMin: null };
+  for (const r of agg.rows) {
+    stats.types[r.listing_type] = (stats.types[r.listing_type] || 0) + 1;
+    stats.cats[r.category] = (stats.cats[r.category] || 0) + 1;
+    const p = Number(r.price) || 0;
+    if (r.listing_type === 'rent') stats.rentMin = stats.rentMin == null ? p : Math.min(stats.rentMin, p);
+    if (r.listing_type === 'sale') stats.saleMin = stats.saleMin == null ? p : Math.min(stats.saleMin, p);
+  }
+  return { listings: rows, stats };
+}
+
+// ---------- SEO: หน้ารวมทำเลทั้งหมด ----------
+app.get('/areas', async (req, res) => {
+  try {
+    const base = baseUrl(req);
+    const brand = brandName(await getSettings().catch(() => ({})));
+    const provinces = await areaProvinces();
+    res.send(seo.renderAreasIndex({ provinces, baseUrl: base, brand }));
+  } catch (e) { console.error(e); res.status(500).send('เกิดข้อผิดพลาด'); }
+});
+
+// ---------- SEO: หน้าทำเลอัตโนมัติ  /area/:location[/:type][/:category] ----------
+app.get('/area/:location/:type?/:category?', async (req, res) => {
+  try {
+    const location = String(req.params.location || '').slice(0, 80).trim();
+    let type = req.params.type;
+    let category = req.params.category;
+    if (!location) return res.redirect(302, '/areas');
+    // ตรวจสอบ/ทำความสะอาดพารามิเตอร์ — ค่าไม่ถูกต้องให้ redirect ไปหน้าที่ถูกต้อง
+    if (type && !seo.TYPES.includes(type)) return res.redirect(302, seo.areaUrl(location));
+    if (category && !seo.CATS.includes(category)) return res.redirect(302, seo.areaUrl(location, type));
+
+    const base = baseUrl(req);
+    const brand = brandName(await getSettings().catch(() => ({})));
+    const [{ listings, stats }, provinces] = await Promise.all([
+      areaData(location, type, category),
+      areaProvinces()
+    ]);
+    stats.brand = brand;
+    res.send(seo.renderAreaPage({ location, type, category, listings, stats, provinces, baseUrl: base }));
+  } catch (e) { console.error(e); res.status(500).send('เกิดข้อผิดพลาด'); }
+});
+
 app.get('/sitemap.xml', async (req, res) => {
   try {
-    const { rows } = await pool.query(`SELECT id, updated_at FROM listings WHERE status = 'active' ORDER BY id`);
     const base = baseUrl(req);
+    const [listings, combos] = await Promise.all([
+      pool.query(`SELECT id, updated_at FROM listings WHERE status='active' ORDER BY id`),
+      pool.query(`SELECT province, listing_type, category, COUNT(*)::int AS c
+                  FROM listings WHERE status='active' AND province <> ''
+                  GROUP BY province, listing_type, category`)
+    ]);
+    const seen = new Set();
+    const add = (loc) => { if (!seen.has(loc)) seen.add(loc); };
+    add(`${base}/`); add(`${base}/search`); add(`${base}/areas`);
+    for (const r of combos.rows) {
+      add(base + seo.areaUrl(r.province));                                  // hub ทำเล
+      add(base + seo.areaUrl(r.province, r.listing_type));                  // ทำเล + เช่า/ขาย
+      add(base + seo.areaUrl(r.province, r.listing_type, r.category));      // ทำเล + ประเภท + หมวด
+    }
     const urls = [
-      `<url><loc>${base}/</loc></url>`,
-      `<url><loc>${base}/search</loc></url>`,
-      ...rows.map(r => `<url><loc>${base}/listing/${r.id}</loc><lastmod>${new Date(r.updated_at).toISOString().slice(0, 10)}</lastmod></url>`)
+      ...[...seen].map(u => `<url><loc>${u}</loc></url>`),
+      ...listings.rows.map(r => `<url><loc>${base}/listing/${r.id}</loc><lastmod>${new Date(r.updated_at).toISOString().slice(0, 10)}</lastmod></url>`)
     ].join('');
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`);
-  } catch (e) { res.status(500).send(''); }
+  } catch (e) { console.error(e); res.status(500).send(''); }
 });
 
 app.get('/robots.txt', (req, res) =>

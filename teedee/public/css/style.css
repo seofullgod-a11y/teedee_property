@@ -885,3 +885,100 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   .facts-grid { grid-template-columns: 1fr; gap: 0; }
   .amen-grid { grid-template-columns: 1fr; gap: 8px; }
 }
+
+/* ---------- SEO Area Landing Pages ---------- */
+.area-page { padding-bottom: 60px; }
+.area-head { margin: 18px 0 24px; }
+.area-head h1 { font-family: var(--font-display); font-size: clamp(1.5rem, 4vw, 2.1rem); font-weight: 600; line-height: 1.25; letter-spacing: .01em; }
+.area-sub { margin-top: 10px; color: var(--muted); font-size: var(--fs-sm); line-height: 1.7; max-width: 760px; }
+.breadcrumb .sep { color: var(--line); }
+.area-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 18px; }
+.area-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); color: var(--text);
+  font-size: var(--fs-xs); font-weight: 500; white-space: nowrap; transition: border-color .18s, background .18s, color .18s;
+}
+.area-chip:hover { border-color: var(--gold); color: var(--gold); }
+.area-chip.on { background: var(--gold); border-color: var(--gold); color: #fff; }
+.area-chip.clear { border-style: dashed; color: var(--muted); }
+.area-chip.clear:hover { color: var(--gold); }
+.chip-div { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+.empty-area { text-align: center; padding: 48px 20px; color: var(--muted); border: 1px dashed var(--line); border-radius: 16px; }
+.empty-area p { margin-bottom: 14px; }
+.area-more { margin-top: 48px; padding-top: 30px; border-top: 1px solid var(--line); }
+.area-more h2 { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 500; margin-bottom: 16px; }
+.area-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.area-links a {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 15px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); font-size: var(--fs-xs); font-weight: 500;
+  transition: border-color .18s, transform .18s;
+}
+.area-links a:hover { border-color: var(--gold); transform: translateY(-1px); }
+.area-links a span { color: var(--muted); font-weight: 400; }
+.area-links a.all { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 40%, var(--line)); }
+.area-links a.all svg { width: 15px; height: 15px; }
+
+/* ---------- Below-map: Explore area / Commute / Viewing / Same-area ---------- */
+/* 1) สำรวจย่านนี้ */
+.area-insight { background: var(--gold-soft); border: 1px solid color-mix(in srgb, var(--gold) 22%, var(--line)); border-radius: 14px; padding: 16px 18px; margin-bottom: 18px; }
+.ai-badge { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); font-weight: 500; color: var(--gold); margin-bottom: 8px; }
+.ai-badge svg { width: 15px; height: 15px; }
+#areaInsightText { color: var(--ink-2); line-height: 1.8; font-size: var(--fs-sm); }
+.ai-loading { color: var(--muted); font-style: italic; }
+.nb-cats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.nb-cat { background: var(--bg); border: 1px solid var(--line); border-radius: 13px; padding: 14px 16px; }
+.nb-cat-head { display: flex; align-items: center; gap: 7px; font-weight: 500; font-size: var(--fs-sm); margin-bottom: 10px; color: var(--ink); }
+.nb-cat-head svg { width: 17px; height: 17px; color: var(--gold); }
+.nb-cat-list { display: flex; flex-direction: column; gap: 7px; }
+.nb-place { display: flex; justify-content: space-between; gap: 10px; font-size: var(--fs-xs); color: var(--ink-2); }
+.nb-place b { color: var(--gold); font-weight: 500; white-space: nowrap; }
+.area-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 11px 18px; border-radius: 999px;
+  background: #191917; color: #fff; font-size: var(--fs-sm); font-weight: 500; transition: transform .18s, background .18s; }
+.area-cta:hover { transform: translateY(-2px); background: #000; }
+.area-cta svg { width: 16px; height: 16px; }
+.area-cta .ac-arrow { margin-left: -2px; }
+
+/* 3) เดินทาง */
+.cm-list { display: flex; flex-direction: column; }
+.cm-row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-bottom: 1px dashed var(--line); }
+.cm-row:last-child { border-bottom: 0; }
+.cm-name { flex: 1; display: flex; align-items: center; gap: 7px; font-size: var(--fs-sm); color: var(--ink-2); }
+.cm-name svg { width: 16px; height: 16px; color: var(--gold); flex-shrink: 0; }
+.cm-dist { font-weight: 500; font-size: var(--fs-sm); color: var(--ink); white-space: nowrap; }
+.cm-go { font-size: var(--fs-xs); color: var(--gold); font-weight: 500; white-space: nowrap; padding: 5px 12px; border: 1px solid color-mix(in srgb, var(--gold) 35%, var(--line)); border-radius: 999px; transition: background .18s; }
+.cm-go:hover { background: var(--gold-soft); }
+.cm-custom { display: flex; gap: 8px; margin-top: 14px; }
+.cm-custom input { flex: 1; padding: 11px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg); font-size: var(--fs-sm); color: var(--ink-2); outline: none; }
+.cm-custom input:focus { border-color: var(--gold); }
+.cm-custom .btn { white-space: nowrap; }
+.cm-custom .btn svg { width: 16px; height: 16px; }
+.cm-note { font-size: .76rem; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+
+/* 2) นัดชมสถานที่ */
+.vw-card { background: linear-gradient(180deg, var(--gold-soft), var(--card)); border: 1px solid color-mix(in srgb, var(--gold) 22%, var(--line)); border-radius: 16px; padding: 22px; }
+.vw-head { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 18px; }
+.vw-head > svg { width: 30px; height: 30px; color: var(--gold); flex-shrink: 0; margin-top: 2px; }
+.vw-head h2 { font-family: var(--font-display); font-size: var(--fs-md); font-weight: 500; }
+.vw-head p { font-size: var(--fs-xs); color: var(--muted); margin-top: 3px; line-height: 1.6; }
+.vw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.vw-grid label { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-xs); color: var(--ink-2); font-weight: 500; }
+.vw-grid input, .vw-grid select { padding: 11px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--card); font-size: var(--fs-sm); color: var(--ink-2); outline: none; font-family: inherit; }
+.vw-grid input:focus, .vw-grid select:focus { border-color: var(--gold); }
+.vw-success { text-align: center; padding: 20px 10px; }
+.vw-success svg { width: 44px; height: 44px; color: #4c5a3f; background: var(--ok-bg); border-radius: 50%; padding: 9px; margin-bottom: 12px; }
+.vw-success h3 { font-family: var(--font-display); font-size: var(--fs-md); font-weight: 500; margin-bottom: 6px; }
+.vw-success p { font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.7; }
+
+/* 4) ทรัพย์อื่นในทำเลเดียวกัน */
+.sa-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.sa-head h2 { font-size: var(--fs-md); font-weight: 500; border: 0; padding: 0; margin: 0; }
+.sa-all { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-xs); color: var(--gold); font-weight: 500; white-space: nowrap; }
+.sa-all svg { width: 15px; height: 15px; }
+.same-area-sec .grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+
+@media (max-width: 560px) {
+  .nb-cats { grid-template-columns: 1fr; }
+  .vw-grid { grid-template-columns: 1fr; }
+  .cm-custom { flex-direction: column; }
+  .cm-custom .btn { justify-content: center; }
+}
