@@ -70,7 +70,6 @@
         </div>
       </div>
 
-      <div class="stats" id="stats"></div>
     </div>
   </header>
 
@@ -90,6 +89,20 @@
         <div class="skeleton" style="height:380px"></div>
         <div class="skeleton" style="height:380px"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- Recently viewed (แสดงเมื่อมีประวัติ) -->
+  <section class="section" id="recentSec" style="display:none;padding-top:0">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow-text">Recently Viewed</span>
+          <h2>ดูล่าสุด</h2>
+          <p>ประกาศที่คุณเพิ่งเปิดดู</p>
+        </div>
+      </div>
+      <div class="grid" id="recentGrid"></div>
     </div>
   </section>
 
@@ -130,6 +143,7 @@
         <h2>ทำไมต้อง TeeDee</h2>
         <p class="sub">เราตั้งใจให้การหาบ้านเป็นเรื่องง่ายและโปร่งใสที่สุด</p>
         <div class="why-grid" id="whyGrid"></div>
+        <div class="why-stats" id="stats"></div>
       </div>
     </div>
   </section>
@@ -283,6 +297,18 @@
           <div class="stat"><div class="num">${total.toLocaleString()}</div><div class="lbl">ประกาศทั้งหมด</div></div>
           <div class="stat"><div class="num">${rentCount.total.toLocaleString()}</div><div class="lbl">สำหรับเช่า</div></div>
           <div class="stat"><div class="num">${saleCount.total.toLocaleString()}</div><div class="lbl">สำหรับขาย</div></div>`;
+
+        // ดูล่าสุด
+        const recentIds = TD.recent();
+        if (recentIds.length) {
+          const rr = await fetch('/api/listings?ids=' + recentIds.join(',')).then(r => r.json());
+          const map = new Map(rr.items.map(i => [i.id, i]));
+          const items = recentIds.map(id => map.get(id)).filter(Boolean).slice(0, 3);
+          if (items.length) {
+            document.getElementById('recentSec').style.display = 'block';
+            document.getElementById('recentGrid').innerHTML = items.map(l => TD.card(l)).join('');
+          }
+        }
       } catch (err) { console.error(err); }
     })();
 

@@ -57,6 +57,7 @@
       }
       const l = data.item;
       document.title = `${l.title} — TeeDee`;
+      TD.pushRecent(l.id);
 
       document.getElementById('crumb').innerHTML = `
         <a href="/">หน้าแรก</a> › <a href="/search?type=${l.listing_type}">${TD.typeLabel[l.listing_type]}</a>
@@ -79,7 +80,10 @@
       document.getElementById('wrap').innerHTML = `
       <div>
         <div class="gallery">
-          <div class="main"><img id="mainImg" src="${TD.esc(imgs[0] || '')}" alt="${TD.esc(l.title)}"></div>
+          <div class="main" style="position:relative">
+            <img id="mainImg" src="${TD.esc(imgs[0] || '')}" alt="${TD.esc(l.title)}">
+            <button class="fav-btn ${TD.favs().includes(Number(l.id)) ? 'on' : ''}" data-fav="${l.id}" type="button" aria-label="บันทึกรายการโปรด" style="width:42px;height:42px">${TD.icons.heart}</button>
+          </div>
           ${imgs.length > 1 ? `<div class="thumbs" id="thumbs">${imgs.map((im, i) =>
             `<img src="${TD.esc(im)}" class="${i === 0 ? 'active' : ''}" data-src="${TD.esc(im)}" alt="รูปที่ ${i + 1}">`).join('')}</div>` : ''}
         </div>
@@ -102,8 +106,33 @@
           <div class="p">${TD.price(l.price, l.listing_type)}${l.listing_type === 'rent' ? '<span class="per"> /เดือน</span>' : ''}</div>
           ${l.listing_type === 'sale' ? `<div class="per">≈ ฿${Number(l.price).toLocaleString('th-TH')}</div>` : ''}
         </div>
+        ${l.listing_type === 'sale' ? `
+        <div class="calc-card">
+          <h3 style="display:flex;align-items:center;gap:8px">${TD.icons.calc} คำนวณผ่อนต่อเดือน</h3>
+          <p class="note">ประเมินเบื้องต้นจากราคาประกาศ ${TD.price(l.price, 'sale')}</p>
+          <div class="calc-row">
+            <div class="lbl"><span>เงินดาวน์</span><b id="dpVal"></b></div>
+            <input type="range" id="dpRange" min="0" max="50" step="5" value="10">
+          </div>
+          <div class="calc-row">
+            <div class="lbl"><span>ดอกเบี้ยต่อปี</span><b id="irVal"></b></div>
+            <input type="range" id="irRange" min="2" max="9" step="0.25" value="6">
+          </div>
+          <div class="calc-row">
+            <div class="lbl"><span>ระยะเวลากู้</span><b id="yrVal"></b></div>
+            <input type="range" id="yrRange" min="5" max="40" step="5" value="30">
+          </div>
+          <div class="calc-result"><span class="t">ผ่อนประมาณ</span><span class="v" id="monthly"></span></div>
+          <p class="calc-sub">ตัวเลขโดยประมาณเพื่อการตัดสินใจเบื้องต้นเท่านั้น เงื่อนไขจริงขึ้นอยู่กับธนาคารและผู้กู้แต่ละราย</p>
+        </div>` : ''}
         <div class="contact-card">
           <h3>สนใจประกาศนี้? ทักหาเราเลย</h3>
+          ${(l.contact_phone || l.contact_line) ? `
+          <div class="direct-contact">
+            ${l.contact_phone ? `<a class="dc-phone" href="tel:${TD.esc(l.contact_phone)}">${TD.icons.phone} โทร ${TD.esc(l.contact_phone)}</a>` : ''}
+            ${l.contact_line ? `<a class="dc-line" href="https://line.me/R/ti/p/~${encodeURIComponent(l.contact_line)}" target="_blank" rel="noopener">💬 แอด LINE: ${TD.esc(l.contact_line)}</a>` : ''}
+          </div>
+          <div class="or-sep">หรือฝากข้อความไว้</div>` : ''}
           <div class="frm">
             <input id="c-name" placeholder="ชื่อของคุณ *">
             <input id="c-phone" placeholder="เบอร์โทร">
@@ -113,8 +142,52 @@
             <button class="btn btn-primary" id="sendBtn" style="justify-content:center">${TD.icons.phone} ส่งข้อความติดต่อ</button>
             <p style="font-size:.78rem;color:var(--muted);text-align:center">ทีมงานจะส่งต่อให้ผู้ดูแลทรัพย์ติดต่อกลับโดยเร็ว</p>
           </div>
+          <div class="share-row">
+            <button type="button" id="copyLink">${TD.icons.copy} คัดลอกลิงก์</button>
+            <a href="https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener">💬 แชร์ LINE</a>
+            <button type="button" id="shareBtn">${TD.icons.share} แชร์</button>
+          </div>
         </div>
       </div>`;
+
+      // ---- Loan calculator ----
+      if (l.listing_type === 'sale') {
+        const P = Number(l.price) || 0;
+        const fmt = (n) => '฿' + Math.round(n).toLocaleString('th-TH');
+        function paintRange(el) {
+          const pct = (el.value - el.min) / (el.max - el.min) * 100;
+          el.style.setProperty('--fill', pct + '%');
+        }
+        function calc() {
+          const dp = Number(dpRange.value), ir = Number(irRange.value), yr = Number(yrRange.value);
+          document.getElementById('dpVal').textContent = dp + '% (' + fmt(P * dp / 100) + ')';
+          document.getElementById('irVal').textContent = ir.toFixed(2) + '%';
+          document.getElementById('yrVal').textContent = yr + ' ปี';
+          const loan = P * (1 - dp / 100), r = ir / 100 / 12, n = yr * 12;
+          const m = r === 0 ? loan / n : loan * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+          document.getElementById('monthly').textContent = fmt(m) + '/เดือน';
+          [dpRange, irRange, yrRange].forEach(paintRange);
+        }
+        const dpRange = document.getElementById('dpRange'),
+              irRange = document.getElementById('irRange'),
+              yrRange = document.getElementById('yrRange');
+        [dpRange, irRange, yrRange].forEach(el => el.addEventListener('input', calc));
+        calc();
+      }
+
+      // ---- Share ----
+      document.getElementById('copyLink').addEventListener('click', async () => {
+        const btn = document.getElementById('copyLink');
+        try {
+          await navigator.clipboard.writeText(location.href);
+          btn.textContent = '✓ คัดลอกแล้ว';
+          setTimeout(() => { btn.innerHTML = TD.icons.copy + ' คัดลอกลิงก์'; }, 1800);
+        } catch { prompt('คัดลอกลิงก์นี้:', location.href); }
+      });
+      document.getElementById('shareBtn').addEventListener('click', () => {
+        if (navigator.share) navigator.share({ title: l.title, url: location.href }).catch(() => {});
+        else document.getElementById('copyLink').click();
+      });
 
       // Gallery switch
       const thumbs = document.getElementById('thumbs');

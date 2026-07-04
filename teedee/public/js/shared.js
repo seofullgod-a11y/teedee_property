@@ -22,12 +22,35 @@ const TD = {
     fileCheck: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 15l2 2l4 -4"/></svg>',
     headset: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-3a8 8 0 1 1 16 0v3"/><path d="M18 19c0 1.657 -2.686 3 -6 3"/><path d="M4 14a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2v-3z"/><path d="M15 14a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2v-3z"/></svg>',
     mapSearch: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 18l-2 -1l-6 3v-13l6 -3l6 3l6 -3v7.5"/><path d="M9 4v13"/><path d="M15 7v5"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M20.2 20.2l1.8 1.8"/></svg>',
-    ban: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M5.7 5.7l12.6 12.6"/></svg>'
+    ban: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M5.7 5.7l12.6 12.6"/></svg>',
+    heart: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/></svg>',
+    share: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M8.7 10.7l6.6 -3.4"/><path d="M8.7 13.3l6.6 3.4"/></svg>',
+    copy: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"/><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"/></svg>',
+    calc: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"/><path d="M8 14l0 .01"/><path d="M12 14l0 .01"/><path d="M16 14l0 .01"/><path d="M8 17l0 .01"/><path d="M12 17l0 .01"/><path d="M16 17l0 .01"/></svg>'
   },
 
   catLabel: { house: 'บ้านเดี่ยว', condo: 'คอนโด', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' },
   catIcon: { house: 'home', condo: 'building', townhouse: 'townhouse', land: 'land', commercial: 'store' },
   typeLabel: { rent: 'เช่า', sale: 'ขาย' },
+
+  favs() {
+    try { return JSON.parse(localStorage.getItem('teedee_favs') || '[]'); } catch { return []; }
+  },
+  toggleFav(id) {
+    id = Number(id);
+    let f = this.favs();
+    f = f.includes(id) ? f.filter(x => x !== id) : [...f, id];
+    localStorage.setItem('teedee_favs', JSON.stringify(f));
+    return f.includes(id);
+  },
+  recent() {
+    try { return JSON.parse(localStorage.getItem('teedee_recent') || '[]'); } catch { return []; }
+  },
+  pushRecent(id) {
+    id = Number(id);
+    const r = [id, ...this.recent().filter(x => x !== id)].slice(0, 8);
+    localStorage.setItem('teedee_recent', JSON.stringify(r));
+  },
 
   esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, m =>
@@ -55,10 +78,12 @@ const TD = {
     const nearby = (l.nearby || []).slice(0, 2).map(n =>
       `<div class="nb"><span class="pill">ใกล้</span>${this.esc(n.label)} <span style="opacity:.7">(${this.esc(n.dist)})</span></div>`).join('');
 
+    const faved = this.favs().includes(Number(l.id));
     return `
     <a class="card" href="/listing/${l.id}">
       <div class="thumb">
         ${img ? `<img src="${this.esc(img)}" alt="${this.esc(l.title)}" loading="lazy">` : ''}
+        <button class="fav-btn ${faved ? 'on' : ''}" data-fav="${l.id}" type="button" aria-label="บันทึกรายการโปรด">${this.icons.heart}</button>
         <span class="badge-type ${l.listing_type}">${this.icons[this.catIcon[l.category] || 'home']} ${this.typeLabel[l.listing_type] || ''}${this.catLabel[l.category] ? ' · ' + this.catLabel[l.category] : ''}</span>
         <span class="price-tag">
           <span class="p">${this.price(l.price, l.listing_type)}</span>
@@ -85,6 +110,7 @@ const TD = {
         <a href="/#categories">ประเภททั้งหมด</a>
       </nav>
       <span class="nav-spacer"></span>
+      <a class="icon-btn" href="/saved" aria-label="รายการโปรด" title="รายการโปรด">${this.icons.heart}</a>
       <a class="btn btn-ghost" href="/#list-cta" style="padding:9px 18px;font-size:.88rem">ลงประกาศ</a>
     </div></div>`;
   },
@@ -109,7 +135,8 @@ const TD = {
           <a href="/search?q=เชียงใหม่">เชียงใหม่</a>
           <a href="/search?q=หัวหิน">หัวหิน</a>
         </div>
-        <div><h4>สำหรับเจ้าของ</h4>
+        <div><h4>เมนูลัด</h4>
+          <a href="/saved">รายการโปรดของฉัน</a>
           <a href="/#list-cta">ลงประกาศฟรี</a>
           <a href="/admin">เข้าสู่ระบบผู้ดูแล</a>
         </div>
@@ -132,3 +159,16 @@ const TD = {
     return j;
   }
 };
+
+
+// global: favorite toggle (ทำงานกับการ์ดทุกใบทุกหน้า)
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-fav]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const on = TD.toggleFav(b.dataset.fav);
+    b.classList.toggle('on', on);
+    b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+  });
+}

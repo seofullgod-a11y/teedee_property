@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายการโปรดของฉัน — TeeDee (ที่ดี)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="nav"></div>
+
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow-text">Saved</span>
+      <h1>รายการโปรดของฉัน</h1>
+      <p>ประกาศที่คุณกดหัวใจไว้ — เก็บบนเครื่องนี้ ไม่ต้องสมัครสมาชิก</p>
+    </div>
+    <div class="grid" id="results" style="margin-top:24px">
+      <div class="skeleton" style="height:380px"></div>
+      <div class="skeleton" style="height:380px"></div>
+    </div>
+    <div style="height:44px"></div>
+  </div>
+
+  <div id="footer"></div>
+
+  <script src="/js/shared.js"></script>
+  <script>
+    document.getElementById('nav').innerHTML = TD.navbar();
+    document.getElementById('footer').innerHTML = TD.footer();
+
+    async function load() {
+      const ids = TD.favs();
+      const box = document.getElementById('results');
+      if (!ids.length) return empty(box);
+      try {
+        const r = await fetch('/api/listings?ids=' + ids.join(',')).then(x => x.json());
+        // เรียงตามลำดับที่กดบันทึก (ใหม่สุดท้าย -> แสดงก่อน)
+        const map = new Map(r.items.map(i => [i.id, i]));
+        const items = [...ids].reverse().map(id => map.get(id)).filter(Boolean);
+        if (!items.length) return empty(box);
+        box.innerHTML = items.map(l => TD.card(l)).join('');
+      } catch { empty(box); }
+    }
+    function empty(box) {
+      box.innerHTML = '';
+      box.insertAdjacentHTML('beforebegin', `
+        <div class="empty-state">${TD.icons.heart}
+          <h3 style="font-family:var(--font-display);margin-bottom:6px">ยังไม่มีรายการโปรด</h3>
+          <p>กดรูปหัวใจบนประกาศที่ถูกใจ แล้วกลับมาดูที่นี่ได้เลย</p>
+          <a class="btn btn-primary" href="/search" style="margin-top:18px">เริ่มค้นหา</a>
+        </div>`);
+    }
+    load();
+
+    // เมื่อกดเอาหัวใจออกในหน้านี้ ให้การ์ดหายไปนุ่ม ๆ
+    document.addEventListener('click', e => {
+      const b = e.target.closest('[data-fav]');
+      if (!b) return;
+      setTimeout(() => {
+        if (!TD.favs().includes(Number(b.dataset.fav))) {
+          const card = b.closest('.card');
+          card.style.transition = 'opacity .3s, transform .3s';
+          card.style.opacity = '0'; card.style.transform = 'scale(.96)';
+          setTimeout(() => { card.remove(); if (!document.querySelector('#results .card')) location.reload(); }, 310);
+        }
+      }, 60);
+    });
+  </script>
+</body>
+</html>

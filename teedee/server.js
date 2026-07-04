@@ -9,6 +9,20 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'teedee1234';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+
+async function notifyTelegram(text) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'HTML' })
+    });
+  } catch (e) { console.error('telegram notify failed:', e.message); }
+}
+const tgEsc = (s) => String(s || '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -33,9 +47,15 @@ const LISTING_FIELDS = `id, title, listing_type, category, price, location_text,
 // GET /api/listings?type=rent&category=condo&q=พญาไท&min=10000&max=50000&beds=2&featured=1&sort=price_asc&page=1
 app.get('/api/listings', async (req, res) => {
   try {
-    const { type, category, q, min, max, beds, featured, sort, page } = req.query;
+    const { type, category, q, min, max, beds, featured, sort, page, ids } = req.query;
     const where = [`status = 'active'`];
     const params = [];
+    if (ids) {
+      const arr = String(ids).split(',').map(Number).filter(n => Number.isInteger(n) && n > 0).slice(0, 60);
+      if (!arr.length) return res.json({ total: 0, page: 1, limit: 24, items: [] });
+      params.push(arr);
+      where.push(`id = ANY($${params.length})`);
+    }
     const add = (sql, val) => { params.push(val); where.push(sql.replace('?', `$${params.length}`)); };
 
     if (type && ['rent', 'sale'].includes(type)) add('listing_type = ?', type);
@@ -101,6 +121,22 @@ app.post('/api/inquiries', async (req, res) => {
       [listing_id || null, String(name).slice(0, 120), String(phone || '').slice(0, 40),
        String(line_id || '').slice(0, 80), String(message || '').slice(0, 2000)]);
     res.json({ ok: true });
+
+    // แจ้งเตือน Telegram แบบ fire-and-forget (ไม่บล็อก response)
+    (async () => {
+      let listingLine = '';
+      if (listing_id) {
+        const { rows } = await pool.query('SELECT title FROM listings WHERE id = $1', [Number(listing_id)]).catch(() => ({ rows: [] }));
+        if (rows[0]) listingLine = `\n🏠 ประกาศ: ${tgEsc(rows[0].title)} (#${listing_id})`;
+      }
+      notifyTelegram(
+        `📩 <b>ข้อความติดต่อใหม่ — TeeDee</b>${listingLine}\n` +
+        `👤 ${tgEsc(name)}\n` +
+        (phone ? `📞 ${tgEsc(phone)}\n` : '') +
+        (line_id ? `💬 LINE: ${tgEsc(line_id)}\n` : '') +
+        (message ? `📝 ${tgEsc(String(message).slice(0, 500))}` : '')
+      );
+    })().catch(() => {});
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server error' });
@@ -286,7 +322,55 @@ app.post('/api/admin/ai/generate', requireAdmin, async (req, res) => {
 });
 
 // ---------- Pages ----------
-app.get('/listing/:id', (req, res) => res.sendFile(path.join(__dirname, 'public/listing.html')));
+const fs = require('fs');
+const listingTpl = fs.readFileSync(path.join(__dirname, 'public/listing.html'), 'utf8');
+const htmlEsc = (s) => String(s || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+const baseUrl = (req) => process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+
+app.get('/listing/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const { rows } = await pool.query(
+      `SELECT title, description, images, price, listing_type FROM listings WHERE id = $1 AND status = 'active'`, [id]);
+    if (rows[0]) {
+      const l = rows[0];
+      const priceTxt = l.listing_type === 'rent'
+        ? `฿${Number(l.price).toLocaleString('th-TH')}/เดือน`
+        : `฿${Number(l.price).toLocaleString('th-TH')}`;
+      const title = `${htmlEsc(l.title)} · ${priceTxt} — TeeDee`;
+      const desc = htmlEsc(String(l.description || '').slice(0, 160));
+      const img = htmlEsc((l.images || [])[0] || '');
+      const og = `<title>${title}</title>
+  <meta name="description" content="${desc}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${desc}">
+  ${img ? `<meta property="og:image" content="${img}">` : ''}
+  <meta property="og:url" content="${baseUrl(req)}/listing/${id}">
+  <meta name="twitter:card" content="summary_large_image">`;
+      return res.send(listingTpl.replace('<title>รายละเอียดประกาศ — TeeDee (ที่ดี)</title>', og));
+    }
+  } catch (e) { console.error(e); }
+  res.send(listingTpl);
+});
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT id, updated_at FROM listings WHERE status = 'active' ORDER BY id`);
+    const base = baseUrl(req);
+    const urls = [
+      `<url><loc>${base}/</loc></url>`,
+      `<url><loc>${base}/search</loc></url>`,
+      ...rows.map(r => `<url><loc>${base}/listing/${r.id}</loc><lastmod>${new Date(r.updated_at).toISOString().slice(0, 10)}</lastmod></url>`)
+    ].join('');
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`);
+  } catch (e) { res.status(500).send(''); }
+});
+
+app.get('/robots.txt', (req, res) =>
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: ${baseUrl(req)}/sitemap.xml`));
+
+app.get('/saved', (req, res) => res.sendFile(path.join(__dirname, 'public/saved.html')));
 app.get('/search', (req, res) => res.sendFile(path.join(__dirname, 'public/listings.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
 app.get('/healthz', (req, res) => res.json({ ok: true }));

@@ -196,6 +196,8 @@
             <div><label>พื้นที่ใช้สอย (ตร.ม.)</label><input id="f-sqm" type="number" min="0" step="0.1"></div>
             <div><label>ที่ดิน (ตร.ว.)</label><input id="f-wah" type="number" min="0" step="0.1"></div>
             <div><label>ชั้น (สำหรับคอนโด)</label><input id="f-floor" placeholder="18"></div>
+            <div><label>เบอร์โทรติดต่อ (แสดงปุ่มโทรบนหน้าประกาศ)</label><input id="f-phone" placeholder="081-234-5678"></div>
+            <div><label>LINE ID (แสดงปุ่มแอด LINE)</label><input id="f-line" placeholder="teedee.property"></div>
             <div style="display:flex;align-items:end;gap:20px;padding-bottom:8px">
               <label class="chk"><input type="checkbox" id="f-pets"> เลี้ยงสัตว์ได้</label>
               <label class="chk"><input type="checkbox" id="f-feat"> ⭐ ประกาศแนะนำ</label>
@@ -411,7 +413,7 @@
     function resetEditor() {
       editingId = null;
       $('editorTitle').textContent = 'เพิ่มประกาศใหม่';
-      ['f-title', 'f-price', 'f-loc', 'f-prov', 'f-bed', 'f-bath', 'f-sqm', 'f-wah', 'f-floor', 'f-desc', 'f-hl', 'f-ainotes']
+      ['f-title', 'f-price', 'f-loc', 'f-prov', 'f-bed', 'f-bath', 'f-sqm', 'f-wah', 'f-floor', 'f-phone', 'f-line', 'f-desc', 'f-hl', 'f-ainotes']
         .forEach(id => $(id).value = '');
       $('f-type').value = 'rent'; $('f-cat').value = 'condo'; $('f-status').value = 'active';
       $('f-pets').checked = false; $('f-feat').checked = false;
@@ -428,6 +430,7 @@
       $('f-bed').value = l.bedrooms || ''; $('f-bath').value = l.bathrooms || '';
       $('f-sqm').value = Number(l.area_sqm) || ''; $('f-wah').value = Number(l.land_area_sqwah) || '';
       $('f-floor').value = l.floor_text; $('f-desc').value = l.description;
+      $('f-phone').value = l.contact_phone || ''; $('f-line').value = l.contact_line || '';
       $('f-hl').value = (l.highlights || []).join('\n');
       $('f-pets').checked = l.pets_allowed; $('f-feat').checked = l.featured;
       $('f-ainotes').value = '';
@@ -459,7 +462,9 @@
           return a.value.trim() ? { label: a.value.trim(), dist: b.value.trim() } : null;
         }).filter(Boolean),
         pets_allowed: $('f-pets').checked,
-        featured: $('f-feat').checked
+        featured: $('f-feat').checked,
+        contact_phone: $('f-phone').value.trim(),
+        contact_line: $('f-line').value.trim()
       };
     }
     $('saveBtn').onclick = async () => {
