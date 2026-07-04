@@ -1068,3 +1068,58 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 @media (max-width: 375px) {
   .nav-cta { display: none; }
 }
+
+/* ============ Signature Search v2 — บาร์เดียวจบ เด่นขึ้น รกน้อยลง ============ */
+.searchbox { max-width: 780px; }
+.search-bar {
+  box-shadow: 0 18px 44px rgba(28, 28, 26, .10), 0 2px 8px rgba(28, 28, 26, .05);
+  padding: 7px 7px 7px 22px; gap: 12px;
+}
+.search-bar:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 18px 48px rgba(28, 28, 26, .13), 0 0 0 4px color-mix(in srgb, var(--gold) 14%, transparent);
+}
+:root[data-theme="dark"] .search-bar {
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .5), 0 2px 8px rgba(0, 0, 0, .3);
+}
+/* ตัวกรองในบาร์: desktop = แถวเดียวกัน */
+.s-filters { display: contents; }
+.s-div { width: 1px; height: 26px; background: var(--line); flex-shrink: 0; }
+.s-select { position: relative; flex-shrink: 0; }
+.s-select select {
+  appearance: none; -webkit-appearance: none;
+  border: 0; background: transparent; outline: none; cursor: pointer;
+  font-family: inherit; font-size: var(--fs-sm); color: var(--ink-2);
+  padding: 10px 24px 10px 4px; max-width: 150px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color .15s;
+}
+.s-select select:hover, .s-select select:focus { color: var(--ink); }
+.s-select::after {
+  content: ''; position: absolute; right: 8px; top: 50%;
+  width: 6px; height: 6px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg); pointer-events: none;
+}
+/* AI hint — เบาลง ไม่แย่งซีน */
+.ai-hint {
+  font-size: .74rem; color: var(--muted); margin-top: 12px; opacity: .85;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+/* มือถือ: ตัวกรองลงมาเป็นแถวสองในบาร์เดียวกัน */
+@media (max-width: 640px) {
+  .search-bar { flex-wrap: wrap; padding: 6px 6px 0 18px; gap: 8px; }
+  .search-bar input { font-size: var(--fs-base); }
+  .search-bar .s-btn { width: 46px; height: 46px; padding: 12px; }
+  .s-filters {
+    display: flex; flex: 1 1 100%; order: 9;
+    border-top: 1px solid var(--line);
+    margin: 2px -6px 0 -18px; padding: 2px 8px;
+  }
+  .s-filters .s-div { display: none; }
+  .s-select { flex: 1; min-width: 0; }
+  .s-select + .s-div + .s-select { border-left: 1px solid var(--line); }
+  .s-select select { width: 100%; max-width: none; padding: 11px 26px 11px 12px; font-size: var(--fs-xs); text-align: center; text-align-last: center; }
+  .s-select::after { right: 12px; }
+  .ai-hint { font-size: .7rem; padding: 0 8px; }
+  .quick-chips { margin-top: 16px; }
+}

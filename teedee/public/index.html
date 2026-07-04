@@ -34,35 +34,37 @@
         <form class="search-bar" id="searchForm" role="search">
           <span class="s-icon" id="ic-search"></span>
           <input type="text" name="q" id="qInput" autocomplete="off" aria-label="คำค้นหา" placeholder="">
+          <div class="s-filters">
+            <span class="s-div" aria-hidden="true"></span>
+            <label class="s-select">
+              <select name="category" aria-label="ประเภททรัพย์">
+                <option value="">ทุกประเภท</option>
+                <option value="condo">คอนโด</option>
+                <option value="house">บ้านเดี่ยว</option>
+                <option value="townhouse">ทาวน์เฮาส์</option>
+                <option value="land">ที่ดิน</option>
+                <option value="commercial">อาคารพาณิชย์</option>
+              </select>
+            </label>
+            <span class="s-div" aria-hidden="true"></span>
+            <label class="s-select">
+              <select name="budget" aria-label="งบประมาณ">
+                <option value="">ทุกช่วงราคา</option>
+                <option value="0-15000">เช่า · ไม่เกิน 15,000</option>
+                <option value="15000-30000">เช่า · 15,000 – 30,000</option>
+                <option value="30000-60000">เช่า · 30,000 – 60,000</option>
+                <option value="0-3000000">ซื้อ · ไม่เกิน 3 ล้าน</option>
+                <option value="3000000-6000000">ซื้อ · 3 – 6 ล้าน</option>
+                <option value="6000000-999999999">ซื้อ · 6 ล้านขึ้นไป</option>
+              </select>
+            </label>
+          </div>
           <button class="s-btn" type="submit" aria-label="ค้นหา"><span id="ic-search2"></span><span class="t">ค้นหา</span></button>
         </form>
-        <p style="font-size:.76rem;color:var(--muted);margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px">
-          <span id="ic-spark" style="color:var(--gold);display:inline-flex;width:14px;height:14px"></span>
+        <p class="ai-hint">
+          <span id="ic-spark" style="color:var(--gold);display:inline-flex;width:13px;height:13px"></span>
           พิมพ์ภาษาคนได้เลย เช่น "คอนโดเลี้ยงแมวได้ ใกล้ BTS ไม่เกิน 2 หมื่น" — AI จะตีความให้
         </p>
-        <div class="search-filters">
-          <label class="pill-select">
-            <select name="category" form="searchForm" aria-label="ประเภททรัพย์">
-              <option value="">ทุกประเภททรัพย์</option>
-              <option value="condo">คอนโด</option>
-              <option value="house">บ้านเดี่ยว</option>
-              <option value="townhouse">ทาวน์เฮาส์</option>
-              <option value="land">ที่ดิน</option>
-              <option value="commercial">อาคารพาณิชย์</option>
-            </select>
-          </label>
-          <label class="pill-select">
-            <select name="budget" form="searchForm" aria-label="งบประมาณ">
-              <option value="">ทุกช่วงราคา</option>
-              <option value="0-15000">เช่า · ไม่เกิน 15,000</option>
-              <option value="15000-30000">เช่า · 15,000 – 30,000</option>
-              <option value="30000-60000">เช่า · 30,000 – 60,000</option>
-              <option value="0-3000000">ซื้อ · ไม่เกิน 3 ล้าน</option>
-              <option value="3000000-6000000">ซื้อ · 3 – 6 ล้าน</option>
-              <option value="6000000-999999999">ซื้อ · 6 ล้านขึ้นไป</option>
-            </select>
-          </label>
-        </div>
 
         <div class="quick-chips" id="chips">
           <span class="lbl">ยอดนิยม</span>
