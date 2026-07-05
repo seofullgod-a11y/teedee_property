@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var d=document.documentElement,t=localStorage.getItem("yj_theme");d.dataset.theme=t==="dark"?"dark":"light";var l=localStorage.getItem("yj_lang");d.lang=l==="en"?"en":"th";d.dataset.lang=d.lang;}catch(e){}})();</script>
+  <title>ปัดหาบ้านที่ใช่ — อยู่ใจ (yoojai.com)</title>
+  <meta name="description" content="ปัดขวาถ้าถูกใจ! ค้นหาบ้านในฝันแบบสนุก ๆ ทีละหลัง เก็บเข้ารายการโปรดอัตโนมัติ">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css?v=40">
+  <link rel="icon" href="/favicon">
+</head>
+<body>
+  <div id="nav"></div>
+
+  <div class="container sw-page">
+    <div class="page-head" style="text-align:center">
+      <span class="eyebrow-text">Discover</span>
+      <h1>ปัดหาบ้านที่ใช่ 🃏</h1>
+      <p class="page-sub">ถูกใจปัดขวา ❤️ ไม่ใช่ปัดซ้าย — ระบบจะเก็บเข้ารายการโปรดให้เอง</p>
+    </div>
+
+    <div class="sw-seg" id="swSeg">
+      <button data-t="" class="on" type="button">ทั้งหมด</button>
+      <button data-t="rent" type="button">เช่า</button>
+      <button data-t="sale" type="button">ซื้อ</button>
+    </div>
+
+    <div class="sw-deck" id="deck">
+      <div class="sw-loading"><div class="skeleton" style="height:100%;border-radius:24px"></div></div>
+    </div>
+
+    <div class="sw-actions" id="swActions" style="visibility:hidden">
+      <button class="sw-btn sw-nope" id="btnNope" type="button" aria-label="ข้าม">✕</button>
+      <button class="sw-btn sw-undo" id="btnUndo" type="button" aria-label="ย้อนกลับ">↩</button>
+      <button class="sw-btn sw-like" id="btnLike" type="button" aria-label="ถูกใจ">♥</button>
+    </div>
+    <p class="sw-hint">ลากการ์ด หรือกดปุ่ม · ใช้คีย์บอร์ด ← → ได้</p>
+  </div>
+
+  <div id="footer"></div>
+  <script src="/js/shared.js?v=40"></script>
+  <script>
+    TD.chrome('discover');
+    const $ = id => document.getElementById(id);
+    const deck = $('deck');
+    let cards = [];        // ข้อมูลทรัพย์ที่รอปัด
+    let history = [];      // สำหรับ undo
+    let busy = false;
+    let curType = '';
+
+    const swiped = () => { try { return JSON.parse(localStorage.getItem('yj_swiped') || '{}'); } catch { return {}; } };
+    const markSwiped = (id, act) => {
+      const s = swiped(); s[id] = act;
+      const keys = Object.keys(s);
+      if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(k => delete s[k]);
+      try { localStorage.setItem('yj_swiped', JSON.stringify(s)); } catch (e) {}
+    };
+    const unmark = (id) => { const s = swiped(); delete s[id]; try { localStorage.setItem('yj_swiped', JSON.stringify(s)); } catch (e) {} };
+
+    async function load() {
+      deck.innerHTML = '<div class="sw-loading"><div class="skeleton" style="height:100%;border-radius:24px"></div></div>';
+      $('swActions').style.visibility = 'hidden';
+      const p = new URLSearchParams();
+      if (curType) p.set('type', curType);
+      let items = [];
+      try {
+        const r1 = await fetch('/api/listings?' + p.toString()).then(x => x.json());
+        items = r1.items || [];
+        if ((r1.total || 0) > 24) {
+          const r2 = await fetch('/api/listings?' + p.toString() + '&page=2').then(x => x.json());
+          items = items.concat(r2.items || []);
+        }
+      } catch (e) {}
+      const done = swiped();
+      const fresh = items.filter(l => !done[l.id]);
+      const seen = items.filter(l => done[l.id] === 'skip'); // เคยข้าม เอากลับมาท้ายกอง
+      cards = shuffle(fresh).concat(shuffle(seen));
+      history = [];
+      render();
+    }
+
+    function shuffle(a) { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+    function cardHtml(l) {
+      const img = (l.images && l.images[0]) || '';
+      const specs = [];
+      if (l.bedrooms > 0) specs.push(`${l.bedrooms} นอน`);
+      if (l.bathrooms > 0) specs.push(`${l.bathrooms} น้ำ`);
+      if (Number(l.area_sqm) > 0) specs.push(`${Number(l.area_sqm)} ตร.ม.`);
+      const promo = TD.promoBadge(l);
+      return `
+        ${img ? `<img class="sw-img" src="${TD.esc(img)}" alt="" draggable="false">` : '<div class="sw-img sw-noimg">🏠</div>'}
+        <div class="sw-stamp sw-stamp-like">ถูกใจ ❤</div>
+        <div class="sw-stamp sw-stamp-nope">ข้าม ✕</div>
+        <div class="sw-grad"></div>
+        <div class="sw-info">
+          ${promo ? `<span class="promo-badge ${promo.cls}" style="position:static;margin-bottom:8px">${promo.label}</span>` : ''}
+          <div class="sw-price">${TD.price(l.price, l.listing_type)}${l.listing_type === 'rent' ? '<span class="sw-per">/เดือน</span>' : ''}</div>
+          <div class="sw-title">${TD.esc(l.title)}</div>
+          <div class="sw-meta">${TD.icons.pin} ${TD.esc(l.location_text || l.province || '')}${specs.length ? ' · ' + specs.join(' · ') : ''}</div>
+          <a class="sw-detail" href="/listing/${l.id}" onclick="event.stopPropagation()">ดูรายละเอียด →</a>
+        </div>`;
+    }
+
+    function render() {
+      deck.innerHTML = '';
+      if (!cards.length) {
+        const favN = TD.favs().length;
+        deck.innerHTML = `
+          <div class="sw-empty">
+            <div style="font-size:44px">🎉</div>
+            <h3>ปัดครบทุกหลังแล้ว!</h3>
+            <p>คุณถูกใจไว้ ${favN} รายการ</p>
+            <div class="sw-empty-cta">
+              ${favN ? `<a class="btn btn-primary" href="/saved">ดูรายการโปรด (${favN})</a>` : ''}
+              <a class="btn btn-ghost" href="/search">ค้นหาแบบละเอียด</a>
+            </div>
+          </div>`;
+        $('swActions').style.visibility = 'hidden';
+        return;
+      }
+      // วางแค่ 3 ใบบนสุด (บน + หลังอีก 2)
+      cards.slice(0, 3).forEach((l, i) => {
+        const el = document.createElement('div');
+        el.className = 'sw-card';
+        el.style.zIndex = 10 - i;
+        el.dataset.pos = i;
+        el.innerHTML = cardHtml(l);
+        if (i > 0) el.style.transform = `translateY(${i * 10}px) scale(${1 - i * 0.04})`;
+        deck.appendChild(el);
+      });
+      $('swActions').style.visibility = 'visible';
+      attachDrag(deck.querySelector('.sw-card[data-pos="0"]'));
+    }
+
+    function attachDrag(el) {
+      if (!el) return;
+      let sx = 0, sy = 0, dx = 0, dy = 0, dragging = false;
+      const likeStamp = el.querySelector('.sw-stamp-like');
+      const nopeStamp = el.querySelector('.sw-stamp-nope');
+      const move = (e) => {
+        if (!dragging) return;
+        const p = e.touches ? e.touches[0] : e;
+        dx = p.clientX - sx; dy = p.clientY - sy;
+        el.style.transition = 'none';
+        el.style.transform = `translate(${dx}px, ${dy * 0.4}px) rotate(${dx * 0.06}deg)`;
+        const op = Math.min(Math.abs(dx) / 90, 1);
+        likeStamp.style.opacity = dx > 0 ? op : 0;
+        nopeStamp.style.opacity = dx < 0 ? op : 0;
+      };
+      const up = () => {
+        if (!dragging) return;
+        dragging = false;
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+        if (Math.abs(dx) > 85) { fly(dx > 0 ? 'like' : 'skip'); }
+        else {
+          el.style.transition = 'transform .3s cubic-bezier(.22,.9,.36,1)';
+          el.style.transform = '';
+          likeStamp.style.opacity = 0; nopeStamp.style.opacity = 0;
+        }
+        dx = 0;
+      };
+      el.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.sw-detail')) return;
+        dragging = true; sx = e.clientX; sy = e.clientY;
+        document.addEventListener('pointermove', move);
+        document.addEventListener('pointerup', up);
+      });
+    }
+
+    function fly(action) {
+      if (busy || !cards.length) return;
+      busy = true;
+      const l = cards[0];
+      const el = deck.querySelector('.sw-card[data-pos="0"]');
+      const dir = action === 'like' ? 1 : -1;
+      el.querySelector(action === 'like' ? '.sw-stamp-like' : '.sw-stamp-nope').style.opacity = 1;
+      el.style.transition = 'transform .38s ease, opacity .38s ease';
+      el.style.transform = `translate(${dir * (window.innerWidth * 0.7 + 120)}px, -30px) rotate(${dir * 18}deg)`;
+      el.style.opacity = '0';
+      // บันทึกผล
+      markSwiped(l.id, action);
+      history.push({ l, action, wasFav: TD.favs().includes(Number(l.id)) });
+      if (action === 'like') {
+        if (!TD.favs().includes(Number(l.id))) TD.toggleFav(l.id);
+        TD.taste.bump(l, 3); // ปัดขวา = ชอบชัดเจน สอนระบบแรง ๆ
+      }
+      setTimeout(() => { cards.shift(); busy = false; render(); }, 300);
+    }
+
+    function undo() {
+      if (busy || !history.length) return;
+      const last = history.pop();
+      unmark(last.l.id);
+      if (last.action === 'like' && !last.wasFav && TD.favs().includes(Number(last.l.id))) TD.toggleFav(last.l.id);
+      cards.unshift(last.l);
+      render();
+    }
+
+    $('btnLike').onclick = () => fly('like');
+    $('btnNope').onclick = () => fly('skip');
+    $('btnUndo').onclick = undo;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') fly('like');
+      if (e.key === 'ArrowLeft') fly('skip');
+      if (e.key === 'z' || e.key === 'Backspace') undo();
+    });
+    document.querySelectorAll('#swSeg button').forEach(b => b.onclick = () => {
+      document.querySelectorAll('#swSeg button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      curType = b.dataset.t;
+      load();
+    });
+
+    load();
+  </script>
+</body>
+</html>

@@ -208,6 +208,45 @@ const TD = {
     localStorage.setItem('teedee_recent', JSON.stringify(r));
   },
 
+  // ---------- ระบบเรียนรู้รสนิยม (ในเครื่องผู้ใช้ ไม่ต้องล็อกอิน) ----------
+  taste: {
+    _read() {
+      try { return JSON.parse(localStorage.getItem('yj_taste_v1') || '{}'); } catch { return {}; }
+    },
+    _write(t) { try { localStorage.setItem('yj_taste_v1', JSON.stringify(t)); } catch (e) {} },
+    // บันทึกความสนใจจากทรัพย์ที่ดู/ถูกใจ (weight: ดู=1, กดหัวใจ/ปัดขวา=3)
+    bump(l, w) {
+      if (!l) return;
+      w = w || 1;
+      const t = this._read();
+      const inc = (key, val) => {
+        if (!val) return;
+        t[key] = t[key] || {};
+        t[key][val] = (t[key][val] || 0) + w;
+      };
+      inc('cat', l.category); inc('type', l.listing_type); inc('prov', l.province);
+      if (Number(l.price) > 0) {
+        t.priceSum = (t.priceSum || 0) + Number(l.price) * w;
+        t.priceN = (t.priceN || 0) + w;
+      }
+      t.n = (t.n || 0) + w;
+      this._write(t);
+    },
+    // สรุปรสนิยมเด่น → ใช้ประกอบ query "คัดมาเพื่อคุณ"
+    top() {
+      const t = this._read();
+      if (!t.n || t.n < 2) return null; // ยังรู้จักน้อยไป ไม่เดามั่ว
+      const best = (obj) => {
+        const e = Object.entries(obj || {}).sort((a, b) => b[1] - a[1])[0];
+        return e ? e[0] : '';
+      };
+      return {
+        category: best(t.cat), type: best(t.type), province: best(t.prov),
+        avgPrice: t.priceN ? Math.round(t.priceSum / t.priceN) : 0, strength: t.n
+      };
+    }
+  },
+
   esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, m =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
@@ -306,6 +345,7 @@ const TD = {
           <a href="/areas">ดูทำเลทั้งหมด →</a>
         </div>
         <div><h4>เมนูลัด</h4>
+          <a href="/discover">ปัดหาบ้านที่ใช่ 🃏</a>
           <a href="/saved">รายการโปรดของฉัน</a>
           <a href="/#list-cta">ติดต่อเรา</a>
           <a href="/admin">เข้าสู่ระบบผู้ดูแล</a>
@@ -871,7 +911,7 @@ TD.EN = {
   'เช่า · ไม่เกิน 15,000': 'Rent · up to ฿15,000', 'เช่า · 15,000 – 30,000': 'Rent · ฿15,000–30,000',
   'เช่า · 30,000 – 60,000': 'Rent · ฿30,000–60,000', 'ซื้อ · ไม่เกิน 3 ล้าน': 'Buy · up to ฿3M',
   'ซื้อ · 3 – 6 ล้าน': 'Buy · ฿3M–6M', 'ซื้อ · 6 ล้านขึ้นไป': 'Buy · ฿6M+',
-  'ยอดนิยม': 'Popular', 'ให้ AI ช่วยหา': 'Ask AI', 'คอนโดใกล้ BTS': 'Condos near BTS', 'บ้านนครปฐม': 'Houses in Nakhon Pathom',
+  'ยอดนิยม': 'Popular', 'ให้ AI ช่วยหา': 'Ask AI', 'ปัดหาบ้าน': 'Swipe homes', 'ปัดหาบ้านที่ใช่ 🃏': 'Swipe to find home 🃏', 'คอนโดใกล้ BTS': 'Condos near BTS', 'บ้านนครปฐม': 'Houses in Nakhon Pathom',
   'บ้านเช่าเชียงใหม่': 'Rentals in Chiang Mai', 'ที่ดินทั้งหมด': 'All land', 'เลี้ยงสัตว์ได้': 'Pet-friendly',
   // ---- Home sections ----
   'ประกาศแนะนำ': 'Featured Listings', 'คัดมาให้เฉพาะประกาศเด่น ข้อมูลครบ พร้อมติดต่อ': 'Hand-picked standout listings, full details, ready to contact',

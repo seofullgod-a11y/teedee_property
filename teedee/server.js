@@ -1549,6 +1549,7 @@ app.get('/about', (req, res) => res.sendFile(path.join(__dirname, 'public/about.
 app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public/contact.html')));
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public/privacy.html')));
 app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public/terms.html')));
+app.get('/discover', (req, res) => res.sendFile(path.join(__dirname, 'public/discover.html')));
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 // ---------- Boot ----------

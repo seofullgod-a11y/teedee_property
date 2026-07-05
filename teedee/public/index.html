@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=38">
+  <link rel="stylesheet" href="/css/style.css?v=40">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -60,6 +60,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/></svg>
             ให้ AI ช่วยหา
           </button>
+          <a class="chip-ai chip-swipe" href="/discover">🃏 ปัดหาบ้าน</a>
           <button data-q="ใกล้ BTS">คอนโดใกล้ BTS</button>
           <button data-q="นครปฐม">บ้านนครปฐม</button>
           <button data-q="เชียงใหม่">บ้านเช่าเชียงใหม่</button>
@@ -90,6 +91,20 @@
   </section>
 
   <!-- Recently viewed (แสดงเมื่อมีประวัติ) -->
+  <section class="section" id="forYouSec" style="display:none;padding-top:0">
+    <div class="container">
+      <div class="sec-head reveal">
+        <div>
+          <span class="eyebrow-text">For You</span>
+          <h2>คัดมาเพื่อคุณ ✨</h2>
+          <p id="fySub"></p>
+        </div>
+        <a class="see-all" id="fyMore" href="/search">ดูเพิ่มเติม <span id="ic-arrow-fy"></span></a>
+      </div>
+      <div class="grid" id="forYou"></div>
+    </div>
+  </section>
+
   <section class="section" id="recentSec" style="display:none;padding-top:0">
     <div class="container">
       <div class="section-head">
@@ -185,7 +200,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=38"></script>
+  <script src="/js/shared.js?v=40"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
@@ -419,6 +434,30 @@
           <div class="stat"><div class="num">${total.toLocaleString()}</div><div class="lbl">ประกาศทั้งหมด</div></div>
           <div class="stat"><div class="num">${(rentCount.total || 0).toLocaleString()}</div><div class="lbl">สำหรับเช่า</div></div>
           <div class="stat"><div class="num">${(saleCount.total || 0).toLocaleString()}</div><div class="lbl">สำหรับขาย</div></div>`;
+
+        // คัดมาเพื่อคุณ (จากรสนิยมที่ระบบเรียนรู้ในเครื่องผู้ใช้)
+        try {
+          const taste = TD.taste.top();
+          if (taste && (taste.category || taste.type)) {
+            const fp = new URLSearchParams();
+            if (taste.type) fp.set('type', taste.type);
+            if (taste.category) fp.set('category', taste.category);
+            const fr = await fetch('/api/listings?' + fp.toString()).then(r => r.json());
+            const recent3 = TD.recent().slice(0, 2);
+            const picks = (fr.items || []).filter(l => !recent3.includes(l.id)).slice(0, 3);
+            if (picks.length) {
+              const bits = [];
+              if (taste.category && TD.catLabel[taste.category]) bits.push(TD.catLabel[taste.category]);
+              if (taste.type) bits.push(taste.type === 'rent' ? 'ให้เช่า' : 'ขาย');
+              if (taste.province) bits.push('แถว' + taste.province);
+              document.getElementById('fySub').textContent = 'จากที่คุณดูและถูกใจ: ' + bits.join(' · ');
+              document.getElementById('fyMore').href = '/search?' + fp.toString();
+              document.getElementById('ic-arrow-fy').innerHTML = TD.icons.arrowRight;
+              document.getElementById('forYou').innerHTML = picks.map(l => TD.card(l)).join('');
+              document.getElementById('forYouSec').style.display = 'block';
+            }
+          }
+        } catch (e) {}
 
         // ดูล่าสุด
         const recentIds = TD.recent();
