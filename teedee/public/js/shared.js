@@ -39,7 +39,8 @@ const TD = {
     moon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/></svg>',
     translate: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7"/><path d="M9 3v2c0 4.418 -2.239 8 -5 8"/><path d="M5 9c0 2.144 2.952 3.908 6.7 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/></svg>',
     compare: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M7 8l-4 4l4 4"/><path d="M17 8l4 4l-4 4"/></svg>',
-    bell: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>'
+    bell: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>',
+    star: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></svg>'
   },
 
   brand: { main: 'อยู่', accent: 'ใจ', sub: 'yoojai.com', logo: '' },
@@ -206,6 +207,7 @@ const TD = {
         <a href="/search?type=rent" class="${active === 'rent' ? 'on' : ''}">เช่า</a>
         <a href="/search?type=sale" class="${active === 'sale' ? 'on' : ''}">ซื้อ</a>
         <a href="/search?category=land" class="${active === 'land' ? 'on' : ''}">ที่ดิน</a>
+        <a href="/map" class="${active === 'map' ? 'on' : ''}">แผนที่</a>
         <a href="/#categories">ประเภททั้งหมด</a>
       </nav>
       <span class="nav-spacer"></span>
@@ -291,6 +293,145 @@ if (typeof document !== 'undefined') {
   });
 }
 
+TD.REVIEW_ASPECTS = ['เดินทางสะดวก', 'ปลอดภัย', 'เงียบสงบ', 'ร้านอาหาร/คาเฟ่เยอะ', 'ใกล้ห้าง/ตลาด', 'น้ำไม่ท่วม', 'ชุมชนน่าอยู่', 'อากาศดี'];
+TD.openReviewModal = function (province, onDone) {
+  if (!province || document.querySelector('.rv-ov')) return;
+  const ov = document.createElement('div');
+  ov.className = 'yj-modal-ov rv-ov';
+  ov.innerHTML = `
+    <div class="yj-modal" role="dialog" aria-modal="true">
+      <button class="yj-modal-x" aria-label="ปิด">✕</button>
+      <div class="yj-modal-ic">${TD.icons.star || '★'}</div>
+      <h3>รีวิวทำเล ${TD.esc(province)}</h3>
+      <p class="yj-modal-sub">แบ่งปันประสบการณ์ย่านนี้ให้คนอื่นตัดสินใจง่ายขึ้น</p>
+      <div class="rv-stars" id="rvStars">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-star="${n}" aria-label="${n} ดาว">★</button>`).join('')}</div>
+      <div class="rv-aspects" id="rvAspects">${TD.REVIEW_ASPECTS.map(a => `<button type="button" data-aspect="${a}">${a}</button>`).join('')}</div>
+      <textarea class="yj-input" id="rvComment" rows="3" placeholder="เล่าเพิ่มเติม (ไม่บังคับ) เช่น เดินทางเข้าเมืองสะดวก ร้านอาหารเยอะ"></textarea>
+      <input class="yj-input" id="rvAuthor" placeholder="ชื่อ/ชื่อเล่น (ไม่บังคับ)">
+      <div class="yj-msg" id="rvMsg"></div>
+      <button class="btn btn-primary" id="rvSubmit" style="width:100%;justify-content:center">ส่งรีวิว</button>
+    </div>`;
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+  const close = () => { ov.remove(); document.body.style.overflow = ''; };
+  ov.querySelector('.yj-modal-x').onclick = close;
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+
+  let rating = 0;
+  const stars = ov.querySelectorAll('#rvStars button');
+  stars.forEach(s => {
+    s.onclick = () => { rating = Number(s.dataset.star); stars.forEach((x, i) => x.classList.toggle('on', i < rating)); };
+    s.onmouseenter = () => stars.forEach((x, i) => x.classList.toggle('hover', i < Number(s.dataset.star)));
+  });
+  ov.querySelector('#rvStars').onmouseleave = () => stars.forEach(x => x.classList.remove('hover'));
+  const aspects = new Set();
+  ov.querySelectorAll('#rvAspects button').forEach(b => b.onclick = () => {
+    const a = b.dataset.aspect;
+    if (aspects.has(a)) { aspects.delete(a); b.classList.remove('on'); }
+    else { aspects.add(a); b.classList.add('on'); }
+  });
+  ov.querySelector('#rvSubmit').onclick = async () => {
+    const msg = ov.querySelector('#rvMsg');
+    if (!rating) { msg.textContent = 'กรุณาให้คะแนนดาว'; msg.className = 'yj-msg err'; return; }
+    const btn = ov.querySelector('#rvSubmit'); btn.disabled = true;
+    msg.textContent = 'กำลังส่ง…'; msg.className = 'yj-msg';
+    try {
+      await TD.post('/api/area-reviews', {
+        province, rating, aspects: [...aspects],
+        comment: ov.querySelector('#rvComment').value.trim(),
+        author: ov.querySelector('#rvAuthor').value.trim()
+      });
+      ov.querySelector('.yj-modal').innerHTML = `
+        <div class="yj-modal-ic ok">${TD.icons.check}</div>
+        <h3>ขอบคุณสำหรับรีวิว!</h3>
+        <p class="yj-modal-sub">รีวิวของคุณช่วยให้คนหาบ้านตัดสินใจง่ายขึ้นมากครับ</p>
+        <button class="btn btn-primary" id="rvDone" style="width:100%;justify-content:center;margin-top:6px">เรียบร้อย</button>`;
+      ov.querySelector('#rvDone').onclick = () => { close(); if (onDone) onDone(); };
+    } catch (e) {
+      btn.disabled = false; msg.textContent = e.message || 'ส่งไม่สำเร็จ ลองใหม่'; msg.className = 'yj-msg err';
+    }
+  };
+};
+
+TD.openConcierge = function () {
+  if (document.querySelector('.cc-ov')) return;
+  const ov = document.createElement('div');
+  ov.className = 'cc-ov';
+  ov.innerHTML = `
+    <div class="cc-modal" role="dialog" aria-modal="true">
+      <div class="cc-head">
+        <div class="cc-head-t">${TD.icons.sparkles} <b>ผู้ช่วยหาบ้าน AI</b></div>
+        <button class="cc-x" aria-label="ปิด">✕</button>
+      </div>
+      <div class="cc-log" id="ccLog"></div>
+      <div class="cc-input">
+        <input id="ccInput" placeholder="พิมพ์บอกความต้องการ เช่น คอนโดเช่าใกล้ BTS งบ 2 หมื่น" autocomplete="off">
+        <button class="cc-send" id="ccSend" aria-label="ส่ง">${TD.icons.arrowRight}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+  const log = ov.querySelector('#ccLog'), input = ov.querySelector('#ccInput');
+  const close = () => { ov.remove(); document.body.style.overflow = ''; };
+  ov.querySelector('.cc-x').onclick = close;
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+
+  const bubble = (who, html) => {
+    const d = document.createElement('div');
+    d.className = 'cc-msg ' + who;
+    d.innerHTML = html;
+    log.appendChild(d); log.scrollTop = log.scrollHeight;
+    return d;
+  };
+  // greeting + example chips
+  bubble('bot', 'สวัสดีครับ 🙌 บอกผมได้เลยว่ากำลังมองหาบ้านแบบไหน เดี๋ยวผมคัดให้');
+  const chips = ['คอนโดเช่าใกล้ BTS ไม่เกิน 2 หมื่น', 'บ้านเดี่ยวนครปฐม 3 ห้องนอน', 'ที่ดินลงทุน', 'คอนโดวิวแม่น้ำ'];
+  const chipWrap = document.createElement('div');
+  chipWrap.className = 'cc-chips';
+  chipWrap.innerHTML = chips.map(c => `<button type="button">${c}</button>`).join('');
+  log.appendChild(chipWrap);
+  chipWrap.querySelectorAll('button').forEach(b => b.onclick = () => { input.value = b.textContent; send(); });
+
+  let busy = false;
+  async function send() {
+    const msg = input.value.trim();
+    if (!msg || busy) return;
+    busy = true; input.value = '';
+    if (chipWrap.parentElement) chipWrap.remove();
+    bubble('user', TD.esc(msg));
+    const typing = bubble('bot typing', '<span></span><span></span><span></span>');
+    try {
+      const r = await TD.post('/api/concierge', { message: msg });
+      typing.remove();
+      bubble('bot', TD.esc(r.reply || 'ลองใหม่อีกครั้งครับ'));
+      if (r.items && r.items.length) {
+        const wrap = document.createElement('div');
+        wrap.className = 'cc-cards';
+        wrap.innerHTML = r.items.map(l => TD.card(l)).join('');
+        log.appendChild(wrap); log.scrollTop = log.scrollHeight;
+      } else if (r.filters) {
+        const q = new URLSearchParams();
+        Object.entries(r.filters).forEach(([k, v]) => { if (v) q.set(k, v); });
+        const d = bubble('bot', `<a class="cc-alt" href="/search?${q.toString()}">ดูผลการค้นหาทั้งหมด →</a>`);
+      }
+    } catch (e) {
+      typing.remove();
+      bubble('bot', 'ขออภัยครับ ระบบขัดข้องชั่วคราว ลองใหม่อีกครั้ง');
+    }
+    busy = false; input.focus();
+  }
+  ov.querySelector('#ccSend').onclick = send;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+  setTimeout(() => input.focus(), 100);
+};
+
+// launcher: ปุ่มที่มี data-concierge
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-concierge]')) { e.preventDefault(); TD.openConcierge(); }
+  });
+}
+
 TD.openAlertModal = function (criteria) {
   criteria = criteria || {};
   const catL = { condo: 'คอนโด', house: 'บ้านเดี่ยว', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' };
@@ -371,6 +512,8 @@ TD.renderCompareTray = function () {
   if (typeof document === 'undefined') return;
   let tray = document.getElementById('cmpTray');
   const list = this.compareList();
+  // ไม่ต้องโชว์แถบลอยบนหน้าเปรียบเทียบเอง (ซ้ำซ้อน)
+  if (location.pathname === '/compare') { if (tray) tray.remove(); return; }
   if (!list.length) { if (tray) tray.remove(); return; }
   if (!tray) {
     tray = document.createElement('div');

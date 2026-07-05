@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=15">
+  <link rel="stylesheet" href="/css/style.css?v=17">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -43,9 +43,10 @@
     <img id="lbImg" alt="">
     <button class="lb-nav lb-next" id="lbNext" aria-label="รูปถัดไป">›</button>
     <div class="lb-count" id="lbCount"></div>
+    <div class="lb-strip" id="lbStrip"></div>
   </div>
 
-  <script src="/js/shared.js?v=15"></script>
+  <script src="/js/shared.js?v=17"></script>
   <script>
     TD.chrome('');
     const id = Number(location.pathname.split('/').pop());
@@ -141,6 +142,7 @@
         </div>` : ''}
         ${catHtml ? `<div class="nb-cats">${catHtml}</div>` : ''}
         ${prov ? `<a class="area-cta" href="/area/${encodeURIComponent(prov)}">${TD.icons.mapSearch} ดูอสังหาฯ ทั้งหมดใน${TD.esc(prov)} <span class="ac-arrow">${TD.icons.arrowRight}</span></a>` : ''}
+        ${prov ? `<div class="area-reviews" id="areaReviews" data-prov="${TD.esc(prov)}"></div>` : ''}
       </div>`;
     }
 
@@ -213,6 +215,34 @@
       </div>`;
     }
 
+    function renderAreaReviews(province) {
+      const box = $('areaReviews');
+      if (!box) return;
+      const stars = (n) => '<span class="rv-star-row">' + [1, 2, 3, 4, 5].map(i => `<span class="${i <= Math.round(n) ? 'on' : ''}">★</span>`).join('') + '</span>';
+      fetch('/api/area-reviews?province=' + encodeURIComponent(province))
+        .then(r => r.json())
+        .then(d => {
+          const top = Object.entries(d.aspects || {}).sort((a, b) => b[1] - a[1]).slice(0, 4);
+          box.innerHTML = `
+            <div class="rv-head">
+              <div class="rv-sum">
+                <div class="rv-avg">${d.count ? d.avg.toFixed(1) : '–'}</div>
+                <div>${stars(d.avg)}<div class="rv-count">${d.count ? d.count + ' รีวิว' : 'ยังไม่มีรีวิว'}</div></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="rvWrite" type="button">${TD.icons.star} เขียนรีวิว</button>
+            </div>
+            ${top.length ? `<div class="rv-tags">${top.map(([a, c]) => `<span class="rv-tag">${TD.esc(a)} <b>${c}</b></span>`).join('')}</div>` : ''}
+            ${(d.items || []).slice(0, 3).map(rv => `
+              <div class="rv-item">
+                <div class="rv-item-top">${stars(rv.rating)} <span class="rv-author">${TD.esc(rv.author || 'ผู้ใช้ไม่ระบุชื่อ')}</span></div>
+                ${rv.comment ? `<p class="rv-comment">${TD.esc(rv.comment)}</p>` : ''}
+                ${(rv.aspects || []).length ? `<div class="rv-item-tags">${rv.aspects.map(a => `<span>${TD.esc(a)}</span>`).join('')}</div>` : ''}
+              </div>`).join('')}`;
+          const wb = $('rvWrite');
+          if (wb) wb.onclick = () => TD.openReviewModal(province, () => renderAreaReviews(province));
+        }).catch(() => { box.style.display = 'none'; });
+    }
+
     function initBelowMap(l) {
       // 1) AI วิเคราะห์ย่าน
       const ai = $('areaInsight');
@@ -226,6 +256,10 @@
             else { ai.style.display = 'none'; }
           }).catch(() => { const el = $('areaInsightText'); if (el) el.parentElement.style.display = 'none'; });
       }
+
+      // 1b) รีวิวทำเล
+      const rvBox = $('areaReviews');
+      if (rvBox && l.province) renderAreaReviews(l.province);
 
       // 3) เดินทาง — ปุ่มจุดหมายกำหนดเอง
       const cmBtn = $('cmBtn'), cmInput = $('cmInput');
@@ -492,6 +526,28 @@
         if (item) openLb(Number(item.dataset.i) || 0);
       });
     }
+    function buildStrip() {
+      const strip = $('lbStrip');
+      if (!strip) return;
+      if (lbImgs.length < 2) { strip.innerHTML = ''; return; }
+      strip.innerHTML = lbImgs.map((src, i) =>
+        `<button class="lb-thumb" data-t="${i}" aria-label="รูปที่ ${i + 1}"><img src="${TD.esc(src)}" alt="" loading="lazy"></button>`).join('');
+      strip.querySelectorAll('[data-t]').forEach(b => b.onclick = (e) => { e.stopPropagation(); jumpLb(Number(b.dataset.t)); });
+      syncStrip();
+    }
+    function syncStrip() {
+      const strip = $('lbStrip');
+      if (!strip) return;
+      strip.querySelectorAll('.lb-thumb').forEach((b, i) => b.classList.toggle('on', i === lbIdx));
+      const cur = strip.querySelector('.lb-thumb.on');
+      if (cur) cur.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+    function jumpLb(i) {
+      lbIdx = i;
+      const im = $('lbImg');
+      im.style.opacity = '0';
+      setTimeout(() => { im.src = lbImgs[lbIdx]; $('lbCount').textContent = `${lbIdx + 1} / ${lbImgs.length}`; im.style.opacity = '1'; syncStrip(); }, 100);
+    }
     function openLb(i) {
       if (!lbImgs.length) return;
       lbIdx = i;
@@ -499,6 +555,7 @@
       $('lbCount').textContent = `${lbIdx + 1} / ${lbImgs.length}`;
       $('lb').hidden = false;
       document.body.style.overflow = 'hidden';
+      buildStrip();
     }
     function stepLb(d) {
       if (lbImgs.length < 2) return;
@@ -510,6 +567,7 @@
         $('lbCount').textContent = `${lbIdx + 1} / ${lbImgs.length}`;
         im.onload = () => { im.style.opacity = '1'; };
         im.style.opacity = '1';
+        syncStrip();
       }, 130);
     }
     function closeLb() { $('lb').hidden = true; document.body.style.overflow = ''; }

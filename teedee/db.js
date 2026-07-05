@@ -87,6 +87,17 @@ async function migrate() {
       created_at TIMESTAMPTZ DEFAULT now(),
       PRIMARY KEY (search_id, listing_id)
     );
+
+    CREATE TABLE IF NOT EXISTS area_reviews (
+      id SERIAL PRIMARY KEY,
+      province TEXT NOT NULL,
+      rating INT NOT NULL,
+      aspects JSONB DEFAULT '[]',
+      author TEXT DEFAULT '',
+      comment TEXT DEFAULT '',
+      approved BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
   `);
 
   // ค่าเริ่มต้นของแบรนด์ (แก้ได้ในหลังบ้าน)
@@ -241,19 +252,31 @@ const SEED = [
 async function seed() {
   const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM listings');
   if (rows[0].c > 0) return;
+  // พิกัดโดยประมาณตามจังหวัด (ไว้ให้แผนที่มีหมุดตั้งแต่เริ่ม) + สุ่มเล็กน้อยไม่ให้ทับกัน
+  const PROV_COORD = {
+    'กรุงเทพมหานคร': [13.7563, 100.5018], 'นครปฐม': [13.8199, 100.0621],
+    'ประจวบคีรีขันธ์': [12.5706, 99.9576], 'ระยอง': [12.6833, 101.2372],
+    'เชียงใหม่': [18.7883, 98.9853], 'ชลบุรี': [13.3611, 100.9847],
+    'ภูเก็ต': [7.8804, 98.3923], 'นนทบุรี': [13.8591, 100.5217],
+    'ปทุมธานี': [14.0208, 100.5250], 'สมุทรปราการ': [13.5991, 100.5998]
+  };
+  const jit = () => (Math.random() - 0.5) * 0.06;
   for (const s of SEED) {
+    const base = PROV_COORD[s.province];
+    const lat = s.latitude != null ? s.latitude : (base ? base[0] + jit() : null);
+    const lng = s.longitude != null ? s.longitude : (base ? base[1] + jit() : null);
     await pool.query(
       `INSERT INTO listings
         (title, listing_type, category, price, location_text, province, bedrooms, bathrooms,
          area_sqm, land_area_sqwah, floor_text, description, highlights, images, nearby,
-         pets_allowed, featured, amenities, furnishings, common_fee_text, year_built, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,'active')`,
+         pets_allowed, featured, amenities, furnishings, common_fee_text, year_built, latitude, longitude, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,'active')`,
       [s.title, s.listing_type, s.category, s.price, s.location_text, s.province,
        s.bedrooms || 0, s.bathrooms || 0, s.area_sqm || 0, s.land_area_sqwah || 0,
        s.floor_text || '', s.description, JSON.stringify(s.highlights || []),
        JSON.stringify(s.images || []), JSON.stringify(s.nearby || []),
        !!s.pets_allowed, !!s.featured, JSON.stringify(s.amenities || []),
-       JSON.stringify(s.furnishings || []), s.common_fee_text || '', s.year_built || null]
+       JSON.stringify(s.furnishings || []), s.common_fee_text || '', s.year_built || null, lat, lng]
     );
   }
   console.log(`Seeded ${SEED.length} listings`);

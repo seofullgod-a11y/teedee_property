@@ -321,6 +321,149 @@ app.get('/api/listings-by-ids', async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
 });
 
+// ============ Map search: markers เบา ๆ ============
+app.get('/api/map-listings', async (req, res) => {
+  try {
+    const where = [`status='active'`, `latitude IS NOT NULL`, `longitude IS NOT NULL`];
+    const args = [];
+    const add = (col, op, val) => { args.push(val); where.push(`${col}${op}$${args.length}`); };
+    if (['rent', 'sale'].includes(req.query.type)) add('listing_type', '=', req.query.type);
+    if (['condo', 'house', 'townhouse', 'land', 'commercial'].includes(req.query.category)) add('category', '=', req.query.category);
+    if (req.query.min) add('price', '>=', Number(req.query.min) || 0);
+    if (req.query.max) add('price', '<=', Number(req.query.max) || 0);
+    if (req.query.beds) add('bedrooms', '>=', Number(req.query.beds) || 0);
+    if (req.query.q) {
+      args.push('%' + String(req.query.q).slice(0, 60) + '%');
+      const p = '$' + args.length;
+      where.push(`(title ILIKE ${p} OR location_text ILIKE ${p} OR province ILIKE ${p})`);
+    }
+    const { rows } = await pool.query(
+      `SELECT id, title, price, listing_type, category, latitude, longitude,
+              bedrooms, bathrooms, area_sqm, location_text, (images->>0) AS image
+       FROM listings WHERE ${where.join(' AND ')} LIMIT 400`, args);
+    res.json({ items: rows });
+  } catch (e) { console.error('map-listings:', e.message); res.status(500).json({ error: 'server error' }); }
+});
+
+// ============ AI Concierge: คุยแล้วคัดทรัพย์ให้ ============
+async function conciergeFilters(q) {
+  if (!ANTHROPIC_API_KEY) return null;
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL, max_tokens: 350,
+      system: 'คุณคือผู้ช่วยหาบ้านมืออาชีพของเว็บ "อยู่ใจ" พูดจาเป็นกันเองแต่สุภาพ ตอบสั้นกระชับ',
+      messages: [{
+        role: 'user',
+        content: `ผู้ใช้พิมพ์ว่า: "${q}"\n\nตอบเป็น JSON เท่านั้น ห้ามมีข้อความอื่น:\n{"reply":"ข้อความตอบผู้ใช้ 1-2 ประโยค เป็นกันเอง สรุปว่ากำลังหาอะไรให้","filters":{"type":"rent"|"sale"|null,"category":"condo"|"house"|"townhouse"|"land"|"commercial"|null,"min":number|null,"max":number|null,"beds":number|null,"q":"คีย์เวิร์ดทำเล/สถานที่ หรือว่าง"}}\n\nกติกา: เช่า=rent ซื้อ/ขาย=sale, หมื่น=10000 แสน=100000 ล้าน=1000000, "ไม่เกิน X"=max, เอาเฉพาะชื่อทำเล/สถานที่ลง q`
+      }]
+    })
+  });
+  const out = await r.json();
+  if (!r.ok) return null;
+  const text = (out.content || []).filter(c => c.type === 'text').map(c => c.text).join('').replace(/```json|```/g, '').trim();
+  return JSON.parse(text);
+}
+
+app.post('/api/concierge', async (req, res) => {
+  try {
+    const q = String(req.body?.message || '').slice(0, 300).trim();
+    if (q.length < 2) return res.json({ reply: 'ลองพิมพ์บอกความต้องการได้เลยครับ เช่น "คอนโดเช่าใกล้ BTS งบ 2 หมื่น"', items: [] });
+
+    let parsed = null;
+    try { parsed = await conciergeFilters(q); } catch (e) { console.error('concierge ai:', e.message); }
+
+    const f = (parsed && parsed.filters) || {};
+    const filters = {
+      type: ['rent', 'sale'].includes(f.type) ? f.type : null,
+      category: ['condo', 'house', 'townhouse', 'land', 'commercial'].includes(f.category) ? f.category : null,
+      min: Number(f.min) > 0 ? Number(f.min) : null,
+      max: Number(f.max) > 0 ? Number(f.max) : null,
+      beds: Number(f.beds) > 0 ? Math.min(Number(f.beds), 10) : null,
+      q: String(f.q || '').slice(0, 80)
+    };
+
+    const where = [`status='active'`]; const args = [];
+    const add = (c, v) => { args.push(v); where.push(c.replace('?', '$' + args.length)); };
+    if (filters.type) add('listing_type=?', filters.type);
+    if (filters.category) add('category=?', filters.category);
+    if (filters.min) add('price>=?', filters.min);
+    if (filters.max) add('price<=?', filters.max);
+    if (filters.beds) add('bedrooms>=?', filters.beds);
+    if (filters.q) { args.push('%' + filters.q + '%'); const p = '$' + args.length; where.push(`(title ILIKE ${p} OR location_text ILIKE ${p} OR province ILIKE ${p} OR description ILIKE ${p})`); }
+    const { rows } = await pool.query(
+      `SELECT ${LISTING_FIELDS} FROM listings WHERE ${where.join(' AND ')} ORDER BY featured DESC, created_at DESC LIMIT 6`, args);
+
+    let reply = (parsed && parsed.reply) || '';
+    if (!reply) {
+      const bits = [];
+      if (filters.type) bits.push(filters.type === 'rent' ? 'เช่า' : 'ขาย');
+      if (filters.category) bits.push({ condo: 'คอนโด', house: 'บ้านเดี่ยว', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' }[filters.category]);
+      if (filters.q) bits.push('ย่าน' + filters.q);
+      reply = rows.length
+        ? `หา${bits.join(' ') || 'ทรัพย์'}มาให้แล้ว ${rows.length} รายการครับ ลองดูด้านล่างได้เลย`
+        : `ยังไม่เจอทรัพย์ที่ตรงเป๊ะครับ ลองปรับเงื่อนไข หรือกดตั้งแจ้งเตือนไว้ได้`;
+    } else if (!rows.length) {
+      reply += ' (ตอนนี้ยังไม่มีรายการตรงเป๊ะ ลองปรับเงื่อนไขดูได้ครับ)';
+    }
+    res.json({ reply, filters, items: rows });
+  } catch (e) { console.error('concierge:', e.message); res.status(500).json({ reply: 'ขออภัยครับ ระบบขัดข้องชั่วคราว ลองใหม่อีกครั้ง', items: [] }); }
+});
+
+// ============ Area reviews (รีวิวทำเล) ============
+const reviewHits = new Map();
+app.get('/api/area-reviews', async (req, res) => {
+  try {
+    const province = String(req.query.province || '').slice(0, 80).trim();
+    if (!province) return res.json({ avg: 0, count: 0, aspects: {}, items: [] });
+    const agg = await pool.query(
+      `SELECT COUNT(*)::int c, COALESCE(ROUND(AVG(rating)::numeric,1),0) avg FROM area_reviews WHERE province=$1 AND approved`, [province]);
+    const items = await pool.query(
+      `SELECT id, rating, aspects, author, comment, created_at FROM area_reviews
+       WHERE province=$1 AND approved ORDER BY created_at DESC LIMIT 20`, [province]);
+    const aspects = {};
+    for (const r of items.rows) for (const a of (r.aspects || [])) aspects[a] = (aspects[a] || 0) + 1;
+    res.json({ avg: Number(agg.rows[0].avg), count: agg.rows[0].c, aspects, items: items.rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.post('/api/area-reviews', async (req, res) => {
+  try {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+    const now = Date.now(); const h = reviewHits.get(ip) || { c: 0, t: now };
+    if (now - h.t > 3600e3) { h.c = 0; h.t = now; }
+    if (h.c >= 8) return res.status(429).json({ error: 'ส่งรีวิวบ่อยเกินไป ลองใหม่ภายหลังครับ' });
+    const b = req.body || {};
+    const province = String(b.province || '').slice(0, 80).trim();
+    const rating = Math.min(5, Math.max(1, parseInt(b.rating, 10) || 0));
+    if (!province || !rating) return res.status(400).json({ error: 'กรุณาให้คะแนนและระบุทำเล' });
+    const aspects = Array.isArray(b.aspects) ? b.aspects.filter(a => typeof a === 'string').slice(0, 6) : [];
+    const author = String(b.author || '').slice(0, 60).trim();
+    const comment = String(b.comment || '').slice(0, 600).trim();
+    const { rows } = await pool.query(
+      `INSERT INTO area_reviews (province, rating, aspects, author, comment) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      [province, rating, JSON.stringify(aspects), author, comment]);
+    h.c++; reviewHits.set(ip, h);
+    notifyTelegram(`⭐ รีวิวทำเลใหม่: ${province} (${rating}/5)${author ? ' โดย ' + author : ''}${comment ? '\n"' + comment.slice(0, 120) + '"' : ''}`);
+    res.json({ ok: true, id: rows[0].id });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.get('/api/admin/area-reviews', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, province, rating, aspects, author, comment, approved, created_at
+       FROM area_reviews ORDER BY created_at DESC LIMIT 300`);
+    res.json({ items: rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.delete('/api/admin/area-reviews/:id', requireAdmin, async (req, res) => {
+  await pool.query('DELETE FROM area_reviews WHERE id=$1', [Number(req.params.id)]);
+  res.json({ ok: true });
+});
+
 app.post('/api/admin/login', (req, res) => {
   if ((req.body?.password || '') === ADMIN_PASSWORD) return res.json({ token: adminToken() });
   res.status(401).json({ error: 'รหัสผ่านไม่ถูกต้อง' });
@@ -901,6 +1044,7 @@ app.get('/favicon', async (req, res) => {
 app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon'));
 app.get('/search', (req, res) => res.sendFile(path.join(__dirname, 'public/listings.html')));
 app.get('/compare', (req, res) => res.sendFile(path.join(__dirname, 'public/compare.html')));
+app.get('/map', (req, res) => res.sendFile(path.join(__dirname, 'public/map.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 

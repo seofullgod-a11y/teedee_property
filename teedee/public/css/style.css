@@ -721,7 +721,7 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .lb-prev { left: 22px; }
 .lb-next { right: 22px; }
 .lb-count {
-  position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
   color: #fff; font-family: var(--font-display); font-size: var(--fs-sm);
   background: rgba(255, 255, 255, .12); border-radius: 999px; padding: 6px 16px;
 }
@@ -1215,7 +1215,7 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .cmp-clear:hover { color: #fff; }
 .cmp-go { display: inline-flex; align-items: center; gap: 5px; background: var(--gold); color: #14130f; font-weight: 500; font-size: var(--fs-sm); padding: 9px 16px; border-radius: 999px; }
 .cmp-go svg { width: 15px; height: 15px; }
-@media (max-width: 640px) { .cmp-tray { left: 12px; right: 12px; transform: none; justify-content: space-between; } @keyframes cmp-up { from { transform: translateY(20px); opacity: 0; } } }
+@media (max-width: 640px) { .cmp-tray { left: 16px; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); transform: none; justify-content: space-between; } @keyframes cmp-up { from { transform: translateY(20px); opacity: 0; } } }
 
 .yj-toast {
   position: fixed; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -1273,3 +1273,79 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .chat-fab { display: none !important; }
 /* ทรัพย์อื่นในทำเล — ย้ายมาเต็มความกว้างใต้กริด */
 .same-area-sec { margin-top: 18px; }
+
+/* ============ AI Concierge chat modal ============ */
+.cc-ov { position: fixed; inset: 0; z-index: 400; background: rgba(20,19,15,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); display: grid; place-items: end center; padding: 0; }
+@media (min-width: 640px) { .cc-ov { place-items: center; padding: 20px; } }
+.cc-modal { display: flex; flex-direction: column; width: 100%; max-width: 480px; height: 82vh; max-height: 640px; background: var(--card); border: 1px solid var(--line); border-radius: 22px 22px 0 0; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.3); animation: cc-up .28s ease; }
+@media (min-width: 640px) { .cc-modal { border-radius: 22px; height: 72vh; } }
+@keyframes cc-up { from { transform: translateY(30px); opacity: 0; } }
+.cc-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, var(--gold-soft), var(--card)); }
+.cc-head-t { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 1.02rem; }
+.cc-head-t svg { width: 20px; height: 20px; color: var(--gold); }
+.cc-x { width: 32px; height: 32px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.cc-x:hover { color: var(--ink); }
+.cc-log { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
+.cc-msg { max-width: 85%; padding: 11px 15px; border-radius: 16px; font-size: var(--fs-sm); line-height: 1.6; }
+.cc-msg.bot { background: var(--soft); color: var(--ink); border-bottom-left-radius: 5px; align-self: flex-start; }
+.cc-msg.user { background: var(--gold); color: #fff; border-bottom-right-radius: 5px; align-self: flex-end; }
+:root[data-theme="dark"] .cc-msg.user { color: #14130f; }
+.cc-msg.typing { display: flex; gap: 4px; align-items: center; }
+.cc-msg.typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: cc-blink 1.2s infinite; }
+.cc-msg.typing span:nth-child(2) { animation-delay: .2s; } .cc-msg.typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes cc-blink { 0%,60%,100% { opacity: .3; } 30% { opacity: 1; } }
+.cc-chips { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; max-width: 100%; }
+.cc-chips button { border: 1px solid var(--line-strong); background: var(--card); color: var(--ink-2); padding: 8px 13px; border-radius: 999px; font-size: var(--fs-xs); font-family: inherit; cursor: pointer; transition: all .15s; }
+.cc-chips button:hover { border-color: var(--gold); color: var(--gold); }
+.cc-cards { align-self: stretch; display: flex; flex-direction: column; gap: 12px; }
+.cc-cards .card { max-width: 100%; }
+.cc-alt { color: var(--gold); font-weight: 500; }
+.cc-input { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); background: var(--card); }
+.cc-input input { flex: 1; border: 1px solid var(--line); border-radius: 999px; padding: 12px 18px; background: var(--bg); color: var(--ink); font-family: inherit; font-size: var(--fs-sm); outline: none; }
+.cc-input input:focus { border-color: var(--gold); }
+.cc-send { width: 44px; height: 44px; border-radius: 999px; border: 0; background: var(--gold); color: #fff; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+:root[data-theme="dark"] .cc-send { color: #14130f; }
+.cc-send svg { width: 19px; height: 19px; }
+.cc-send:disabled { opacity: .5; }
+/* home concierge entry */
+.ai-cta { display: inline-flex; align-items: center; gap: 9px; margin-top: 16px; padding: 13px 22px; border-radius: 999px; background: #191917; color: #fff; font-weight: 500; font-size: var(--fs-sm); cursor: pointer; border: 0; font-family: inherit; transition: transform .18s, background .18s; }
+.ai-cta:hover { transform: translateY(-2px); background: #000; }
+.ai-cta svg { width: 18px; height: 18px; color: var(--gold); }
+
+/* ============ Area reviews ============ */
+.rv-stars { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
+.rv-stars button { background: transparent; border: 0; font-size: 34px; line-height: 1; color: var(--line-strong); cursor: pointer; transition: color .12s, transform .12s; }
+.rv-stars button.on, .rv-stars button.hover { color: var(--gold); }
+.rv-stars button:hover { transform: scale(1.15); }
+.rv-aspects { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.rv-aspects button { border: 1px solid var(--line); background: transparent; color: var(--ink-2); padding: 7px 12px; border-radius: 999px; font-size: var(--fs-xs); font-family: inherit; cursor: pointer; transition: all .15s; }
+.rv-aspects button:hover { border-color: var(--gold); }
+.rv-aspects button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); font-weight: 500; }
+.rv-ov textarea.yj-input { resize: vertical; min-height: 68px; }
+
+.area-reviews { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; }
+.rv-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.rv-sum { display: flex; align-items: center; gap: 12px; }
+.rv-avg { font-family: var(--font-display); font-size: 2rem; font-weight: 600; color: var(--gold); line-height: 1; }
+.rv-star-row { display: inline-flex; gap: 1px; color: var(--line-strong); font-size: .85rem; }
+.rv-star-row .on { color: var(--gold); }
+.rv-count { font-size: var(--fs-xs); color: var(--muted); margin-top: 2px; }
+.rv-head .btn svg { width: 15px; height: 15px; }
+.rv-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.rv-tag { background: var(--soft); border-radius: 999px; padding: 6px 12px; font-size: var(--fs-xs); color: var(--ink-2); }
+.rv-tag b { color: var(--gold); }
+.rv-item { padding: 12px 0; border-top: 1px solid var(--line); }
+.rv-item-top { display: flex; align-items: center; gap: 10px; }
+.rv-author { font-size: var(--fs-sm); color: var(--ink-2); font-weight: 500; }
+.rv-comment { font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.65; margin-top: 6px; }
+.rv-item-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rv-item-tags span { font-size: .72rem; color: var(--muted); background: var(--soft); padding: 3px 9px; border-radius: 6px; }
+
+/* ============ Lightbox filmstrip (tour) ============ */
+.lb-strip { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; gap: 8px; padding: 0 16px; overflow-x: auto; justify-content: safe center; scrollbar-width: none; }
+.lb-strip::-webkit-scrollbar { display: none; }
+.lb-thumb { flex: 0 0 auto; width: 62px; height: 46px; border-radius: 8px; overflow: hidden; border: 2px solid transparent; background: #222; cursor: pointer; padding: 0; opacity: .55; transition: opacity .15s, border-color .15s; }
+.lb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lb-thumb:hover { opacity: .85; }
+.lb-thumb.on { opacity: 1; border-color: var(--gold); }
+@media (max-width: 640px) { .lb-strip { bottom: 8px; } .lb-thumb { width: 52px; height: 38px; } }

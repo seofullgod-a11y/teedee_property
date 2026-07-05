@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=15">
+  <link rel="stylesheet" href="/css/style.css?v=17">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -185,6 +185,7 @@
       <button data-view="editor"><span data-ic="sparkles"></span> เพิ่มประกาศใหม่</button>
       <button data-view="inbox"><span data-ic="phone"></span> ข้อความติดต่อ <span class="unread-dot" id="unreadDot" style="display:none">0</span></button>
       <button data-view="alerts"><span data-ic="heart"></span> การแจ้งเตือน</button>
+      <button data-view="reviews"><span data-ic="star"></span> รีวิวทำเล</button>
       <button data-view="settings"><span data-ic="settings"></span> ตั้งค่าเว็บไซต์</button>
       <span class="spacer"></span>
       <a class="menu foot-link" href="/" target="_blank"><span data-ic="arrowRight"></span> ดูหน้าเว็บ</a>
@@ -209,6 +210,13 @@
         <h1>การแจ้งเตือนทรัพย์ตรงใจ</h1>
         <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">รายชื่อผู้ที่ฝากเงื่อนไขไว้ เมื่อมีประกาศใหม่ตรงเงื่อนไข ระบบจะแจ้งเตือนผ่าน Telegram พร้อมช่องทางติดต่อลูกค้า</p>
         <div id="alertsWrap"></div>
+      </div>
+
+      <!-- Reviews -->
+      <div data-panel="reviews" style="display:none">
+        <h1>รีวิวทำเล</h1>
+        <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">รีวิวที่ผู้ใช้เขียนถึงย่านต่าง ๆ — ลบรายการที่ไม่เหมาะสมได้</p>
+        <div id="reviewsWrap"></div>
       </div>
 
       <!-- Listings -->
@@ -361,7 +369,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=15"></script>
+  <script src="/js/shared.js?v=17"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -427,6 +435,7 @@
         p.style.display = p.dataset.panel === view ? 'block' : 'none');
       if (view === 'dashboard') loadDash();
       if (view === 'alerts') loadAlerts();
+      if (view === 'reviews') loadReviews();
       if (view === 'listings') loadListings();
       if (view === 'inbox') loadInbox();
       if (view === 'settings') loadSettings();
@@ -481,6 +490,31 @@
       const l = await api('/api/admin/listings');
       $('dashRecent').innerHTML = renderTable(l.items.slice(0, 5));
       bindTable($('dashRecent'));
+    }
+
+    // ---------- Reviews (moderation) ----------
+    async function loadReviews() {
+      const d = await api('/api/admin/area-reviews');
+      if (!d.items.length) { $('reviewsWrap').innerHTML = '<p style="color:var(--muted)">ยังไม่มีรีวิว</p>'; return; }
+      const stars = n => '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
+      $('reviewsWrap').innerHTML = `<div style="overflow-x:auto"><table><thead><tr>
+        <th>ทำเล</th><th>คะแนน</th><th>รีวิว</th><th>โดย</th><th>เมื่อ</th><th></th>
+        </tr></thead><tbody>${d.items.map(r => {
+          const asp = (typeof r.aspects === 'string' ? JSON.parse(r.aspects) : (r.aspects || [])).join(', ');
+          return `<tr>
+            <td>${TD.esc(r.province)}</td>
+            <td style="color:var(--copper);white-space:nowrap">${stars(r.rating)}</td>
+            <td>${r.comment ? TD.esc(r.comment) : '<span style="color:var(--muted)">—</span>'}${asp ? `<div style="font-size:.75rem;color:var(--muted);margin-top:3px">${TD.esc(asp)}</div>` : ''}</td>
+            <td>${TD.esc(r.author || '—')}</td>
+            <td style="font-size:.78rem;color:var(--muted);white-space:nowrap">${new Date(r.created_at).toLocaleDateString('th-TH')}</td>
+            <td><button class="rv-del" data-id="${r.id}" style="border:1px solid var(--line);background:transparent;color:var(--danger);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.78rem">ลบ</button></td>
+          </tr>`;
+        }).join('')}</tbody></table></div>`;
+      $('reviewsWrap').querySelectorAll('.rv-del').forEach(b => b.onclick = async () => {
+        if (!confirm('ลบรีวิวนี้?')) return;
+        await api('/api/admin/area-reviews/' + b.dataset.id, { method: 'DELETE' });
+        loadReviews();
+      });
     }
 
     // ---------- Saved searches (การแจ้งเตือน) ----------
