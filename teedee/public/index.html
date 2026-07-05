@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=43">
+  <link rel="stylesheet" href="/css/style.css?v=44">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -93,13 +93,13 @@
   <!-- Recently viewed (แสดงเมื่อมีประวัติ) -->
   <section class="section" id="forYouSec" style="display:none;padding-top:0">
     <div class="container">
-      <div class="sec-head">
+      <div class="section-head">
         <div>
           <span class="eyebrow-text">For You</span>
           <h2>คัดมาเพื่อคุณ ✨</h2>
           <p id="fySub"></p>
         </div>
-        <a class="see-all" id="fyMore" href="/search">ดูเพิ่มเติม <span id="ic-arrow-fy"></span></a>
+        <a class="more" id="fyMore" href="/search">ดูเพิ่มเติม <span id="ic-arrow-fy"></span></a>
       </div>
       <div class="grid" id="forYou"></div>
     </div>
@@ -200,7 +200,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=43"></script>
+  <script src="/js/shared.js?v=44"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);

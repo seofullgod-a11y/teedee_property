@@ -1594,3 +1594,6 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
 }
 :root[data-theme="dark"] .pwa-pill .pwa-x { color: rgba(242, 239, 232, .6); }
+
+/* กันลูกศร/ไอคอน inline พองเต็มจอ ถ้า class จัดขนาดหลุด */
+.section-head a svg { width: 16px; height: 16px; flex-shrink: 0; }
