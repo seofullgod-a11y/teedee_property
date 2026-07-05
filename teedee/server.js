@@ -2,7 +2,7 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const { pool, migrate, seed, PROV_COORD } = require('./db');
+const { pool, migrate, seed, PROV_COORD, SEED } = require('./db');
 const seo = require('./seo');
 
 const app = express();
@@ -895,10 +895,17 @@ app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
                   GROUP BY 1 ORDER BY 1`),
       pool.query(`SELECT COUNT(*)::int c FROM events WHERE type='search' AND created_at >= now() - interval '30 days'`)
     ]);
+    // ทรัพย์ที่ควรปรับปรุง: เผยแพร่อยู่ แต่ยอดเข้าชมน้อย/ไม่มีคนติดต่อ
+    const needsAttention = await pool.query(
+      `SELECT l.id, l.title, l.views,
+        (SELECT COUNT(*)::int FROM inquiries WHERE listing_id=l.id) inquiries,
+        (SELECT COUNT(*)::int FROM listings WHERE jsonb_array_length(COALESCE(images,'[]'::jsonb))=0 AND id=l.id) noimg
+       FROM listings l WHERE l.status='active'
+       ORDER BY l.views ASC, inquiries ASC LIMIT 6`);
     const series = [];
     const map = Object.fromEntries(viewsTrend.rows.map(r => [r.d, r.c]));
     for (let k = 13; k >= 0; k--) { const dt = new Date(Date.now() - k * 864e5).toISOString().slice(0, 10); series.push({ d: dt, c: map[dt] || 0 }); }
-    res.json({ searches: searches.rows, provinces: provinces.rows, viewsTrend: series, totalSearches: topSearchers.rows[0].c });
+    res.json({ searches: searches.rows, provinces: provinces.rows, viewsTrend: series, totalSearches: topSearchers.rows[0].c, needsAttention: needsAttention.rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
 });
 
@@ -947,6 +954,44 @@ app.get('/api/admin/business-summary', requireAdmin, async (req, res) => {
 app.post('/api/admin/login', (req, res) => {
   if ((req.body?.password || '') === ADMIN_PASSWORD) return res.json({ token: adminToken() });
   res.status(401).json({ error: 'รหัสผ่านไม่ถูกต้อง' });
+});
+
+// ============ ข้อมูลตัวอย่าง (Demo) — โหลด/ล้างได้ ไม่ปน production ============
+app.get('/api/admin/demo/status', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT COUNT(*) FILTER (WHERE is_demo)::int demo, COUNT(*) FILTER (WHERE NOT is_demo)::int real FROM listings`);
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: 'server error' }); }
+});
+app.post('/api/admin/demo/load', requireAdmin, async (req, res) => {
+  try {
+    const existing = await pool.query('SELECT COUNT(*)::int c FROM listings WHERE is_demo');
+    if (existing.rows[0].c > 0) return res.status(400).json({ error: 'มีข้อมูลตัวอย่างอยู่แล้ว — ล้างก่อนถ้าต้องการโหลดใหม่' });
+    let n = 0;
+    for (const s of SEED) {
+      const base = PROV_COORD[s.province];
+      const jit = () => (Math.random() - 0.5) * 0.06;
+      const lat = base ? +(base[0] + jit()).toFixed(6) : null;
+      const lng = base ? +(base[1] + jit()).toFixed(6) : null;
+      await pool.query(
+        `INSERT INTO listings (title, listing_type, category, price, location_text, province, bedrooms, bathrooms,
+          area_sqm, land_area_sqwah, floor_text, description, highlights, images, nearby, pets_allowed, featured,
+          amenities, furnishings, common_fee_text, year_built, latitude, longitude, status, is_demo)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,'active',true)`,
+        [s.title, s.listing_type, s.category, s.price, s.location_text, s.province, s.bedrooms || 0, s.bathrooms || 0,
+         s.area_sqm || 0, s.land_area_sqwah || 0, s.floor_text || '', s.description, JSON.stringify(s.highlights || []),
+         JSON.stringify(s.images || []), JSON.stringify(s.nearby || []), !!s.pets_allowed, !!s.featured,
+         JSON.stringify(s.amenities || []), JSON.stringify(s.furnishings || []), s.common_fee_text || '', s.year_built || null, lat, lng]);
+      n++;
+    }
+    res.json({ ok: true, added: n });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+app.post('/api/admin/demo/clear', requireAdmin, async (req, res) => {
+  try {
+    const { rowCount } = await pool.query('DELETE FROM listings WHERE is_demo');
+    res.json({ ok: true, removed: rowCount });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
 });
 
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
@@ -1030,10 +1075,27 @@ function listingParams(b) {
 }
 
 
+// ดึงพิกัดจากลิงก์ Google Maps ถ้าผู้ใช้วางมา (รองรับรูปแบบ @lat,lng และ q=lat,lng และ !3dlat!4dlng)
+function coordsFromMapUrl(url) {
+  const s = String(url || '');
+  if (!s) return null;
+  let m = s.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/)
+    || s.match(/[?&]q=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/)
+    || s.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/)
+    || s.match(/[?&]ll=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if (!m) return null;
+  const lat = Number(m[1]), lng = Number(m[2]);
+  if (lat >= 5 && lat <= 21 && lng >= 96 && lng <= 106) return [lat, lng]; // อยู่ในกรอบประเทศไทย
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return [lat, lng];
+  return null;
+}
+
 // ถ้าไม่ได้ระบุพิกัด ให้ใช้พิกัดจังหวัดแทน (สุ่มกระจายเล็กน้อย) — ทรัพย์จะขึ้นบนแผนที่เสมอ
-function applyProvinceCoordFallback(p) {
+function applyProvinceCoordFallback(p, mapUrl) {
   // p[5]=province, p[20]=latitude, p[21]=longitude
   if (p[20] == null && p[21] == null) {
+    const fromUrl = coordsFromMapUrl(mapUrl);
+    if (fromUrl) { p[20] = +fromUrl[0].toFixed(6); p[21] = +fromUrl[1].toFixed(6); return p; }
     const base = PROV_COORD[p[5]];
     if (base) {
       const jit = () => (Math.random() - 0.5) * 0.06;
@@ -1046,7 +1108,7 @@ function applyProvinceCoordFallback(p) {
 
 app.post('/api/admin/listings', requireAdmin, async (req, res) => {
   try {
-    const p = applyProvinceCoordFallback(listingParams(req.body || {}));
+    const p = applyProvinceCoordFallback(listingParams(req.body || {}), (req.body || {}).map_url);
     if (!p[0]) return res.status(400).json({ error: 'กรุณากรอกชื่อประกาศ' });
     const { rows } = await pool.query(
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
@@ -1063,10 +1125,72 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
   }
 });
 
+// ============ นำเข้าทรัพย์ทีละหลายรายการ ============
+// รับ rows (array of plain objects จาก CSV ที่ parse ฝั่ง client) แล้ว validate + insert ทีเดียว
+app.post('/api/admin/listings/bulk', requireAdmin, async (req, res) => {
+  const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
+  if (!rows.length) return res.status(400).json({ error: 'ไม่มีข้อมูลให้นำเข้า' });
+  if (rows.length > 500) return res.status(400).json({ error: 'นำเข้าได้สูงสุด 500 รายการต่อครั้ง' });
+  const publish = req.body?.publish === true; // true = เผยแพร่เลย, false = เก็บเป็นร่าง
+  const results = { ok: 0, failed: 0, errors: [], ids: [] };
+  const splitList = (v) => String(v || '').split(/[|;\n]+/).map(s => s.trim()).filter(Boolean);
+  const client = await pool.connect();
+  try {
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i] || {};
+      try {
+        const title = String(r.title || r['ชื่อประกาศ'] || '').trim();
+        if (!title) { results.failed++; results.errors.push(`แถว ${i + 1}: ไม่มีชื่อประกาศ`); continue; }
+        const typeRaw = String(r.listing_type || r['ประเภท'] || '').toLowerCase().trim();
+        const listing_type = ['rent', 'เช่า'].includes(typeRaw) ? 'rent' : 'sale';
+        const catMap = { 'บ้าน': 'house', 'บ้านเดี่ยว': 'house', 'คอนโด': 'condo', 'ทาวน์เฮาส์': 'townhouse', 'ที่ดิน': 'land', 'อาคารพาณิชย์': 'commercial' };
+        const catRaw = String(r.category || r['หมวด'] || '').toLowerCase().trim();
+        const category = ['house', 'condo', 'townhouse', 'land', 'commercial'].includes(catRaw) ? catRaw : (catMap[r.category || r['หมวด']] || 'condo');
+        const body = {
+          title, listing_type, category,
+          price: Number(String(r.price || r['ราคา'] || '').replace(/[^0-9.]/g, '')) || 0,
+          province: String(r.province || r['จังหวัด'] || '').trim(),
+          location_text: String(r.location_text || r['ทำเล'] || '').trim(),
+          bedrooms: Number(r.bedrooms || r['ห้องนอน'] || 0) || 0,
+          bathrooms: Number(r.bathrooms || r['ห้องน้ำ'] || 0) || 0,
+          area_sqm: Number(r.area_sqm || r['พื้นที่'] || 0) || 0,
+          description: String(r.description || r['รายละเอียด'] || '').trim(),
+          images: splitList(r.images || r['รูปภาพ']),
+          pets_allowed: /^(true|1|yes|ได้|y)$/i.test(String(r.pets_allowed || r['เลี้ยงสัตว์'] || '')),
+          status: publish ? 'active' : 'draft'
+        };
+        const p = applyProvinceCoordFallback(listingParams(body), r.map_url || r['ลิงก์แผนที่']);
+        const { rows: ins } = await client.query(
+          `INSERT INTO listings (title, listing_type, category, price, location_text, province,
+            bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
+            images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
+            amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29)
+           RETURNING id`, p);
+        results.ids.push(ins[0].id); results.ok++;
+      } catch (e) { results.failed++; results.errors.push(`แถว ${i + 1}: ${e.message}`); }
+    }
+    if (results.errors.length > 20) results.errors = results.errors.slice(0, 20).concat(['…และอื่น ๆ']);
+    res.json(results);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+  finally { client.release(); }
+});
+
+// เทมเพลต CSV ให้ทีมดาวน์โหลดไปกรอก
+app.get('/api/admin/import-template', requireAdmin, (req, res) => {
+  const headers = ['title', 'listing_type', 'category', 'price', 'province', 'location_text', 'bedrooms', 'bathrooms', 'area_sqm', 'pets_allowed', 'images', 'map_url', 'description'];
+  const sample = ['คอนโดใจกลางเมือง ใกล้ BTS', 'rent', 'condo', '18000', 'กรุงเทพมหานคร', 'อโศก', '1', '1', '35', 'true', 'https://url1.jpg | https://url2.jpg', 'https://maps.google.com/?q=13.7563,100.5018', 'ห้องสวย พร้อมอยู่ เฟอร์นิเจอร์ครบ'];
+  const sample2 = ['บ้านเดี่ยว 2 ชั้น หมู่บ้านสงบ', 'sale', 'house', '4500000', 'นครปฐม', 'ศาลายา', '3', '2', '160', 'false', '', '', 'บ้านเดี่ยวพร้อมสวน ที่จอดรถ 2 คัน'];
+  const csv = '\uFEFF' + [headers, sample, sample2].map(row => row.map(c => /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c).join(',')).join('\r\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="yoojai-import-template.csv"');
+  res.send(csv);
+});
+
 app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const p = applyProvinceCoordFallback(listingParams(req.body || {}));
+    const p = applyProvinceCoordFallback(listingParams(req.body || {}), (req.body || {}).map_url);
     await pool.query(
       `UPDATE listings SET title=$1, listing_type=$2, category=$3, price=$4, location_text=$5,
         province=$6, bedrooms=$7, bathrooms=$8, area_sqm=$9, land_area_sqwah=$10, floor_text=$11,
@@ -1604,6 +1728,26 @@ app.get('/privacy', servePage('privacy.html', { path: '/privacy', title: 'นโ
 app.get('/terms', servePage('terms.html', { path: '/terms', title: 'เงื่อนไขการใช้งาน', desc: 'เงื่อนไขการใช้งานเว็บไซต์อยู่ใจ' }));
 app.get('/discover', servePage('discover.html', { path: '/discover', title: 'ปัดหาบ้านที่ใช่ 🃏', desc: 'ปัดขวาถ้าถูกใจ! ค้นหาบ้านในฝันแบบสนุก ๆ ทีละหลัง เก็บเข้ารายการโปรดอัตโนมัติ' }));
 app.get('/healthz', (req, res) => res.json({ ok: true }));
+
+// ---------- 404: หน้าไม่พบ (ต้องอยู่ท้ายสุดหลังทุก route) ----------
+app.use((req, res) => {
+  // API ที่ไม่พบ → JSON, หน้าเว็บ → หน้า 404 สวย ๆ
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'not found' });
+  res.status(404).sendFile(path.join(__dirname, 'public/404.html'));
+});
+
+// ---------- Global error handler: จับทุก error ไม่ให้เว็บล่ม ----------
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err && err.message);
+  if (res.headersSent) return next(err);
+  if (err && err.type === 'entity.parse.failed') return res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง' });
+  if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'server error' });
+  res.status(500).send('เกิดข้อผิดพลาดชั่วคราว กรุณาลองใหม่');
+});
+
+// กัน process ตายจาก error ที่ไม่ได้ดัก
+process.on('unhandledRejection', (r) => console.error('Unhandled rejection:', r && r.message ? r.message : r));
+process.on('uncaughtException', (e) => console.error('Uncaught exception:', e && e.message ? e.message : e));
 
 // ---------- Boot ----------
 (async () => {

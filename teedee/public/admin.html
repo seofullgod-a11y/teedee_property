@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=44">
+  <link rel="stylesheet" href="/css/style.css?v=45">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -210,6 +210,27 @@
     .biz-row-title { color: var(--pine); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 60%; }
     .biz-row-stat { color: var(--muted); font-size: .8rem; white-space: nowrap; }
     .logo-preview-box.dark-prev { background: #1c1b17; border-color: #3a382f; }
+    .imp-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin-bottom: 20px; max-width: 720px; }
+    .imp-card h2 { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 8px; }
+    .imp-desc { color: var(--muted); font-size: .88rem; line-height: 1.7; margin-bottom: 14px; }
+    .imp-steps { margin: 0 0 14px; padding-left: 20px; font-size: .9rem; line-height: 2.1; color: var(--ink-2); }
+    .imp-summary { background: var(--soft); border-radius: 10px; padding: 10px 14px; font-size: .9rem; margin-bottom: 12px; }
+    .imp-preview-table { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+    .imp-preview-table table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    .imp-preview-table th, .imp-preview-table td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .imp-preview-table th { background: var(--soft); font-family: var(--font-display); font-weight: 500; }
+    .imp-more { font-size: .8rem; color: var(--muted); padding: 8px 10px; }
+    .imp-publish { display: flex; align-items: center; gap: 8px; font-size: .88rem; margin-top: 14px; cursor: pointer; }
+    .imp-publish input { accent-color: var(--gold); width: 16px; height: 16px; }
+    .imp-msg { font-size: .85rem; margin-top: 12px; }
+    .imp-msg.ok { color: #3f8f5f; } .imp-msg.err { color: #c0392b; }
+    .imp-errs { margin-top: 8px; font-size: .78rem; color: #c0392b; background: #fbeaea; border-radius: 8px; padding: 8px 12px; }
+    .imp-demo-stat { display: flex; gap: 10px; flex-wrap: wrap; }
+    .ds-pill { background: var(--soft); border-radius: 999px; padding: 6px 14px; font-size: .85rem; }
+    .ds-pill.demo { background: var(--gold-soft); color: var(--gold); }
+    .danger-btn { color: var(--danger); }
+    .danger-btn:hover { border-color: var(--danger); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -241,6 +262,7 @@
       <button data-view="appts"><span data-ic="calendar"></span> นัดชมทรัพย์ <span class="unread-dot" id="apptDot" style="display:none">0</span></button>
       <button data-view="agents"><span data-ic="user"></span> ทีมเอเจนต์</button>
       <button data-view="analytics"><span data-ic="sparkles"></span> สถิติผู้ใช้</button>
+      <button data-view="import"><span data-ic="download"></span> นำเข้า / ตัวอย่าง</button>
       <button data-view="settings"><span data-ic="settings"></span> ตั้งค่าเว็บไซต์</button>
       <span class="spacer"></span>
       <a class="menu foot-link" href="/" target="_blank"><span data-ic="arrowRight"></span> ดูหน้าเว็บ</a>
@@ -440,6 +462,47 @@
         </div>
       </div>
 
+      <!-- Import / Demo -->
+      <div data-panel="import" style="display:none">
+        <h1>นำเข้าข้อมูล / ตัวอย่าง</h1>
+
+        <div class="imp-card">
+          <h2>📥 นำเข้าทรัพย์หลายรายการจาก CSV</h2>
+          <p class="imp-desc">ให้ทีมกรอกข้อมูลในไฟล์ CSV (เปิดด้วย Excel / Google Sheets ได้) แล้วอัปโหลดทีเดียว — เร็วกว่าพิมพ์ทีละหลัง</p>
+          <ol class="imp-steps">
+            <li>ดาวน์โหลดเทมเพลต → <button class="mini-btn" id="impTemplate" type="button">ดาวน์โหลดเทมเพลต CSV</button></li>
+            <li>กรอกข้อมูลในไฟล์ (มีตัวอย่าง 2 แถวให้ดู) แล้วบันทึกเป็น .csv</li>
+            <li>อัปโหลดกลับมาที่นี่</li>
+          </ol>
+          <input type="file" id="impFile" accept=".csv,text/csv" hidden>
+          <div class="logo-drop" id="impDrop">
+            <span class="lp-text">คลิกเพื่อเลือกไฟล์ CSV หรือลากมาวาง</span>
+            <span class="lp-hint">รองรับหัวคอลัมน์ทั้งภาษาไทยและอังกฤษ · สูงสุด 500 รายการ/ครั้ง</span>
+          </div>
+          <div id="impPreview" style="display:none;margin-top:16px">
+            <div class="imp-summary" id="impSummary"></div>
+            <div class="imp-preview-table" id="impTable"></div>
+            <label class="imp-publish"><input type="checkbox" id="impPublish"> เผยแพร่ทันที (ไม่ติ๊ก = เก็บเป็นฉบับร่างไว้ตรวจก่อน)</label>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+              <button class="btn btn-primary" id="impConfirm" type="button">นำเข้าทั้งหมด</button>
+              <button class="btn btn-ghost" id="impCancel" type="button">ยกเลิก</button>
+            </div>
+          </div>
+          <div class="imp-msg" id="impMsg"></div>
+        </div>
+
+        <div class="imp-card">
+          <h2>🎬 ข้อมูลตัวอย่าง (Demo)</h2>
+          <p class="imp-desc">ระหว่างรอทรัพย์จริง โหลดชุดข้อมูลตัวอย่างสวย ๆ ไว้ทดสอบหรือโชว์ทีม — <b>แยกจากข้อมูลจริง</b> ล้างทีเดียวได้ ไม่กระทบทรัพย์ที่คุณลงเอง</p>
+          <div class="imp-demo-stat" id="demoStat"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button class="btn btn-ghost" id="demoLoad" type="button">โหลดข้อมูลตัวอย่าง</button>
+            <button class="btn btn-ghost danger-btn" id="demoClear" type="button">ล้างข้อมูลตัวอย่าง</button>
+          </div>
+          <div class="imp-msg" id="demoMsg"></div>
+        </div>
+      </div>
+
       <!-- Settings -->
       <div data-panel="settings" style="display:none">
         <h1>ตั้งค่าเว็บไซต์</h1>
@@ -504,7 +567,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=44"></script>
+  <script src="/js/shared.js?v=45"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -597,6 +660,7 @@
       if (view === 'dashboard') loadDash();
       if (view === 'alerts') loadAlerts();
       if (view === 'reviews') loadReviews();
+      if (view === 'import') loadImport();
       if (view === 'listingReviews') loadListingReviews();
       if (view === 'reports') loadReports();
       if (view === 'appts') loadAppts();
@@ -835,6 +899,15 @@
             <div class="an-row"><span class="an-label">${TD.esc(p.prov)}</span>
               <span class="an-bar"><span style="width:${p.c / maxP * 100}%"></span></span>
               <span class="an-c">${p.c}</span></div>`).join('') : '<p style="color:var(--muted);font-size:.85rem">ยังไม่มีข้อมูล</p>'}
+        </div>
+        <div class="dash-card" style="margin-top:16px">
+          <div class="dash-card-h">🔧 ทรัพย์ที่ควรปรับปรุง (ยอดเข้าชมน้อยสุด)</div>
+          <p style="color:var(--muted);font-size:.8rem;margin:-4px 0 12px">ลองเพิ่มรูป ปรับชื่อ/ราคา หรือติดป้าย "แนะนำ" เพื่อดึงความสนใจ</p>
+          ${(d.needsAttention || []).length ? d.needsAttention.map(t => `
+            <div class="biz-row">
+              <a href="/listing/${t.id}" target="_blank" class="biz-row-title">${TD.esc(t.title)}</a>
+              <span class="biz-row-stat">👁 ${Number(t.views).toLocaleString()} · 💬 ${t.inquiries}${t.noimg ? ' · <span style="color:var(--danger)">ไม่มีรูป</span>' : ''}</span>
+            </div>`).join('') : '<p style="color:var(--muted);font-size:.85rem">ยังไม่มีข้อมูล</p>'}
         </div>`;
     }
 
@@ -886,6 +959,101 @@
         loadReviews();
       });
     }
+
+    // ---------- Import / Demo ----------
+    let impRows = [];
+    function parseCSV(text) {
+      const rows = []; let row = [], cur = '', q = false;
+      text = text.replace(/^\uFEFF/, '');
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (q) {
+          if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+          else if (c === '"') q = false;
+          else cur += c;
+        } else {
+          if (c === '"') q = true;
+          else if (c === ',') { row.push(cur); cur = ''; }
+          else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+          else if (c === '\r') { /* skip */ }
+          else cur += c;
+        }
+      }
+      if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+      return rows.filter(r => r.some(c => String(c).trim() !== ''));
+    }
+    function loadImport() {
+      loadDemoStat();
+      $('impPreview').style.display = 'none';
+      $('impMsg').textContent = ''; $('impMsg').className = 'imp-msg';
+    }
+    async function loadDemoStat() {
+      try {
+        const d = await api('/api/admin/demo/status');
+        $('demoStat').innerHTML = `<span class="ds-pill">ข้อมูลจริง: <b>${d.real}</b></span> <span class="ds-pill demo">ข้อมูลตัวอย่าง: <b>${d.demo}</b></span>`;
+        $('demoLoad').disabled = d.demo > 0;
+        $('demoClear').disabled = d.demo === 0;
+      } catch (e) {}
+    }
+    $('impTemplate').onclick = async () => {
+      try {
+        const res = await fetch('/api/admin/import-template', { headers: { authorization: 'Bearer ' + token } });
+        const blob = await res.blob(); const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'yoojai-import-template.csv'; a.click(); URL.revokeObjectURL(url);
+      } catch (e) { toast('ดาวน์โหลดไม่สำเร็จ', true); }
+    };
+    $('impDrop').onclick = () => $('impFile').click();
+    $('impDrop').addEventListener('dragover', e => { e.preventDefault(); $('impDrop').classList.add('drag'); });
+    $('impDrop').addEventListener('dragleave', () => $('impDrop').classList.remove('drag'));
+    $('impDrop').addEventListener('drop', e => { e.preventDefault(); $('impDrop').classList.remove('drag'); if (e.dataTransfer.files[0]) readCsv(e.dataTransfer.files[0]); });
+    $('impFile').onchange = () => { if ($('impFile').files[0]) readCsv($('impFile').files[0]); };
+    function readCsv(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const grid = parseCSV(reader.result);
+          if (grid.length < 2) { toast('ไฟล์ว่างหรือไม่มีข้อมูล', true); return; }
+          const headers = grid[0].map(h => h.trim());
+          impRows = grid.slice(1).map(r => { const o = {}; headers.forEach((h, i) => o[h] = (r[i] || '').trim()); return o; });
+          const titleKey = headers.find(h => /title|ชื่อ/.test(h));
+          const withTitle = impRows.filter(r => (r[titleKey] || '').trim()).length;
+          $('impSummary').innerHTML = `พบ <b>${impRows.length}</b> แถว · มีชื่อประกาศ <b>${withTitle}</b> รายการ`;
+          const cols = headers.slice(0, 5);
+          $('impTable').innerHTML = `<table><thead><tr>${cols.map(c => `<th>${TD.esc(c)}</th>`).join('')}</tr></thead><tbody>${
+            impRows.slice(0, 5).map(r => `<tr>${cols.map(c => `<td>${TD.esc(String(r[c] || '').slice(0, 40))}</td>`).join('')}</tr>`).join('')
+          }</tbody></table>${impRows.length > 5 ? `<p class="imp-more">…และอีก ${impRows.length - 5} แถว</p>` : ''}`;
+          $('impPreview').style.display = 'block';
+          $('impMsg').textContent = '';
+        } catch (e) { toast('อ่านไฟล์ไม่สำเร็จ', true); }
+      };
+      reader.readAsText(file);
+    }
+    $('impCancel').onclick = () => { impRows = []; $('impPreview').style.display = 'none'; $('impFile').value = ''; };
+    $('impConfirm').onclick = async () => {
+      if (!impRows.length) return;
+      $('impConfirm').disabled = true;
+      $('impMsg').textContent = 'กำลังนำเข้า…'; $('impMsg').className = 'imp-msg';
+      try {
+        const r = await api('/api/admin/listings/bulk', { method: 'POST', body: JSON.stringify({ rows: impRows, publish: $('impPublish').checked }) });
+        $('impMsg').innerHTML = `✓ นำเข้าสำเร็จ <b>${r.ok}</b> รายการ${r.failed ? ` · ไม่สำเร็จ ${r.failed}` : ''}${$('impPublish').checked ? '' : ' (เก็บเป็นฉบับร่าง)'}`;
+        $('impMsg').className = 'imp-msg ok';
+        if (r.errors && r.errors.length) $('impMsg').innerHTML += `<div class="imp-errs">${r.errors.map(e => TD.esc(e)).join('<br>')}</div>`;
+        impRows = []; $('impPreview').style.display = 'none'; $('impFile').value = '';
+        loadDemoStat();
+      } catch (e) { $('impMsg').textContent = e.message || 'นำเข้าไม่สำเร็จ'; $('impMsg').className = 'imp-msg err'; }
+      $('impConfirm').disabled = false;
+    };
+    $('demoLoad').onclick = async () => {
+      $('demoMsg').textContent = 'กำลังโหลด…'; $('demoMsg').className = 'imp-msg';
+      try { const r = await api('/api/admin/demo/load', { method: 'POST' }); $('demoMsg').textContent = `✓ โหลดข้อมูลตัวอย่าง ${r.added} รายการแล้ว`; $('demoMsg').className = 'imp-msg ok'; loadDemoStat(); }
+      catch (e) { $('demoMsg').textContent = e.message; $('demoMsg').className = 'imp-msg err'; }
+    };
+    $('demoClear').onclick = async () => {
+      if (!confirm('ล้างข้อมูลตัวอย่างทั้งหมด? (ข้อมูลจริงจะไม่ถูกแตะต้อง)')) return;
+      $('demoMsg').textContent = 'กำลังล้าง…'; $('demoMsg').className = 'imp-msg';
+      try { const r = await api('/api/admin/demo/clear', { method: 'POST' }); $('demoMsg').textContent = `✓ ล้างข้อมูลตัวอย่าง ${r.removed} รายการแล้ว`; $('demoMsg').className = 'imp-msg ok'; loadDemoStat(); }
+      catch (e) { $('demoMsg').textContent = e.message; $('demoMsg').className = 'imp-msg err'; }
+    };
 
     // ---------- Listing reviews (moderation) ----------
     async function loadListingReviews() {

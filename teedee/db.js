@@ -170,6 +170,7 @@ async function migrate() {
       created_at TIMESTAMPTZ DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS idx_listing_reviews ON listing_reviews (listing_id, approved);
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT false;
   `);
 
   // ค่าเริ่มต้นของแบรนด์ (แก้ได้ในหลังบ้าน)
@@ -392,4 +393,4 @@ async function seed() {
   console.log(`Seeded ${SEED.length} listings`);
 }
 
-module.exports = { pool, migrate, seed, PROV_COORD };
+module.exports = { pool, migrate, seed, PROV_COORD, SEED, U };
