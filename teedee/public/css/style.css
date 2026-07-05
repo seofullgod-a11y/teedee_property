@@ -1159,14 +1159,14 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .s-select-btn[aria-expanded="true"]::after { transform: translateY(-30%) rotate(225deg); }
 .ssb-lbl { overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
 .s-panel {
-  position: absolute; left: 10px; right: 10px; top: calc(100% + 10px); z-index: 200;
+  position: absolute; left: 10px; right: 10px; top: calc(100% + 6px); z-index: 200;
   background: var(--card); border: 1px solid var(--line-strong); border-radius: 16px;
   box-shadow: 0 20px 50px rgba(28, 28, 26, .22), 0 4px 12px rgba(28, 28, 26, .12);
   padding: 6px; max-height: 288px; overflow: auto;
 }
 :root[data-theme="dark"] .s-panel { background: #24221c; box-shadow: 0 20px 50px rgba(0, 0, 0, .6); }
-/* ยกบาร์ค้นหาให้ลอยเหนือ AI hint ตอนเปิดแผง เพื่อไม่ให้ทับกัน */
-.searchbox:has(.s-select-btn[aria-expanded="true"]) .ai-hint { opacity: .25; }
+/* เปิดแผงแล้วซ่อน AI hint จริง ๆ (คงพื้นที่ไว้ ไม่ให้เลย์เอาต์กระตุก) */
+.searchbox.panel-open .ai-hint { visibility: hidden; }
 .sp-opt {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   width: 100%; border: 0; background: transparent; cursor: pointer;
