@@ -211,7 +211,7 @@ p  { font-size: var(--fs-base); }
 .search-stage { position: relative; }
 .search-stage .search-bar { position: relative; z-index: 2; }
 .search-mascot {
-  position: absolute; width: 72px; right: 16px; top: -48px; z-index: 1;
+  position: absolute; width: 58px; right: 14px; top: -38px; z-index: 1;
   pointer-events: none; transform-origin: bottom center;
   animation: m-pop .5s cubic-bezier(.34, 1.56, .64, 1) both, mc-bob 3s ease-in-out infinite .5s;
 }
@@ -237,8 +237,8 @@ p  { font-size: var(--fs-base); }
   .search-bar .s-btn, .search-mascot { animation: none !important; }
 }
 @media (max-width: 640px) {
-  .search-mascot { width: 54px; top: -36px; right: 12px; }
-  .seg { margin-bottom: 30px; }
+  .search-mascot { width: 46px; top: -30px; right: 12px; }
+  .seg { margin-bottom: 28px; }
 }
 
 /* secondary filters — quiet pills under the bar */
