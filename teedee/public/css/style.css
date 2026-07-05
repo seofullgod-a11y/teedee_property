@@ -220,9 +220,9 @@ p  { font-size: var(--fs-base); }
 }
 /* มือ/ปีก: อยู่หน้าบาร์ (z-index สูงกว่า) จิ้มลงปุ่ม */
 .mascot-arm {
-  width: 26px; right: 23px; top: -16px; z-index: 3;
+  width: 32px; right: 20px; top: -15px; z-index: 3;
   animation: m-pop .5s cubic-bezier(.34, 1.56, .64, 1) both, m-poke 1.9s ease-in-out infinite .5s;
-  transform-box: view-box; transform-origin: 44px 10px;
+  transform-box: view-box; transform-origin: 46px 8px;
 }
 @keyframes m-pop { 0% { opacity: 0; transform: translateY(10px) scale(.7); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes mb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
@@ -252,7 +252,7 @@ p  { font-size: var(--fs-base); }
 }
 @media (max-width: 640px) {
   .mascot-body { width: 44px; top: -26px; right: 14px; }
-  .mascot-arm { width: 21px; top: -12px; right: 20px; }
+  .mascot-arm { width: 26px; top: -11px; right: 17px; }
   .seg { margin-bottom: 38px; }
 }
 
