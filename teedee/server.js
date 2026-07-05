@@ -150,39 +150,45 @@ const LISTING_FIELDS = `id, title, listing_type, category, price, location_text,
 // GET /api/listings?type=rent&category=condo&q=พญาไท&min=10000&max=50000&beds=2&featured=1&sort=price_asc&page=1
 app.get('/api/listings', async (req, res) => {
   try {
-    const { type, category, q, min, max, beds, featured, sort, page, ids } = req.query;
-    const where = [`status = 'active'`];
+    const { type, category, q, min, max, beds, baths, pets, province, featured, sort, page, ids } = req.query;
+    const where = [`l.status = 'active'`];
     const params = [];
     if (ids) {
       const arr = String(ids).split(',').map(Number).filter(n => Number.isInteger(n) && n > 0).slice(0, 60);
       if (!arr.length) return res.json({ total: 0, page: 1, limit: 24, items: [] });
       params.push(arr);
-      where.push(`id = ANY($${params.length})`);
+      where.push(`l.id = ANY($${params.length})`);
     }
     const add = (sql, val) => { params.push(val); where.push(sql.replace('?', `$${params.length}`)); };
 
-    if (type && ['rent', 'sale'].includes(type)) add('listing_type = ?', type);
-    if (category) add('category = ?', category);
+    if (type && ['rent', 'sale'].includes(type)) add('l.listing_type = ?', type);
+    if (category) add('l.category = ?', category);
     if (q) {
       params.push(`%${q}%`);
       const n = params.length;
-      where.push(`(title ILIKE $${n} OR location_text ILIKE $${n} OR province ILIKE $${n} OR description ILIKE $${n})`);
+      where.push(`(l.title ILIKE $${n} OR l.location_text ILIKE $${n} OR l.province ILIKE $${n} OR l.description ILIKE $${n})`);
     }
-    if (min) add('price >= ?', Number(min) || 0);
-    if (max) add('price <= ?', Number(max) || 999999999999);
-    if (beds) add('bedrooms >= ?', Number(beds) || 0);
-    if (featured === '1') where.push('featured = true');
+    if (min) add('l.price >= ?', Number(min) || 0);
+    if (max) add('l.price <= ?', Number(max) || 999999999999);
+    if (beds) add('l.bedrooms >= ?', Number(beds) || 0);
+    if (baths) add('l.bathrooms >= ?', Number(baths) || 0);
+    if (pets === '1') where.push('l.pets_allowed = true');
+    if (province) add('l.province = ?', String(province).slice(0, 80));
+    if (featured === '1') where.push('l.featured = true');
 
     const sorts = {
-      price_asc: 'price ASC', price_desc: 'price DESC',
-      newest: 'created_at DESC', popular: 'views DESC'
+      price_asc: 'l.price ASC', price_desc: 'l.price DESC',
+      newest: 'l.created_at DESC', popular: 'l.views DESC',
+      rating: 'rating_avg DESC NULLS LAST, rating_count DESC'
     };
-    const orderBy = sorts[sort] || 'featured DESC, created_at DESC';
+    const orderBy = sorts[sort] || 'l.featured DESC, l.created_at DESC';
     const limit = 24;
     const offset = (Math.max(1, Number(page) || 1) - 1) * limit;
 
-    const sql = `SELECT ${LISTING_FIELDS}, COUNT(*) OVER()::int AS total
-                 FROM listings WHERE ${where.join(' AND ')}
+    const RATING_SUB = `(SELECT ROUND(AVG(rating)::numeric,1) FROM listing_reviews WHERE listing_id=l.id AND approved) AS rating_avg,
+                        (SELECT COUNT(*)::int FROM listing_reviews WHERE listing_id=l.id AND approved) AS rating_count`;
+    const sql = `SELECT ${LISTING_FIELDS}, ${RATING_SUB}, COUNT(*) OVER()::int AS total
+                 FROM listings l WHERE ${where.join(' AND ')}
                  ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
     const { rows } = await pool.query(sql, params);
     if (q && String(q).trim().length >= 2 && !ids) logEvent('search', String(q).trim(), { type: type || '', category: category || '', results: rows[0]?.total || 0 });
@@ -893,6 +899,48 @@ app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
     const map = Object.fromEntries(viewsTrend.rows.map(r => [r.d, r.c]));
     for (let k = 13; k >= 0; k--) { const dt = new Date(Date.now() - k * 864e5).toISOString().slice(0, 10); series.push({ d: dt, c: map[dt] || 0 }); }
     res.json({ searches: searches.rows, provinces: provinces.rows, viewsTrend: series, totalSearches: topSearchers.rows[0].c });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.get('/api/admin/business-summary', requireAdmin, async (req, res) => {
+  try {
+    const [portfolio, leads, appts, reviews, topPerf, provDist] = await Promise.all([
+      pool.query(`SELECT
+        COUNT(*) FILTER (WHERE status='active')::int active,
+        COUNT(*) FILTER (WHERE status='active' AND listing_type='sale')::int active_sale,
+        COUNT(*) FILTER (WHERE status='active' AND listing_type='rent')::int active_rent,
+        COUNT(*) FILTER (WHERE status='draft')::int drafts,
+        COALESCE(SUM(price) FILTER (WHERE status='active' AND listing_type='sale'),0)::bigint sale_value,
+        COALESCE(SUM(views) FILTER (WHERE status='active'),0)::bigint total_views
+        FROM listings`),
+      pool.query(`SELECT
+        COUNT(*) FILTER (WHERE created_at >= now() - interval '30 days')::int m0,
+        COUNT(*) FILTER (WHERE created_at >= now() - interval '60 days' AND created_at < now() - interval '30 days')::int m1,
+        COUNT(*)::int total
+        FROM inquiries`),
+      pool.query(`SELECT
+        COUNT(*) FILTER (WHERE status='pending')::int pending,
+        COUNT(*) FILTER (WHERE status IN ('pending','confirmed') AND visit_date >= current_date)::int upcoming
+        FROM appointments`),
+      pool.query(`SELECT COALESCE(ROUND(AVG(rating)::numeric,1),0) avg, COUNT(*)::int c FROM listing_reviews WHERE approved`),
+      pool.query(`SELECT l.id, l.title, l.views,
+        (SELECT COUNT(*)::int FROM inquiries WHERE listing_id=l.id) inquiries
+        FROM listings l WHERE l.status='active' ORDER BY l.views DESC LIMIT 5`),
+      pool.query(`SELECT province, COUNT(*)::int c FROM listings WHERE status='active' AND province<>'' GROUP BY province ORDER BY c DESC LIMIT 6`)
+    ]);
+    const L = leads.rows[0];
+    const trend = L.m1 > 0 ? Math.round(((L.m0 - L.m1) / L.m1) * 100) : (L.m0 > 0 ? 100 : 0);
+    const totalViews = Number(portfolio.rows[0].total_views) || 0;
+    const conversion = totalViews > 0 ? +(L.total / totalViews * 100).toFixed(1) : 0;
+    res.json({
+      portfolio: portfolio.rows[0],
+      leads: { month: L.m0, prevMonth: L.m1, total: L.total, trend },
+      appointments: appts.rows[0],
+      rating: reviews.rows[0],
+      conversion,
+      topPerformers: topPerf.rows,
+      provinces: provDist.rows
+    });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
 });
 

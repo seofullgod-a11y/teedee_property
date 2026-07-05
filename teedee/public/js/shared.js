@@ -252,6 +252,7 @@ const TD = {
       </div>
       <div class="body">
         <h3>${this.esc(l.title)}${l.verified ? ` <span class="vfy" title="ตรวจสอบแล้ว">${this.icons.verified}</span>` : ''}</h3>
+        ${Number(l.rating_count) > 0 ? `<div class="card-rating"><span class="cr-star">★</span> ${Number(l.rating_avg).toFixed(1)} <span class="cr-count">(${l.rating_count})</span></div>` : ''}
         <div class="loc">${this.icons.pin} ${this.esc(l.location_text || l.province || '-')}</div>
         <div class="spec-row">${specs.map(s => `<span class="spec">${this.icons[s.ic]} ${s.t}</span>`).join('')}</div>
         ${nearby ? `<div class="nearby-row">${nearby}</div>` : ''}

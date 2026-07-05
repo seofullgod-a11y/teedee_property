@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=37">
+  <link rel="stylesheet" href="/css/style.css?v=38">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -195,6 +195,20 @@
     .export-msg { font-size: .82rem; margin-top: 10px; min-height: 16px; color: var(--muted); }
     .export-msg.ok { color: #4c5a3f; }
     .export-msg.err { color: #c0392b; }
+    .biz-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .biz-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 18px 16px; }
+    .biz-card.accent { background: linear-gradient(135deg, var(--gold-soft), var(--card)); border-color: var(--gold); }
+    .biz-label { font-size: .8rem; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .biz-num { font-family: var(--font-display); font-size: 1.85rem; font-weight: 600; line-height: 1; color: var(--ink); }
+    .biz-sub { font-size: .76rem; color: var(--muted); margin-top: 7px; }
+    .biz-up { color: #3f8f5f; font-size: .74rem; font-weight: 600; }
+    .biz-down { color: #c0392b; font-size: .74rem; font-weight: 600; }
+    .biz-flat { color: var(--muted); font-size: .74rem; }
+    .dash-card-h { font-family: var(--font-display); font-weight: 500; font-size: .95rem; margin-bottom: 12px; }
+    .biz-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: .85rem; }
+    .biz-row:last-child { border-bottom: 0; }
+    .biz-row-title { color: var(--pine); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 60%; }
+    .biz-row-stat { color: var(--muted); font-size: .8rem; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -235,7 +249,9 @@
     <main class="main-area">
       <!-- Dashboard -->
       <div data-panel="dashboard">
-        <h1>ภาพรวมระบบ</h1>
+        <h1>ภาพรวมธุรกิจ</h1>
+        <div id="bizSummary"></div>
+        <h2 style="font-size:1.05rem;margin:26px 0 12px;font-family:var(--font-display)">สถิติระบบ</h2>
         <div class="stat-grid" id="statGrid"></div>
         <div class="dash-2col">
           <div id="dashChart"></div>
@@ -470,7 +486,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=37"></script>
+  <script src="/js/shared.js?v=38"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -574,8 +590,67 @@
       if (view === 'editor' && !editingId) resetEditor();
     }
 
+    // ---------- Business summary ----------
+    async function loadBusinessSummary() {
+      let d;
+      try { d = await api('/api/admin/business-summary'); } catch (e) { return; }
+      const baht = n => '฿' + Number(n).toLocaleString('th-TH');
+      const compact = n => { n = Number(n); if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + ' ล้าน'; if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K'; return n.toLocaleString('th-TH'); };
+      const p = d.portfolio, le = d.leads, ap = d.appointments;
+      const trendTxt = le.trend > 0 ? `<span class="biz-up">▲ ${le.trend}%</span>` : le.trend < 0 ? `<span class="biz-down">▼ ${Math.abs(le.trend)}%</span>` : '<span class="biz-flat">—</span>';
+      $('bizSummary').innerHTML = `
+        <div class="biz-grid">
+          <div class="biz-card accent">
+            <div class="biz-label">ประกาศที่กำลังเผยแพร่</div>
+            <div class="biz-num">${p.active}</div>
+            <div class="biz-sub">ขาย ${p.active_sale} · เช่า ${p.active_rent}${p.drafts ? ` · ร่าง ${p.drafts}` : ''}</div>
+          </div>
+          <div class="biz-card">
+            <div class="biz-label">มูลค่าพอร์ต (ประกาศขาย)</div>
+            <div class="biz-num">฿${compact(p.sale_value)}</div>
+            <div class="biz-sub">รวมราคาประกาศขายทั้งหมด</div>
+          </div>
+          <div class="biz-card">
+            <div class="biz-label">ผู้ติดต่อเดือนนี้ ${trendTxt}</div>
+            <div class="biz-num">${le.month}</div>
+            <div class="biz-sub">เดือนก่อน ${le.prevMonth} · รวมทั้งหมด ${le.total}</div>
+          </div>
+          <div class="biz-card">
+            <div class="biz-label">นัดชมที่รอดำเนินการ</div>
+            <div class="biz-num">${ap.pending}</div>
+            <div class="biz-sub">กำลังจะถึง ${ap.upcoming} นัด</div>
+          </div>
+          <div class="biz-card">
+            <div class="biz-label">อัตราการติดต่อ</div>
+            <div class="biz-num">${d.conversion}%</div>
+            <div class="biz-sub">จากยอดเข้าชม → ผู้ติดต่อ</div>
+          </div>
+          <div class="biz-card">
+            <div class="biz-label">คะแนนรีวิวเฉลี่ย</div>
+            <div class="biz-num">${d.rating.c ? '★ ' + Number(d.rating.avg).toFixed(1) : '–'}</div>
+            <div class="biz-sub">${d.rating.c ? 'จาก ' + d.rating.c + ' รีวิว' : 'ยังไม่มีรีวิว'}</div>
+          </div>
+        </div>
+        <div class="dash-2col" style="margin-top:16px">
+          <div class="dash-card">
+            <div class="dash-card-h">ทรัพย์ที่มีคนสนใจมากสุด</div>
+            ${d.topPerformers.length ? d.topPerformers.map(t => `
+              <div class="biz-row">
+                <a href="/listing/${t.id}" target="_blank" class="biz-row-title">${TD.esc(t.title)}</a>
+                <span class="biz-row-stat">👁 ${Number(t.views).toLocaleString('th-TH')} · 💬 ${t.inquiries}</span>
+              </div>`).join('') : '<p style="color:var(--muted);font-size:.85rem">ยังไม่มีข้อมูล</p>'}
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-h">กระจายตามจังหวัด</div>
+            ${d.provinces.length ? d.provinces.map(pr => `
+              <div class="biz-row"><span>${TD.esc(pr.province)}</span><span class="biz-row-stat">${pr.c} ทรัพย์</span></div>`).join('') : '<p style="color:var(--muted);font-size:.85rem">ยังไม่มีข้อมูล</p>'}
+          </div>
+        </div>`;
+    }
+
     // ---------- Dashboard ----------
     async function loadDash() {
+      loadBusinessSummary();
       const s = await api('/api/admin/stats');
       $('statGrid').innerHTML = `
         <div class="stat-card"><div class="n">${s.active}</div><div class="l">ประกาศเผยแพร่</div></div>

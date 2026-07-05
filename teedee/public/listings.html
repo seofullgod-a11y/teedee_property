@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=37">
+  <link rel="stylesheet" href="/css/style.css?v=38">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -57,6 +57,17 @@
           <option value="4">4+ ห้องนอน</option>
         </select>
       </div>
+      <div class="field" style="min-width:110px">
+        <select name="baths">
+          <option value="">ห้องน้ำ</option>
+          <option value="1">1+ ห้องน้ำ</option>
+          <option value="2">2+ ห้องน้ำ</option>
+          <option value="3">3+ ห้องน้ำ</option>
+        </select>
+      </div>
+      <label class="field pets-field" title="เลี้ยงสัตว์ได้">
+        <input type="checkbox" name="pets" value="1"> 🐾 เลี้ยงสัตว์ได้
+      </label>
       <button class="btn btn-primary" type="submit" style="padding:11px 26px"><span data-ic="search"></span> ค้นหา</button>
     </form>
 
@@ -70,9 +81,12 @@
           <option value="price_asc">ราคาต่ำ → สูง</option>
           <option value="price_desc">ราคาสูง → ต่ำ</option>
           <option value="popular">ยอดนิยม</option>
+          <option value="rating">รีวิวดีที่สุด</option>
         </select>
       </div>
     </div>
+
+    <div class="active-filters" id="activeFilters"></div>
 
     <div class="grid" id="results">
       <div class="skeleton" style="height:380px"></div>
@@ -84,7 +98,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=37"></script>
+  <script src="/js/shared.js?v=38"></script>
   <script>
     const params = new URLSearchParams(location.search);
     TD.chrome(params.get('category') === 'land' ? 'land' : (params.get('type') || ''));
@@ -92,9 +106,10 @@
 
     // Fill form from URL
     const form = document.getElementById('filterForm');
-    ['q', 'type', 'category', 'min', 'max', 'beds'].forEach(k => {
+    ['q', 'type', 'category', 'min', 'max', 'beds', 'baths'].forEach(k => {
       if (params.get(k) && form.elements[k]) form.elements[k].value = params.get(k);
     });
+    if (params.get('pets') === '1' && form.elements['pets']) form.elements['pets'].checked = true;
     if (params.get('sort')) document.getElementById('sortSel').value = params.get('sort');
 
     // Dynamic page title
@@ -122,13 +137,43 @@
       location.href = '/search?' + p.toString();
     });
 
+    function renderActiveFilters() {
+      const box = document.getElementById('activeFilters');
+      const p = new URLSearchParams(location.search);
+      const labels = {
+        q: v => `“${v}”`,
+        type: v => ({ rent: 'เช่า', sale: 'ขาย' }[v] || v),
+        category: v => TD.catLabel[v] || v,
+        min: v => `ตั้งแต่ ฿${Number(v).toLocaleString()}`,
+        max: v => `ไม่เกิน ฿${Number(v).toLocaleString()}`,
+        beds: v => `${v}+ นอน`,
+        baths: v => `${v}+ น้ำ`,
+        pets: () => '🐾 เลี้ยงสัตว์ได้',
+        province: v => `📍 ${v}`
+      };
+      const chips = [];
+      for (const [k, fn] of Object.entries(labels)) {
+        const v = p.get(k);
+        if (v) chips.push(`<button class="af-chip" data-key="${k}" type="button">${fn(v)} <span class="af-x">✕</span></button>`);
+      }
+      if (!chips.length) { box.innerHTML = ''; return; }
+      box.innerHTML = chips.join('') + `<button class="af-clear" id="afClear" type="button">ล้างทั้งหมด</button>`;
+      box.querySelectorAll('.af-chip').forEach(c => c.onclick = () => {
+        const p2 = new URLSearchParams(location.search);
+        p2.delete(c.dataset.key); p2.delete('page');
+        location.href = '/search' + (p2.toString() ? '?' + p2.toString() : '');
+      });
+      document.getElementById('afClear').onclick = () => { location.href = '/search'; };
+    }
+    renderActiveFilters();
+
     function currentCriteria() {
       const p = new URLSearchParams(location.search);
       const budget = (p.get('budget') || '').split('-');
       return {
         q: p.get('q') || '', type: p.get('type') || '', category: p.get('category') || '',
         min: budget[0] || p.get('min') || '', max: budget[1] || p.get('max') || '',
-        beds: p.get('beds') || ''
+        beds: p.get('beds') || '', baths: p.get('baths') || '', pets: p.get('pets') || ''
       };
     }
     document.getElementById('alertBtn').addEventListener('click', () => TD.openAlertModal(currentCriteria()));
