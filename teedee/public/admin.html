@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=18">
+  <link rel="stylesheet" href="/css/style.css?v=21">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -160,6 +160,35 @@
     .top-rank { width: 22px; height: 22px; border-radius: 6px; background: var(--sand, #f4eee2); color: var(--copper); font-weight: 600; font-size: .8rem; display: grid; place-items: center; flex-shrink: 0; }
     .top-title { flex: 1; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .top-views { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+    /* agents */
+    .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .agent-admin-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; text-align: center; }
+    .aac-photo { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; display: block; }
+    .aac-ph { display: grid; place-items: center; background: #f4eee2; color: var(--copper); font-weight: 600; font-size: 1.5rem; font-family: var(--font-display); }
+    .aac-name { font-weight: 600; font-family: var(--font-display); }
+    .aac-role { font-size: .82rem; color: var(--muted); }
+    .aac-meta { font-size: .78rem; color: var(--ink); margin-top: 8px; }
+    .aac-count { font-size: .78rem; color: var(--copper); margin-top: 6px; }
+    .aac-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .aac-actions button { flex: 1; padding: 7px; border: 1px solid var(--line); background: transparent; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: .8rem; }
+    .aac-actions button:hover { border-color: var(--copper); }
+    .aac-actions .del { color: #c0392b; }
+    /* admin modal */
+    .admin-modal-ov { position: fixed; inset: 0; background: rgba(20,19,15,.5); display: grid; place-items: center; z-index: 300; padding: 20px; }
+    .admin-modal { background: #fff; border-radius: 16px; padding: 26px; width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto; }
+    .admin-modal h2 { font-family: var(--font-display); margin-bottom: 16px; }
+    .admin-modal label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 12px; }
+    .admin-modal label.chk { display: flex; align-items: center; gap: 8px; color: var(--ink); }
+    .admin-modal input, .admin-modal textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; font-family: inherit; font-size: .9rem; margin-top: 4px; outline: none; }
+    .admin-modal input:focus, .admin-modal textarea:focus { border-color: var(--copper); }
+    .admin-modal-msg { color: #c0392b; font-size: .82rem; min-height: 18px; }
+    .admin-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+    /* analytics bars */
+    .an-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+    .an-label { width: 120px; font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+    .an-bar { flex: 1; height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+    .an-bar span { display: block; height: 100%; background: var(--copper); border-radius: 999px; }
+    .an-c { font-size: .82rem; color: var(--muted); width: 30px; text-align: right; }
   </style>
 </head>
 <body>
@@ -187,6 +216,9 @@
       <button data-view="alerts"><span data-ic="heart"></span> การแจ้งเตือน</button>
       <button data-view="reviews"><span data-ic="star"></span> รีวิวทำเล</button>
       <button data-view="reports"><span data-ic="flag"></span> รายงานประกาศ <span class="unread-dot" id="reportDot" style="display:none">0</span></button>
+      <button data-view="appts"><span data-ic="calendar"></span> นัดชมทรัพย์ <span class="unread-dot" id="apptDot" style="display:none">0</span></button>
+      <button data-view="agents"><span data-ic="user"></span> ทีมเอเจนต์</button>
+      <button data-view="analytics"><span data-ic="sparkles"></span> สถิติผู้ใช้</button>
       <button data-view="settings"><span data-ic="settings"></span> ตั้งค่าเว็บไซต์</button>
       <span class="spacer"></span>
       <a class="menu foot-link" href="/" target="_blank"><span data-ic="arrowRight"></span> ดูหน้าเว็บ</a>
@@ -225,6 +257,28 @@
         <h1>รายงานประกาศ</h1>
         <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">ประกาศที่ผู้ใช้แจ้งว่าอาจมีปัญหา — ตรวจสอบแล้วกด "จัดการแล้ว"</p>
         <div id="reportsWrap"></div>
+      </div>
+
+      <!-- Appointments -->
+      <div data-panel="appts" style="display:none">
+        <h1>นัดชมทรัพย์</h1>
+        <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">คำขอนัดเข้าชมสถานที่จากลูกค้า — จัดการสถานะได้</p>
+        <div id="apptsWrap"></div>
+      </div>
+
+      <!-- Agents -->
+      <div data-panel="agents" style="display:none">
+        <div class="toolbar"><h1 style="margin:0">ทีมเอเจนต์</h1>
+          <button class="btn btn-primary" id="newAgentBtn" style="padding:10px 20px">+ เพิ่มเอเจนต์</button></div>
+        <p style="color:var(--muted);margin:0 0 18px;font-size:.9rem">ทีมผู้ดูแลทรัพย์ — ผูกกับประกาศได้ในหน้าแก้ไขประกาศ</p>
+        <div id="agentsWrap"></div>
+      </div>
+
+      <!-- Analytics -->
+      <div data-panel="analytics" style="display:none">
+        <h1>สถิติผู้ใช้</h1>
+        <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">พฤติกรรมผู้เข้าชม 30 วันล่าสุด — ช่วยให้เห็นว่าตลาดต้องการอะไร</p>
+        <div id="analyticsWrap"></div>
       </div>
 
       <!-- Listings -->
@@ -295,6 +349,11 @@
                   <option value="price_drop">↓ ราคาพิเศษ</option>
                   <option value="new_project">โครงการใหม่</option>
                   <option value="urgent">ด่วน!</option>
+                </select>
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted)">ผู้ดูแลทรัพย์
+                <select id="f-agent" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-family:inherit;min-width:150px">
+                  <option value="">— ไม่ระบุ —</option>
                 </select>
               </label>
             </div>
@@ -387,7 +446,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=18"></script>
+  <script src="/js/shared.js?v=21"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -436,7 +495,17 @@
         $('loginView').style.display = 'none';
         $('shell').style.display = 'grid';
         show('dashboard');
+        populateAgentSelect();
       } catch { logout(); }
+    }
+    async function populateAgentSelect() {
+      try {
+        const d = await api('/api/admin/agents');
+        const sel = $('f-agent'); if (!sel) return;
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">— ไม่ระบุ —</option>' + d.items.map(a => `<option value="${a.id}">${TD.esc(a.name)}</option>`).join('');
+        sel.value = cur;
+      } catch {}
     }
     if (token) enter();
 
@@ -444,6 +513,7 @@
     document.querySelectorAll('.side button[data-view]').forEach(b =>
       b.onclick = () => show(b.dataset.view));
     $('newBtn').onclick = () => { resetEditor(); show('editor'); };
+    $('newAgentBtn').onclick = () => openAgentModal(null);
     $('cancelBtn').onclick = () => show('listings');
 
     function show(view) {
@@ -455,6 +525,9 @@
       if (view === 'alerts') loadAlerts();
       if (view === 'reviews') loadReviews();
       if (view === 'reports') loadReports();
+      if (view === 'appts') loadAppts();
+      if (view === 'agents') loadAgents();
+      if (view === 'analytics') loadAnalytics();
       if (view === 'listings') loadListings();
       if (view === 'inbox') loadInbox();
       if (view === 'settings') loadSettings();
@@ -509,6 +582,127 @@
       const l = await api('/api/admin/listings');
       $('dashRecent').innerHTML = renderTable(l.items.slice(0, 5));
       bindTable($('dashRecent'));
+    }
+
+    // ---------- Appointments ----------
+    async function loadAppts() {
+      const d = await api('/api/admin/appointments');
+      const pending = d.items.filter(a => a.status === 'pending').length;
+      $('apptDot').style.display = pending ? 'inline-block' : 'none';
+      $('apptDot').textContent = pending;
+      if (!d.items.length) { $('apptsWrap').innerHTML = '<p style="color:var(--muted)">ยังไม่มีคำขอนัดชม</p>'; return; }
+      const stLabel = { pending: 'รอยืนยัน', confirmed: 'ยืนยันแล้ว', done: 'เสร็จสิ้น', cancelled: 'ยกเลิก' };
+      const stColor = { pending: 'var(--copper)', confirmed: '#4c5a3f', done: 'var(--muted)', cancelled: '#c0392b' };
+      // group by date
+      const groups = {};
+      d.items.forEach(a => { const k = a.visit_date ? a.visit_date.slice(0, 10) : 'ไม่ระบุ'; (groups[k] = groups[k] || []).push(a); });
+      $('apptsWrap').innerHTML = Object.entries(groups).map(([date, items]) => `
+        <div style="margin-bottom:22px">
+          <h3 style="font-size:.95rem;font-family:var(--font-display);margin-bottom:10px">${date !== 'ไม่ระบุ' ? new Date(date).toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : date} <span style="color:var(--muted);font-weight:400">· ${items.length} นัด</span></h3>
+          <div style="overflow-x:auto"><table><thead><tr><th>เวลา</th><th>ลูกค้า</th><th>ติดต่อ</th><th>ทรัพย์</th><th>สถานะ</th><th></th></tr></thead><tbody>
+          ${items.map(a => `<tr style="${a.status === 'cancelled' ? 'opacity:.5' : ''}">
+            <td style="white-space:nowrap">${TD.esc(a.visit_time || '-')}</td>
+            <td>${TD.esc(a.name)}</td>
+            <td style="font-size:.82rem">${TD.esc(a.phone || a.line_id || '-')}</td>
+            <td style="font-size:.82rem">${a.title ? `<a href="/listing/${a.listing_id}" target="_blank" style="color:var(--pine)">${TD.esc(a.title)}</a>` : '-'}</td>
+            <td style="color:${stColor[a.status]};white-space:nowrap">${stLabel[a.status] || a.status}</td>
+            <td><select data-appt="${a.id}" style="padding:5px 8px;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:.78rem">
+              ${['pending', 'confirmed', 'done', 'cancelled'].map(s => `<option value="${s}" ${a.status === s ? 'selected' : ''}>${stLabel[s]}</option>`).join('')}
+            </select></td>
+          </tr>`).join('')}
+          </tbody></table></div>
+        </div>`).join('');
+      $('apptsWrap').querySelectorAll('[data-appt]').forEach(sel => sel.onchange = async () => {
+        await api('/api/admin/appointments/' + sel.dataset.appt + '/status', { method: 'POST', body: JSON.stringify({ status: sel.value }) });
+        loadAppts();
+      });
+    }
+
+    // ---------- Agents ----------
+    let editingAgent = null;
+    async function loadAgents() {
+      const d = await api('/api/admin/agents');
+      if (!d.items.length) { $('agentsWrap').innerHTML = '<p style="color:var(--muted)">ยังไม่มีเอเจนต์ กด "เพิ่มเอเจนต์" เพื่อเริ่ม</p>'; return; }
+      $('agentsWrap').innerHTML = `<div class="agent-grid">${d.items.map(a => `
+        <div class="agent-admin-card">
+          ${a.photo_url ? `<img src="${TD.esc(a.photo_url)}" class="aac-photo">` : `<div class="aac-photo aac-ph">${TD.esc((a.name || '?').charAt(0))}</div>`}
+          <div class="aac-name">${TD.esc(a.name)}${a.active ? '' : ' <span style="color:var(--muted);font-size:.75rem">(ปิด)</span>'}</div>
+          <div class="aac-role">${TD.esc(a.role || '')}</div>
+          <div class="aac-meta">${a.phone ? '📞 ' + TD.esc(a.phone) : ''} ${a.line_id ? '· ' + TD.esc(a.line_id) : ''}</div>
+          <div class="aac-count">ดูแล ${a.listings} ทรัพย์</div>
+          <div class="aac-actions"><button data-edit-agent="${a.id}">แก้ไข</button><button data-del-agent="${a.id}" class="del">ลบ</button></div>
+        </div>`).join('')}</div>`;
+      $('agentsWrap').querySelectorAll('[data-edit-agent]').forEach(b => b.onclick = () => openAgentModal(d.items.find(x => x.id == b.dataset.editAgent)));
+      $('agentsWrap').querySelectorAll('[data-del-agent]').forEach(b => b.onclick = async () => {
+        if (!confirm('ลบเอเจนต์นี้? ทรัพย์ที่ผูกไว้จะไม่มีผู้ดูแล')) return;
+        await api('/api/admin/agents/' + b.dataset.delAgent, { method: 'DELETE' }); loadAgents();
+      });
+      populateAgentSelect();
+    }
+    function openAgentModal(agent) {
+      editingAgent = agent || null;
+      const a = agent || {};
+      const m = document.createElement('div'); m.className = 'admin-modal-ov'; m.id = 'agentModal';
+      m.innerHTML = `<div class="admin-modal">
+        <h2>${agent ? 'แก้ไขเอเจนต์' : 'เพิ่มเอเจนต์'}</h2>
+        <label>ชื่อ *<input id="ag-name" value="${TD.esc(a.name || '')}"></label>
+        <label>ตำแหน่ง<input id="ag-role" value="${TD.esc(a.role || 'ผู้ดูแลทรัพย์')}"></label>
+        <div style="display:flex;gap:10px"><label style="flex:1">เบอร์โทร<input id="ag-phone" value="${TD.esc(a.phone || '')}"></label>
+        <label style="flex:1">LINE ID<input id="ag-line" value="${TD.esc(a.line_id || '')}"></label></div>
+        <label>ลิงก์รูปโปรไฟล์<input id="ag-photo" value="${TD.esc(a.photo_url || '')}" placeholder="https://..."></label>
+        <label>แนะนำตัวสั้น ๆ<textarea id="ag-bio" rows="2">${TD.esc(a.bio || '')}</textarea></label>
+        <label class="chk"><input type="checkbox" id="ag-active" ${a.active === false ? '' : 'checked'}> เปิดใช้งาน</label>
+        <div class="admin-modal-msg" id="ag-msg"></div>
+        <div class="admin-modal-actions"><button class="btn btn-ghost" id="ag-cancel">ยกเลิก</button><button class="btn btn-primary" id="ag-save">บันทึก</button></div>
+      </div>`;
+      document.body.appendChild(m);
+      m.querySelector('#ag-cancel').onclick = () => m.remove();
+      m.onclick = e => { if (e.target === m) m.remove(); };
+      m.querySelector('#ag-save').onclick = async () => {
+        const body = { name: $('ag-name').value.trim(), role: $('ag-role').value.trim(), phone: $('ag-phone').value.trim(), line_id: $('ag-line').value.trim(), photo_url: $('ag-photo').value.trim(), bio: $('ag-bio').value.trim(), active: $('ag-active').checked };
+        if (!body.name) { $('ag-msg').textContent = 'กรุณากรอกชื่อ'; return; }
+        try {
+          if (editingAgent) await api('/api/admin/agents/' + editingAgent.id, { method: 'PUT', body: JSON.stringify(body) });
+          else await api('/api/admin/agents', { method: 'POST', body: JSON.stringify(body) });
+          m.remove(); loadAgents();
+        } catch (e) { $('ag-msg').textContent = e.message; }
+      };
+    }
+
+    // ---------- Analytics ----------
+    async function loadAnalytics() {
+      const d = await api('/api/admin/analytics');
+      const tr = d.viewsTrend || [];
+      const max = Math.max(1, ...tr.map(x => x.c));
+      const gap = 1.4, bw = (100 - gap * (tr.length - 1)) / tr.length;
+      const bars = tr.map((x, i) => { const h = x.c / max * 46; return `<rect x="${(i * (bw + gap)).toFixed(2)}" y="${(52 - h).toFixed(2)}" width="${bw.toFixed(2)}" height="${Math.max(h, .6).toFixed(2)}" rx="1" fill="${x.c ? 'var(--copper)' : 'var(--line)'}"><title>${x.d}: ${x.c}</title></rect>`; }).join('');
+      const maxS = Math.max(1, ...d.searches.map(s => s.c));
+      const maxP = Math.max(1, ...d.provinces.map(p => p.c));
+      $('analyticsWrap').innerHTML = `
+        <div class="stat-grid" style="margin-bottom:20px">
+          <div class="stat-card"><div class="n">${tr.reduce((a, b) => a + b.c, 0).toLocaleString()}</div><div class="l">เข้าชมทรัพย์ 14 วัน</div></div>
+          <div class="stat-card"><div class="n">${d.totalSearches.toLocaleString()}</div><div class="l">การค้นหา 30 วัน</div></div>
+        </div>
+        <div class="dash-2col">
+          <div class="dash-card">
+            <div class="dash-card-h">เข้าชมทรัพย์ 14 วันล่าสุด</div>
+            <svg viewBox="0 0 100 58" preserveAspectRatio="none" style="width:100%;height:120px">${bars}</svg>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-h">คำค้นหายอดนิยม (30 วัน)</div>
+            ${d.searches.length ? d.searches.map(s => `
+              <div class="an-row"><span class="an-label">${TD.esc(s.term)}</span>
+                <span class="an-bar"><span style="width:${s.c / maxS * 100}%"></span></span>
+                <span class="an-c">${s.c}</span></div>`).join('') : '<p style="color:var(--muted);font-size:.85rem">ยังไม่มีข้อมูล</p>'}
+          </div>
+        </div>
+        <div class="dash-card" style="margin-top:16px">
+          <div class="dash-card-h">ทำเลที่คนสนใจ (จากการเข้าชม)</div>
+          ${d.provinces.length ? d.provinces.map(p => `
+            <div class="an-row"><span class="an-label">${TD.esc(p.prov)}</span>
+              <span class="an-bar"><span style="width:${p.c / maxP * 100}%"></span></span>
+              <span class="an-c">${p.c}</span></div>`).join('') : '<p style="color:var(--muted);font-size:.85rem">ยังไม่มีข้อมูล</p>'}
+        </div>`;
     }
 
     // ---------- Reports ----------
@@ -737,7 +931,7 @@
       ['f-title', 'f-price', 'f-loc', 'f-prov', 'f-bed', 'f-bath', 'f-sqm', 'f-wah', 'f-floor', 'f-phone', 'f-line', 'f-map', 'f-lat', 'f-lng', 'f-fee', 'f-year', 'f-desc', 'f-hl', 'f-ainotes']
         .forEach(id => $(id).value = '');
       $('f-type').value = 'rent'; $('f-cat').value = 'condo'; $('f-status').value = 'active';
-      $('f-pets').checked = false; $('f-feat').checked = false; $('f-verified').checked = false; $('f-badge').value = '';
+      $('f-pets').checked = false; $('f-feat').checked = false; $('f-verified').checked = false; $('f-badge').value = ''; if($('f-agent'))$('f-agent').value = '';
       $('imgList').innerHTML = ''; $('imgList').appendChild(imgRow());
       $('nbList').innerHTML = ''; $('nbList').appendChild(nbRow());
       setChecked('amen', []); setChecked('furn', []);
@@ -762,7 +956,7 @@
         applyMapInput();
       } else { $('f-map').value = ''; applyMapInput(); }
       $('f-hl').value = (l.highlights || []).join('\n');
-      $('f-pets').checked = l.pets_allowed; $('f-feat').checked = l.featured; $('f-verified').checked = !!l.verified; $('f-badge').value = l.badge || '';
+      $('f-pets').checked = l.pets_allowed; $('f-feat').checked = l.featured; $('f-verified').checked = !!l.verified; $('f-badge').value = l.badge || ''; if($('f-agent'))$('f-agent').value = l.agent_id || '';
       $('f-ainotes').value = '';
       $('imgList').innerHTML = '';
       (l.images?.length ? l.images : ['']).forEach(u => $('imgList').appendChild(imgRow(u)));
@@ -793,6 +987,7 @@
         }).filter(Boolean),
         pets_allowed: $('f-pets').checked,
         featured: $('f-feat').checked,
+        agent_id: $('f-agent') ? $('f-agent').value : '',
         verified: $('f-verified').checked,
         badge: $('f-badge').value,
         contact_phone: $('f-phone').value.trim(),

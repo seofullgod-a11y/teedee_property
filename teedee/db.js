@@ -61,6 +61,7 @@ async function migrate() {
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS year_built INT;
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS badge TEXT DEFAULT '';
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS agent_id INT;
 
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
@@ -122,6 +123,40 @@ async function migrate() {
       reason TEXT NOT NULL,
       detail TEXT DEFAULT '',
       resolved BOOLEAN DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS events (
+      id BIGSERIAL PRIMARY KEY,
+      type TEXT NOT NULL,
+      ref TEXT DEFAULT '',
+      meta JSONB DEFAULT '{}',
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_events_type_time ON events (type, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS agents (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      role TEXT DEFAULT 'ผู้ดูแลทรัพย์',
+      phone TEXT DEFAULT '',
+      line_id TEXT DEFAULT '',
+      photo_url TEXT DEFAULT '',
+      bio TEXT DEFAULT '',
+      active BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS appointments (
+      id SERIAL PRIMARY KEY,
+      listing_id INT REFERENCES listings(id) ON DELETE SET NULL,
+      name TEXT NOT NULL,
+      phone TEXT DEFAULT '',
+      line_id TEXT DEFAULT '',
+      visit_date DATE NOT NULL,
+      visit_time TEXT DEFAULT '',
+      note TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);

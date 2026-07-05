@@ -473,6 +473,7 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 }
 @media (max-width: 900px) {
   .nav-links { display: none; }
+  .nav a.icon-btn { display: none; }
 }
 @media (max-width: 640px) {
   .container { padding: 0 18px; }
@@ -482,7 +483,6 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   .brand .mark svg { width: 17px; height: 17px; }
   .brand .logo-img { height: 30px; }
   .brand .sub-th { display: none; }
-  .nav .icon-btn { display: none; }
   .btn-sm { padding: 8px 15px; font-size: var(--fs-xs); }
   .hero { padding: 48px 0 30px; }
   .hero p.sub { margin-bottom: 32px; font-size: var(--fs-base); }
@@ -1058,7 +1058,8 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 }
 /* มือถือ */
 @media (max-width: 640px) {
-  .nav-actions { gap: 7px; }
+  .nav-actions { gap: 7px; flex-wrap: nowrap; }
+  .nav-actions .icon-btn { width: 36px; height: 36px; }
   .pref-group { height: 36px; }
   .pref-group .pref-btn { min-width: 38px; padding: 0 11px; }
   .pref-group .pref-btn svg { width: 17px; height: 17px; }
@@ -1351,12 +1352,13 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 @media (max-width: 640px) { .lb-strip { bottom: 8px; } .lb-thumb { width: 52px; height: 38px; } }
 
 /* ============ Promo badges + verified ============ */
-.promo-badge { position: absolute; top: 12px; left: 12px; z-index: 2; font-size: .72rem; font-weight: 600; padding: 5px 11px; border-radius: 999px; color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.18); letter-spacing: .01em; }
+.promo-badge { position: absolute; top: 12px; left: 12px; z-index: 3; font-size: .72rem; font-weight: 600; padding: 5px 11px; border-radius: 999px; color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.18); letter-spacing: .01em; }
 .promo-badge.b-hot { background: #d9542b; }
 .promo-badge.b-drop { background: #2f7d4f; }
 .promo-badge.b-new { background: #3a6ea5; }
 .promo-badge.b-urgent { background: #c0392b; }
-.promo-badge.b-fresh { background: rgba(20,19,15,.82); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+/* เมื่อมีป้ายโปรโมท ให้ป้ายประเภทเลื่อนลงมา ไม่ทับกัน */
+.thumb.has-promo .badge-type { top: 46px; }
 .vfy { display: inline-flex; vertical-align: middle; color: var(--gold); }
 .vfy svg { width: 16px; height: 16px; }
 .detail-title h1 .vfy svg { width: 20px; height: 20px; }
@@ -1383,3 +1385,19 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .rp-reasons button:hover { border-color: var(--gold); }
 .rp-reasons button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); font-weight: 500; }
 .rp-ov textarea.yj-input { resize: vertical; }
+
+/* ============ Agent card (ผู้ดูแลทรัพย์) ============ */
+.agent-card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; margin-bottom: 14px; }
+.agent-top { display: flex; align-items: center; gap: 14px; }
+.agent-photo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--soft); }
+.agent-ph { display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; font-size: 1.4rem; color: var(--gold); background: var(--gold-soft); }
+.agent-role { font-size: var(--fs-xs); color: var(--muted); letter-spacing: .02em; }
+.agent-name { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+.agent-name .vfy svg { width: 15px; height: 15px; }
+.agent-bio { font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.6; margin-top: 12px; }
+.agent-actions { display: flex; gap: 8px; margin-top: 14px; }
+.agent-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px; border-radius: 12px; font-size: var(--fs-sm); font-weight: 500; transition: transform .15s; }
+.agent-btn svg { width: 15px; height: 15px; }
+.agent-btn.phone { background: var(--pine, #2f4a3a); color: #fff; }
+.agent-btn.line { background: #06c755; color: #fff; }
+.agent-btn:hover { transform: translateY(-2px); }

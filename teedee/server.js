@@ -23,6 +23,12 @@ async function notifyTelegram(text) {
     });
   } catch (e) { console.error('telegram notify failed:', e.message); }
 }
+// บันทึก event สำหรับ analytics แบบ fire-and-forget (ไม่บล็อก response)
+function logEvent(type, ref, meta) {
+  pool.query('INSERT INTO events (type, ref, meta) VALUES ($1,$2,$3)',
+    [String(type).slice(0, 40), String(ref || '').slice(0, 200), JSON.stringify(meta || {})])
+    .catch(() => {});
+}
 const tgEsc = (s) => String(s || '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
 app.use(express.json({ limit: '6mb' }));
@@ -106,7 +112,7 @@ const brandName = (s) => `${s.site_name_main || 'อยู่'}${s.site_name_acc
 const LISTING_FIELDS = `id, title, listing_type, category, price, location_text, province,
   bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
   images, nearby, pets_allowed, featured, status, contact_line, contact_phone, views,
-  latitude, longitude, amenities, furnishings, common_fee_text, year_built, badge, verified, created_at, updated_at`;
+  latitude, longitude, amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id, created_at, updated_at`;
 
 // ---------- Public API ----------
 
@@ -148,6 +154,7 @@ app.get('/api/listings', async (req, res) => {
                  FROM listings WHERE ${where.join(' AND ')}
                  ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`;
     const { rows } = await pool.query(sql, params);
+    if (q && String(q).trim().length >= 2 && !ids) logEvent('search', String(q).trim(), { type: type || '', category: category || '', results: rows[0]?.total || 0 });
     res.json({ total: rows[0]?.total || 0, page: Number(page) || 1, limit, items: rows });
   } catch (e) {
     console.error(e);
@@ -163,13 +170,21 @@ app.get('/api/listings/:id', async (req, res) => {
     const { rows } = await pool.query(
       `SELECT ${LISTING_FIELDS} FROM listings WHERE id = $1 AND status = 'active'`, [id]);
     if (!rows[0]) return res.status(404).json({ error: 'not found' });
+    logEvent('view', String(id), { province: rows[0].province, category: rows[0].category });
+
+    // ผู้ดูแลทรัพย์ (agent)
+    let agent = null;
+    if (rows[0].agent_id) {
+      const a = await pool.query('SELECT id, name, role, phone, line_id, photo_url, bio FROM agents WHERE id=$1 AND active', [rows[0].agent_id]);
+      agent = a.rows[0] || null;
+    }
 
     const similar = await pool.query(
       `SELECT ${LISTING_FIELDS} FROM listings
        WHERE status='active' AND id != $1 AND (category = $2 OR listing_type = $3)
        ORDER BY featured DESC, created_at DESC LIMIT 3`,
       [id, rows[0].category, rows[0].listing_type]);
-    res.json({ item: rows[0], similar: similar.rows });
+    res.json({ item: rows[0], similar: similar.rows, agent });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server error' });
@@ -627,6 +642,121 @@ app.post('/api/admin/reports/:id/resolve', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ============ Appointments (นัดชมทรัพย์) ============
+const apptHits = new Map();
+app.post('/api/appointments', async (req, res) => {
+  try {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+    const now = Date.now(); const h = apptHits.get(ip) || { c: 0, t: now };
+    if (now - h.t > 3600e3) { h.c = 0; h.t = now; }
+    if (h.c >= 12) return res.status(429).json({ error: 'ส่งคำขอบ่อยเกินไป ลองใหม่ภายหลัง' });
+    const b = req.body || {};
+    if (b.website) return res.json({ ok: true }); // honeypot
+    const name = String(b.name || '').trim().slice(0, 120);
+    const contact = String(b.contact || '').trim().slice(0, 120);
+    const visit_date = String(b.visit_date || '').slice(0, 10);
+    if (!name || !contact || !visit_date || !/^\d{4}-\d{2}-\d{2}$/.test(visit_date))
+      return res.status(400).json({ error: 'กรุณากรอกชื่อ ช่องทางติดต่อ และวันที่' });
+    const isPhone = /[0-9]{6,}/.test(contact.replace(/[^0-9]/g, ''));
+    const { rows } = await pool.query(
+      `INSERT INTO appointments (listing_id, name, phone, line_id, visit_date, visit_time, note)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+      [Number(b.listing_id) || null, name, isPhone ? contact : '', isPhone ? '' : contact,
+       visit_date, String(b.visit_time || '').slice(0, 40), String(b.note || '').slice(0, 500)]);
+    h.c++; apptHits.set(ip, h);
+    (async () => {
+      let title = '';
+      if (b.listing_id) { const r = await pool.query('SELECT title FROM listings WHERE id=$1', [Number(b.listing_id)]).catch(() => ({ rows: [] })); if (r.rows[0]) title = r.rows[0].title; }
+      notifyTelegram(`📅 <b>คำขอนัดชมใหม่</b>\n${title ? '🏠 ' + tgEsc(title) + '\n' : ''}👤 ${tgEsc(name)}\n📞 ${tgEsc(contact)}\n🗓 ${visit_date} ${tgEsc(String(b.visit_time || ''))}`);
+    })();
+    res.json({ ok: true, id: rows[0].id });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.get('/api/admin/appointments', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT a.*, l.title FROM appointments a LEFT JOIN listings l ON l.id=a.listing_id
+       ORDER BY a.visit_date ASC, a.created_at DESC LIMIT 500`);
+    res.json({ items: rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+app.post('/api/admin/appointments/:id/status', requireAdmin, async (req, res) => {
+  const status = ['pending', 'confirmed', 'done', 'cancelled'].includes(req.body?.status) ? req.body.status : 'pending';
+  await pool.query('UPDATE appointments SET status=$1 WHERE id=$2', [status, Number(req.params.id)]);
+  res.json({ ok: true });
+});
+
+// ============ Agents (ทีมผู้ดูแลทรัพย์) ============
+app.get('/api/agents', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT id, name, role, phone, line_id, photo_url, bio FROM agents WHERE active ORDER BY name');
+    res.json({ items: rows });
+  } catch (e) { res.json({ items: [] }); }
+});
+app.get('/api/admin/agents', requireAdmin, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT a.*, (SELECT COUNT(*)::int FROM listings WHERE agent_id=a.id) AS listings
+     FROM agents a ORDER BY a.created_at DESC`);
+  res.json({ items: rows });
+});
+function agentParams(b) {
+  return [
+    String(b.name || '').trim().slice(0, 120),
+    String(b.role || 'ผู้ดูแลทรัพย์').slice(0, 80),
+    String(b.phone || '').slice(0, 40),
+    String(b.line_id || '').slice(0, 80),
+    String(b.photo_url || '').slice(0, 500),
+    String(b.bio || '').slice(0, 500),
+    b.active === false ? false : true
+  ];
+}
+app.post('/api/admin/agents', requireAdmin, async (req, res) => {
+  try {
+    const p = agentParams(req.body || {});
+    if (!p[0]) return res.status(400).json({ error: 'กรุณากรอกชื่อ' });
+    const { rows } = await pool.query(
+      `INSERT INTO agents (name, role, phone, line_id, photo_url, bio, active) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`, p);
+    res.json({ ok: true, id: rows[0].id });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+app.put('/api/admin/agents/:id', requireAdmin, async (req, res) => {
+  try {
+    const p = agentParams(req.body || {});
+    await pool.query(
+      `UPDATE agents SET name=$1, role=$2, phone=$3, line_id=$4, photo_url=$5, bio=$6, active=$7 WHERE id=$8`,
+      [...p, Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+app.delete('/api/admin/agents/:id', requireAdmin, async (req, res) => {
+  await pool.query('UPDATE listings SET agent_id=NULL WHERE agent_id=$1', [Number(req.params.id)]);
+  await pool.query('DELETE FROM agents WHERE id=$1', [Number(req.params.id)]);
+  res.json({ ok: true });
+});
+
+// ============ Analytics ============
+app.get('/api/admin/analytics', requireAdmin, async (req, res) => {
+  try {
+    const [searches, provinces, viewsTrend, topSearchers] = await Promise.all([
+      pool.query(`SELECT lower(ref) term, COUNT(*)::int c FROM events
+                  WHERE type='search' AND created_at >= now() - interval '30 days' AND ref <> ''
+                  GROUP BY lower(ref) ORDER BY c DESC LIMIT 12`),
+      pool.query(`SELECT meta->>'province' prov, COUNT(*)::int c FROM events
+                  WHERE type='view' AND created_at >= now() - interval '30 days' AND meta->>'province' <> ''
+                  GROUP BY meta->>'province' ORDER BY c DESC LIMIT 10`),
+      pool.query(`SELECT to_char(created_at::date,'YYYY-MM-DD') d, COUNT(*)::int c FROM events
+                  WHERE type='view' AND created_at >= now() - interval '13 days'
+                  GROUP BY 1 ORDER BY 1`),
+      pool.query(`SELECT COUNT(*)::int c FROM events WHERE type='search' AND created_at >= now() - interval '30 days'`)
+    ]);
+    const series = [];
+    const map = Object.fromEntries(viewsTrend.rows.map(r => [r.d, r.c]));
+    for (let k = 13; k >= 0; k--) { const dt = new Date(Date.now() - k * 864e5).toISOString().slice(0, 10); series.push({ d: dt, c: map[dt] || 0 }); }
+    res.json({ searches: searches.rows, provinces: provinces.rows, viewsTrend: series, totalSearches: topSearchers.rows[0].c });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
 app.post('/api/admin/login', (req, res) => {
   if ((req.body?.password || '') === ADMIN_PASSWORD) return res.json({ token: adminToken() });
   res.status(401).json({ error: 'รหัสผ่านไม่ถูกต้อง' });
@@ -707,7 +837,8 @@ function listingParams(b) {
     String(b.common_fee_text || '').slice(0, 120),
     Number.isInteger(Number(b.year_built)) && Number(b.year_built) > 1900 ? Number(b.year_built) : null,
     ['', 'hot', 'price_drop', 'new_project', 'urgent'].includes(b.badge) ? b.badge : '',
-    !!b.verified
+    !!b.verified,
+    Number(b.agent_id) > 0 ? Number(b.agent_id) : null
   ];
 }
 
@@ -719,8 +850,8 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built, badge, verified)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
+        amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29)
        RETURNING id`, p);
     res.json({ ok: true, id: rows[0].id });
     runSavedSearchMatch(rows[0].id);
@@ -739,8 +870,8 @@ app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
         province=$6, bedrooms=$7, bathrooms=$8, area_sqm=$9, land_area_sqwah=$10, floor_text=$11,
         description=$12, highlights=$13, images=$14, nearby=$15, pets_allowed=$16, featured=$17,
         status=$18, contact_line=$19, contact_phone=$20, latitude=$21, longitude=$22,
-        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, badge=$27, verified=$28, updated_at=now()
-       WHERE id=$29`, [...p, id]);
+        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, badge=$27, verified=$28, agent_id=$29, updated_at=now()
+       WHERE id=$30`, [...p, id]);
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -796,11 +927,11 @@ app.post('/api/admin/listings/:id/duplicate', requireAdmin, async (req, res) => 
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built, badge, verified)
+        amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id)
        SELECT title || ' (สำเนา)', listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, false, 'draft', contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built, badge, false
+        amenities, furnishings, common_fee_text, year_built, badge, false, agent_id
        FROM listings WHERE id = $1 RETURNING id`, [Number(req.params.id)]);
     if (!rows[0]) return res.status(404).json({ error: 'not found' });
     res.json({ ok: true, id: rows[0].id });

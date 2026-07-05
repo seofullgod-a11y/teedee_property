@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=18">
+  <link rel="stylesheet" href="/css/style.css?v=21">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -46,7 +46,7 @@
     <div class="lb-strip" id="lbStrip"></div>
   </div>
 
-  <script src="/js/shared.js?v=18"></script>
+  <script src="/js/shared.js?v=21"></script>
   <script>
     TD.chrome('');
     const id = Number(location.pathname.split('/').pop());
@@ -287,10 +287,9 @@
           vwBtn.disabled = true; msg.textContent = 'กำลังส่ง…'; msg.className = 'form-msg';
           try {
             const dateTxt = new Date(date).toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            await TD.post('/api/inquiries', {
-              listing_id: l.id, name,
-              phone: isPhone ? contact : '', line_id: isPhone ? '' : contact,
-              message: `📅 ขอนัดเข้าชมสถานที่: ${dateTxt} · ${time}`
+            await TD.post('/api/appointments', {
+              listing_id: l.id, name, contact,
+              visit_date: date, visit_time: time
             });
             document.querySelector('.viewing-sec .vw-card').innerHTML =
               `<div class="vw-success">${TD.icons.check}<h3>ส่งคำขอนัดชมแล้ว!</h3><p>ทีมงานจะติดต่อยืนยันนัด <b>${TD.esc(dateTxt)} · ${TD.esc(time)}</b> กลับโดยเร็วครับ</p></div>`;
@@ -445,6 +444,8 @@
             <p class="calc-sub">ตัวเลขโดยประมาณเพื่อการตัดสินใจเบื้องต้นเท่านั้น เงื่อนไขจริงขึ้นอยู่กับธนาคารและผู้กู้แต่ละราย</p>
           </div>` : ''}
 
+          <div id="agentCard"></div>
+
           <div class="contact-card reveal">
             <h3>สนใจประกาศนี้? ทักหาเราเลย</h3>
             ${(l.contact_phone || l.contact_line) ? `
@@ -477,6 +478,7 @@
       initGallery(imgs);
       initCalc(l);
       initContact(l);
+      renderAgent(data.agent);
       initReveal();
       initChat(l);
       initBelowMap(l);
@@ -624,6 +626,27 @@
     }
 
     // ================= Contact + Share =================
+    function renderAgent(agent) {
+      const box = $('agentCard');
+      if (!box || !agent) return;
+      const initial = (agent.name || '?').trim().charAt(0);
+      box.innerHTML = `
+        <div class="agent-card reveal">
+          <div class="agent-top">
+            ${agent.photo_url ? `<img class="agent-photo" src="${TD.esc(agent.photo_url)}" alt="${TD.esc(agent.name)}">` : `<div class="agent-photo agent-ph">${TD.esc(initial)}</div>`}
+            <div class="agent-info">
+              <div class="agent-role">${TD.esc(agent.role || 'ผู้ดูแลทรัพย์')}</div>
+              <div class="agent-name">${TD.esc(agent.name)} <span class="vfy">${TD.icons.verified}</span></div>
+            </div>
+          </div>
+          ${agent.bio ? `<p class="agent-bio">${TD.esc(agent.bio)}</p>` : ''}
+          <div class="agent-actions">
+            ${agent.phone ? `<a class="agent-btn phone" href="tel:${TD.esc(agent.phone)}">${TD.icons.phone} โทร ${TD.esc(agent.phone)}</a>` : ''}
+            ${agent.line_id ? `<a class="agent-btn line" href="https://line.me/R/ti/p/~${encodeURIComponent(agent.line_id)}" target="_blank" rel="noopener">💬 LINE</a>` : ''}
+          </div>
+        </div>`;
+    }
+
     function initContact(l) {
       $('sendBtn').addEventListener('click', async () => {
         const msg = $('formMsg');

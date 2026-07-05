@@ -137,10 +137,7 @@ const TD = {
       new_project: { cls: 'b-new', label: 'โครงการใหม่' },
       urgent: { cls: 'b-urgent', label: 'ด่วน!' }
     };
-    if (l.badge && map[l.badge]) return map[l.badge];
-    // auto "ใหม่" ถ้าลงประกาศภายใน 7 วัน
-    if (l.created_at && (Date.now() - new Date(l.created_at).getTime()) < 7 * 864e5) return { cls: 'b-fresh', label: 'ใหม่' };
-    return null;
+    return (l.badge && map[l.badge]) ? map[l.badge] : null;
   },
   toggleCompare(id) {
     id = Number(id);
@@ -197,8 +194,8 @@ const TD = {
     const promo = this.promoBadge(l);
     return `
     <a class="card" href="/listing/${l.id}">
-      <div class="thumb">
-        ${img ? `<img src="${this.esc(img)}" alt="${this.esc(l.title)}" loading="lazy">` : ''}
+      <div class="thumb${promo ? ' has-promo' : ''}">
+        ${img ? `<img src="${this.esc(img)}" alt="${this.esc(l.title)}" loading="lazy" decoding="async">` : ''}
         ${promo ? `<span class="promo-badge ${promo.cls}">${promo.label}</span>` : ''}
         <button class="fav-btn ${faved ? 'on' : ''}" data-fav="${l.id}" type="button" aria-label="บันทึกรายการโปรด">${this.icons.heart}</button>
         <button class="cmp-btn ${cmp ? 'on' : ''}" data-cmp="${l.id}" type="button" aria-label="เปรียบเทียบ" title="เปรียบเทียบ">${this.icons.compare}<span>เทียบ</span></button>
