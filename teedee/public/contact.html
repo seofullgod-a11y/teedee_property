@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var d=document.documentElement,t=localStorage.getItem("yj_theme");d.dataset.theme=t==="dark"?"dark":"light";var l=localStorage.getItem("yj_lang");d.lang=l==="en"?"en":"th";d.dataset.lang=d.lang;}catch(e){}})();</script>
+  <title>ติดต่อเรา — อยู่ใจ (yoojai.com)</title>
+  <meta name="description" content="ติดต่อทีมงานอยู่ใจ (yoojai.com) ฝากทรัพย์ สอบถาม หรือให้เราช่วยหาบ้าน ทีมงานพร้อมดูแลคุณ">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css?v=35">
+  <link rel="icon" href="/favicon">
+</head>
+<body>
+  <div id="nav"></div>
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow-text">Contact</span>
+      <h1>ติดต่อเรา</h1>
+    </div>
+    <div class="doc-content">
+      <p class="doc-lead">มีคำถาม อยากฝากทรัพย์ หรือต้องการให้เราช่วยหาบ้าน? ทีมงานอยู่ใจยินดีดูแลคุณ ฝากข้อมูลไว้ เราจะติดต่อกลับโดยเร็วครับ</p>
+      <div class="contact-card" style="max-width:560px;margin:0 auto">
+        <h3>ฝากข้อมูลถึงเรา</h3>
+        <div class="frm">
+          <input id="c-name" placeholder="ชื่อของคุณ *">
+          <div style="position:absolute;left:-9999px" aria-hidden="true"><input id="c-website" tabindex="-1" autocomplete="off"></div>
+          <input id="c-phone" placeholder="เบอร์โทร">
+          <input id="c-line" placeholder="LINE ID">
+          <textarea id="c-msg" rows="4" placeholder="ข้อความ / เรื่องที่ต้องการติดต่อ"></textarea>
+          <button class="btn btn-primary" id="c-send">ส่งข้อความ</button>
+          <p class="form-msg" id="c-formMsg"></p>
+        </div>
+      </div>
+      <div class="contact-channels">
+        <h2>ช่องทางติดต่ออื่น</h2>
+        <p>คุณสามารถติดต่อทีมงานได้ผ่านช่องทางด้านล่าง ทีมงานพร้อมให้บริการในเวลาทำการ</p>
+        <ul class="doc-list">
+          <li>💬 <b>LINE:</b> <span id="ch-line">@yoojai</span> (เพิ่มเพื่อนเพื่อสอบถามได้ทันที)</li>
+          <li>📞 <b>โทร:</b> <span id="ch-phone">ระบุเบอร์ติดต่อของคุณที่นี่</span></li>
+          <li>✉️ <b>อีเมล:</b> <span id="ch-email">contact@yoojai.com</span></li>
+        </ul>
+        <p class="doc-note">* ผู้ดูแลเว็บ: แก้ไขข้อมูลช่องทางติดต่อจริงได้ในไฟล์ contact.html</p>
+      </div>
+    </div>
+  </div>
+  <div id="footer"></div>
+  <script src="/js/shared.js?v=35"></script>
+  <script>
+    (function(){
+      const $=id=>document.getElementById(id);
+      $('c-send').addEventListener('click', async ()=>{
+        if($('c-website').value){return;}
+        const name=$('c-name').value.trim();
+        if(!name){$('c-formMsg').textContent='กรุณากรอกชื่อ';$('c-formMsg').className='form-msg err';return;}
+        if(!$('c-phone').value.trim() && !$('c-line').value.trim()){$('c-formMsg').textContent='กรุณากรอกเบอร์โทรหรือ LINE ID';$('c-formMsg').className='form-msg err';return;}
+        $('c-send').disabled=true;$('c-formMsg').textContent='กำลังส่ง…';$('c-formMsg').className='form-msg';
+        try{
+          await TD.post('/api/inquiries',{name,phone:$('c-phone').value.trim(),line_id:$('c-line').value.trim(),message:'[ติดต่อเรา] '+$('c-msg').value.trim(),website:$('c-website').value});
+          $('c-formMsg').textContent='ส่งข้อมูลเรียบร้อย ทีมงานจะติดต่อกลับโดยเร็วครับ';$('c-formMsg').className='form-msg ok';
+          ['c-name','c-phone','c-line','c-msg'].forEach(i=>$(i).value='');
+        }catch(e){$('c-send').disabled=false;$('c-formMsg').textContent=e.message||'ส่งไม่สำเร็จ ลองใหม่อีกครั้ง';$('c-formMsg').className='form-msg err';}
+      });
+    })();
+  </script>
+</body>
+</html>

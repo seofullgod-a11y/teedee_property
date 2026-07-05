@@ -1,0 +1,23 @@
+{
+  "name": "อยู่ใจ — yoojai.com",
+  "short_name": "อยู่ใจ",
+  "description": "แพลตฟอร์มอสังหาริมทรัพย์ บ้านเช่า บ้าน-คอนโดขาย และที่ดินทั่วไทย ค้นหาง่าย ข้อมูลครบ ติดต่อตรง",
+  "lang": "th",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#faf8f3",
+  "theme_color": "#191917",
+  "categories": ["business", "lifestyle", "shopping"],
+  "icons": [
+    { "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/img/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "ค้นหาทรัพย์", "url": "/search" },
+    { "name": "แผนที่", "url": "/map" },
+    { "name": "รายการโปรด", "url": "/saved" }
+  ]
+}

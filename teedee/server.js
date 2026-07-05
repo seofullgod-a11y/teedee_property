@@ -29,6 +29,37 @@ function logEvent(type, ref, meta) {
     [String(type).slice(0, 40), String(ref || '').slice(0, 200), JSON.stringify(meta || {})])
     .catch(() => {});
 }
+// อีเมลแจ้งเตือนเจ้าของ (ทำงานเมื่อกำหนด SMTP_* env เท่านั้น มิฉะนั้นข้ามไปเงียบ ๆ)
+let _mailer = null, _mailerTried = false;
+function getMailer() {
+  if (_mailerTried) return _mailer;
+  _mailerTried = true;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return null;
+  try {
+    const nodemailer = require('nodemailer');
+    _mailer = nodemailer.createTransport({
+      host: SMTP_HOST, port: Number(SMTP_PORT) || 587,
+      secure: Number(SMTP_PORT) === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS }
+    });
+  } catch (e) { console.error('mailer init failed:', e.message); _mailer = null; }
+  return _mailer;
+}
+function sendEmail(subject, text) {
+  const mailer = getMailer();
+  const to = process.env.NOTIFY_EMAIL || process.env.SMTP_USER;
+  if (!mailer || !to) return;
+  mailer.sendMail({
+    from: process.env.SMTP_FROM || `"อยู่ใจ" <${process.env.SMTP_USER}>`,
+    to, subject, text
+  }).catch(e => console.error('email send failed:', e.message));
+}
+// แจ้งเตือนเจ้าของทั้ง Telegram + อีเมล (ถ้าตั้งค่าไว้)
+function notifyOwner(subject, body) {
+  notifyTelegram(body);
+  sendEmail(subject, body.replace(/<\/?b>/g, ''));
+}
 const tgEsc = (s) => String(s || '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
 app.use(express.json({ limit: '6mb' }));
@@ -226,7 +257,8 @@ app.post('/api/inquiries', async (req, res) => {
         if (rows[0]) listingLine = `\n🏠 ประกาศ: ${tgEsc(rows[0].title)} (#${listing_id})`;
       }
       const bn = brandName(await getSettings().catch(() => ({})));
-      notifyTelegram(
+      notifyOwner(
+        `ข้อความติดต่อใหม่ — ${bn}`,
         `📩 <b>ข้อความติดต่อใหม่ — ${bn}</b>${listingLine}\n` +
         `👤 ${tgEsc(name)}\n` +
         (phone ? `📞 ${tgEsc(phone)}\n` : '') +
@@ -542,6 +574,113 @@ app.delete('/api/admin/area-reviews/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ============ Listing reviews (รีวิวรายทรัพย์) ============
+const listingReviewHits = new Map();
+app.get('/api/listings/:id/reviews', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.json({ avg: 0, count: 0, items: [] });
+    const agg = await pool.query(
+      `SELECT COUNT(*)::int c, COALESCE(ROUND(AVG(rating)::numeric,1),0) avg FROM listing_reviews WHERE listing_id=$1 AND approved`, [id]);
+    const items = await pool.query(
+      `SELECT id, rating, author, comment, created_at FROM listing_reviews
+       WHERE listing_id=$1 AND approved ORDER BY created_at DESC LIMIT 30`, [id]);
+    res.json({ avg: Number(agg.rows[0].avg), count: agg.rows[0].c, items: items.rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.post('/api/listing-reviews', async (req, res) => {
+  try {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+    const now = Date.now(); const h = listingReviewHits.get(ip) || { c: 0, t: now };
+    if (now - h.t > 3600e3) { h.c = 0; h.t = now; }
+    if (h.c >= 8) return res.status(429).json({ error: 'ส่งรีวิวบ่อยเกินไป ลองใหม่ภายหลังครับ' });
+    const b = req.body || {};
+    if (b.website) return res.json({ ok: true }); // honeypot
+    const listing_id = Number(b.listing_id) || 0;
+    const rating = Math.min(5, Math.max(1, parseInt(b.rating, 10) || 0));
+    if (!listing_id || !rating) return res.status(400).json({ error: 'กรุณาให้คะแนนดาว' });
+    const chk = await pool.query('SELECT title FROM listings WHERE id=$1', [listing_id]);
+    if (!chk.rows[0]) return res.status(404).json({ error: 'ไม่พบทรัพย์นี้' });
+    const author = String(b.author || '').slice(0, 60).trim();
+    const comment = String(b.comment || '').slice(0, 600).trim();
+    const { rows } = await pool.query(
+      `INSERT INTO listing_reviews (listing_id, rating, author, comment) VALUES ($1,$2,$3,$4) RETURNING id`,
+      [listing_id, rating, author, comment]);
+    h.c++; listingReviewHits.set(ip, h);
+    notifyTelegram(`⭐ รีวิวทรัพย์ใหม่: ${tgEsc(chk.rows[0].title)} (${rating}/5)${author ? ' โดย ' + tgEsc(author) : ''}${comment ? '\n"' + tgEsc(comment.slice(0, 120)) + '"' : ''}`);
+    res.json({ ok: true, id: rows[0].id });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.get('/api/admin/listing-reviews', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT r.id, r.listing_id, r.rating, r.author, r.comment, r.approved, r.created_at, l.title
+       FROM listing_reviews r LEFT JOIN listings l ON l.id=r.listing_id
+       ORDER BY r.created_at DESC LIMIT 300`);
+    res.json({ items: rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+app.delete('/api/admin/listing-reviews/:id', requireAdmin, async (req, res) => {
+  await pool.query('DELETE FROM listing_reviews WHERE id=$1', [Number(req.params.id)]);
+  res.json({ ok: true });
+});
+
+// ============ Export CSV (สำหรับเจ้าของ) ============
+function toCsv(rows, cols) {
+  const esc = (v) => {
+    if (v === null || v === undefined) return '';
+    let s = String(v);
+    if (v instanceof Date) s = v.toISOString();
+    if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  };
+  const head = cols.map(c => esc(c.label)).join(',');
+  const body = rows.map(r => cols.map(c => esc(r[c.key])).join(',')).join('\r\n');
+  return '\uFEFF' + head + '\r\n' + body; // BOM for Excel Thai
+}
+const EXPORTS = {
+  listings: {
+    sql: `SELECT id, title, listing_type, category, price, province, location_text, bedrooms, bathrooms, area_sqm, status, views, created_at FROM listings ORDER BY created_at DESC`,
+    cols: [
+      { key: 'id', label: 'ID' }, { key: 'title', label: 'ชื่อประกาศ' }, { key: 'listing_type', label: 'ประเภท' },
+      { key: 'category', label: 'หมวด' }, { key: 'price', label: 'ราคา' }, { key: 'province', label: 'จังหวัด' },
+      { key: 'location_text', label: 'ทำเล' }, { key: 'bedrooms', label: 'ห้องนอน' }, { key: 'bathrooms', label: 'ห้องน้ำ' },
+      { key: 'area_sqm', label: 'พื้นที่(ตร.ม.)' }, { key: 'status', label: 'สถานะ' }, { key: 'views', label: 'ยอดเข้าชม' }, { key: 'created_at', label: 'สร้างเมื่อ' }
+    ]
+  },
+  inquiries: {
+    sql: `SELECT i.id, i.name, i.phone, i.line_id, i.message, l.title AS listing, i.created_at
+          FROM inquiries i LEFT JOIN listings l ON l.id=i.listing_id ORDER BY i.created_at DESC`,
+    cols: [
+      { key: 'id', label: 'ID' }, { key: 'name', label: 'ชื่อ' }, { key: 'phone', label: 'เบอร์โทร' },
+      { key: 'line_id', label: 'LINE' }, { key: 'message', label: 'ข้อความ' }, { key: 'listing', label: 'ทรัพย์' }, { key: 'created_at', label: 'เมื่อ' }
+    ]
+  },
+  appointments: {
+    sql: `SELECT a.id, a.name, a.phone, a.line_id, a.visit_date, a.visit_time, a.status, l.title AS listing, a.created_at
+          FROM appointments a LEFT JOIN listings l ON l.id=a.listing_id ORDER BY a.visit_date DESC`,
+    cols: [
+      { key: 'id', label: 'ID' }, { key: 'name', label: 'ชื่อ' }, { key: 'phone', label: 'เบอร์โทร' },
+      { key: 'line_id', label: 'LINE' }, { key: 'visit_date', label: 'วันที่นัด' }, { key: 'visit_time', label: 'เวลา' },
+      { key: 'status', label: 'สถานะ' }, { key: 'listing', label: 'ทรัพย์' }, { key: 'created_at', label: 'จองเมื่อ' }
+    ]
+  }
+};
+app.get('/api/admin/export/:type', requireAdmin, async (req, res) => {
+  try {
+    const cfg = EXPORTS[req.params.type];
+    if (!cfg) return res.status(400).json({ error: 'unknown export type' });
+    const { rows } = await pool.query(cfg.sql);
+    const csv = toCsv(rows, cfg.cols);
+    const stamp = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="yoojai-${req.params.type}-${stamp}.csv"`);
+    res.send(csv);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
 // ============ User accounts ============
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 app.post('/api/auth/register', async (req, res) => {
@@ -667,7 +806,7 @@ app.post('/api/appointments', async (req, res) => {
     (async () => {
       let title = '';
       if (b.listing_id) { const r = await pool.query('SELECT title FROM listings WHERE id=$1', [Number(b.listing_id)]).catch(() => ({ rows: [] })); if (r.rows[0]) title = r.rows[0].title; }
-      notifyTelegram(`📅 <b>คำขอนัดชมใหม่</b>\n${title ? '🏠 ' + tgEsc(title) + '\n' : ''}👤 ${tgEsc(name)}\n📞 ${tgEsc(contact)}\n🗓 ${visit_date} ${tgEsc(String(b.visit_time || ''))}`);
+      notifyOwner(`คำขอนัดชมใหม่${title ? ' — ' + title : ''}`, `📅 <b>คำขอนัดชมใหม่</b>\n${title ? '🏠 ' + tgEsc(title) + '\n' : ''}👤 ${tgEsc(name)}\n📞 ${tgEsc(contact)}\n🗓 ${visit_date} ${tgEsc(String(b.visit_time || ''))}`);
     })();
     res.json({ ok: true, id: rows[0].id });
   } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
@@ -1343,6 +1482,10 @@ app.get('/search', (req, res) => res.sendFile(path.join(__dirname, 'public/listi
 app.get('/compare', (req, res) => res.sendFile(path.join(__dirname, 'public/compare.html')));
 app.get('/map', (req, res) => res.sendFile(path.join(__dirname, 'public/map.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
+app.get('/about', (req, res) => res.sendFile(path.join(__dirname, 'public/about.html')));
+app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public/contact.html')));
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public/privacy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public/terms.html')));
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 // ---------- Boot ----------

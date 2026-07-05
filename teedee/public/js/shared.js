@@ -62,6 +62,51 @@ const TD = {
     this.renderChrome();
     this.initBrand();
     this.loadUser();
+    this.initPWA();
+  },
+  initPWA() {
+    if (this._pwaInit) return; this._pwaInit = true;
+    var head = document.head;
+    if (!document.querySelector('link[rel="manifest"]')) {
+      var m = document.createElement('link'); m.rel = 'manifest'; m.href = '/manifest.json'; head.appendChild(m);
+    }
+    if (!document.querySelector('meta[name="theme-color"]')) {
+      var dark = document.documentElement.dataset.theme === 'dark';
+      var t = document.createElement('meta'); t.name = 'theme-color'; t.content = dark ? '#14130f' : '#191917'; head.appendChild(t);
+    }
+    if (!document.querySelector('link[rel="apple-touch-icon"]')) {
+      var a = document.createElement('link'); a.rel = 'apple-touch-icon'; a.href = '/img/icon-192.png'; head.appendChild(a);
+    }
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
+      });
+    }
+    // ปุ่มติดตั้งแอป (แสดงเมื่อเบราว์เซอร์รองรับ)
+    var self = this;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault(); self._installEvt = e;
+      if (localStorage.getItem('yj_pwa_dismissed') === '1') return;
+      self.showInstallPill();
+    });
+  },
+  showInstallPill() {
+    if (document.getElementById('pwaPill')) return;
+    var pill = document.createElement('div');
+    pill.id = 'pwaPill'; pill.className = 'pwa-pill';
+    pill.innerHTML = '<span>📲 ติดตั้งแอปอยู่ใจ ใช้ง่ายเหมือนแอปจริง</span>' +
+      '<button class="pwa-install">ติดตั้ง</button><button class="pwa-x" aria-label="ปิด">✕</button>';
+    document.body.appendChild(pill);
+    var self = this;
+    pill.querySelector('.pwa-install').onclick = async function () {
+      if (!self._installEvt) { pill.remove(); return; }
+      self._installEvt.prompt();
+      try { await self._installEvt.userChoice; } catch (e) {}
+      self._installEvt = null; pill.remove();
+    };
+    pill.querySelector('.pwa-x').onclick = function () {
+      localStorage.setItem('yj_pwa_dismissed', '1'); pill.remove();
+    };
   },
   renderChrome() {
     const nav = document.getElementById('nav');
@@ -264,10 +309,16 @@ const TD = {
           <a href="/#list-cta">ติดต่อเรา</a>
           <a href="/admin">เข้าสู่ระบบผู้ดูแล</a>
         </div>
+        <div><h4>ข้อมูล</h4>
+          <a href="/about">เกี่ยวกับเรา</a>
+          <a href="/contact">ติดต่อเรา</a>
+          <a href="/privacy">นโยบายความเป็นส่วนตัว</a>
+          <a href="/terms">เงื่อนไขการใช้งาน</a>
+        </div>
       </div>
       <div class="foot-bottom">
         <span>© ${new Date().getFullYear()} ${this.esc(this.brand.main + this.brand.accent)} · ${this.esc(this.brand.sub || '')} — All rights reserved</span>
-        <span>ทำด้วยใจ เพื่อคนหาบ้าน 🏡</span>
+        <span class="foot-legal"><a href="/privacy">ความเป็นส่วนตัว</a> · <a href="/terms">เงื่อนไข</a></span>
       </div>
     </div></footer>`;
   },
@@ -413,6 +464,60 @@ TD.openReviewModal = function (province, onDone) {
         <p class="yj-modal-sub">รีวิวของคุณช่วยให้คนหาบ้านตัดสินใจง่ายขึ้นมากครับ</p>
         <button class="btn btn-primary" id="rvDone" style="width:100%;justify-content:center;margin-top:6px">เรียบร้อย</button>`;
       ov.querySelector('#rvDone').onclick = () => { close(); if (onDone) onDone(); };
+    } catch (e) {
+      btn.disabled = false; msg.textContent = e.message || 'ส่งไม่สำเร็จ ลองใหม่'; msg.className = 'yj-msg err';
+    }
+  };
+};
+
+TD.openListingReviewModal = function (listingId, onDone) {
+  if (!listingId || document.querySelector('.rv-ov')) return;
+  const ov = document.createElement('div');
+  ov.className = 'yj-modal-ov rv-ov';
+  ov.innerHTML = `
+    <div class="yj-modal" role="dialog" aria-modal="true">
+      <button class="yj-modal-x" aria-label="ปิด">✕</button>
+      <div class="yj-modal-ic">${TD.icons.star || '★'}</div>
+      <h3>รีวิวทรัพย์นี้</h3>
+      <p class="yj-modal-sub">แบ่งปันความเห็นของคุณให้คนอื่นตัดสินใจง่ายขึ้น</p>
+      <div class="rv-stars" id="lrvStars">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-star="${n}" aria-label="${n} ดาว">★</button>`).join('')}</div>
+      <textarea class="yj-input" id="lrvComment" rows="3" placeholder="เล่าเพิ่มเติม (ไม่บังคับ) เช่น ทำเลดี ห้องกว้าง เจ้าของดูแลดี"></textarea>
+      <input class="yj-input" id="lrvAuthor" placeholder="ชื่อ/ชื่อเล่น (ไม่บังคับ)">
+      <div style="position:absolute;left:-9999px" aria-hidden="true"><input id="lrvWebsite" tabindex="-1" autocomplete="off"></div>
+      <div class="yj-msg" id="lrvMsg"></div>
+      <button class="btn btn-primary" id="lrvSubmit" style="width:100%;justify-content:center">ส่งรีวิว</button>
+    </div>`;
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+  const close = () => { ov.remove(); document.body.style.overflow = ''; };
+  ov.querySelector('.yj-modal-x').onclick = close;
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+
+  let rating = 0;
+  const stars = ov.querySelectorAll('#lrvStars button');
+  stars.forEach(s => {
+    s.onclick = () => { rating = Number(s.dataset.star); stars.forEach((x, i) => x.classList.toggle('on', i < rating)); };
+    s.onmouseenter = () => stars.forEach((x, i) => x.classList.toggle('hover', i < Number(s.dataset.star)));
+  });
+  ov.querySelector('#lrvStars').onmouseleave = () => stars.forEach(x => x.classList.remove('hover'));
+  ov.querySelector('#lrvSubmit').onclick = async () => {
+    const msg = ov.querySelector('#lrvMsg');
+    if (!rating) { msg.textContent = 'กรุณาให้คะแนนดาว'; msg.className = 'yj-msg err'; return; }
+    const btn = ov.querySelector('#lrvSubmit'); btn.disabled = true;
+    msg.textContent = 'กำลังส่ง…'; msg.className = 'yj-msg';
+    try {
+      await TD.post('/api/listing-reviews', {
+        listing_id: listingId, rating,
+        comment: ov.querySelector('#lrvComment').value.trim(),
+        author: ov.querySelector('#lrvAuthor').value.trim(),
+        website: ov.querySelector('#lrvWebsite').value
+      });
+      ov.querySelector('.yj-modal').innerHTML = `
+        <div class="yj-modal-ic ok">${TD.icons.check}</div>
+        <h3>ขอบคุณสำหรับรีวิว!</h3>
+        <p class="yj-modal-sub">รีวิวของคุณช่วยให้คนหาบ้านตัดสินใจง่ายขึ้นมากครับ</p>
+        <button class="btn btn-primary" id="lrvDone" style="width:100%;justify-content:center;margin-top:6px">เรียบร้อย</button>`;
+      ov.querySelector('#lrvDone').onclick = () => { close(); if (onDone) onDone(); };
     } catch (e) {
       btn.disabled = false; msg.textContent = e.message || 'ส่งไม่สำเร็จ ลองใหม่'; msg.className = 'yj-msg err';
     }

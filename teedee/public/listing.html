@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=34">
+  <link rel="stylesheet" href="/css/style.css?v=35">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -46,7 +46,7 @@
     <div class="lb-strip" id="lbStrip"></div>
   </div>
 
-  <script src="/js/shared.js?v=34"></script>
+  <script src="/js/shared.js?v=35"></script>
   <script>
     TD.chrome('');
     const id = Number(location.pathname.split('/').pop());
@@ -243,6 +243,32 @@
         }).catch(() => { box.style.display = 'none'; });
     }
 
+    function renderListingReviews(id) {
+      const box = $('listingReviews');
+      if (!box) return;
+      const stars = (n) => '<span class="rv-star-row">' + [1, 2, 3, 4, 5].map(i => `<span class="${i <= Math.round(n) ? 'on' : ''}">★</span>`).join('') + '</span>';
+      fetch('/api/listings/' + id + '/reviews')
+        .then(r => r.json())
+        .then(d => {
+          box.innerHTML = `
+            <h2>รีวิวจากผู้เข้าชม</h2>
+            <div class="rv-head">
+              <div class="rv-sum">
+                <div class="rv-avg">${d.count ? d.avg.toFixed(1) : '–'}</div>
+                <div>${stars(d.avg)}<div class="rv-count">${d.count ? d.count + ' รีวิว' : 'ยังไม่มีรีวิว เป็นคนแรกเลย!'}</div></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="lrvWrite" type="button">${TD.icons.star} เขียนรีวิว</button>
+            </div>
+            ${(d.items || []).map(rv => `
+              <div class="rv-item">
+                <div class="rv-item-top">${stars(rv.rating)} <span class="rv-author">${TD.esc(rv.author || 'ผู้ใช้ไม่ระบุชื่อ')}</span></div>
+                ${rv.comment ? `<p class="rv-comment">${TD.esc(rv.comment)}</p>` : ''}
+              </div>`).join('')}`;
+          const wb = $('lrvWrite');
+          if (wb) wb.onclick = () => TD.openListingReviewModal(id, () => renderListingReviews(id));
+        }).catch(() => { box.style.display = 'none'; });
+    }
+
     function initBelowMap(l) {
       // 1) AI วิเคราะห์ย่าน
       const ai = $('areaInsight');
@@ -260,6 +286,7 @@
       // 1b) รีวิวทำเล
       const rvBox = $('areaReviews');
       if (rvBox && l.province) renderAreaReviews(l.province);
+      renderListingReviews(l.id);
 
       // 3) เดินทาง — ปุ่มจุดหมายกำหนดเอง
       const cmBtn = $('cmBtn'), cmInput = $('cmInput');
@@ -405,6 +432,7 @@
           ${exploreAreaSection(l)}
           ${commuteSection(l)}
           ${viewingSection(l)}
+          <div class="detail-section reveal" id="listingReviews" data-lid="${l.id}"></div>
         </div>
 
         <div class="sidebar">

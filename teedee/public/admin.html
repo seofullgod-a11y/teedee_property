@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=34">
+  <link rel="stylesheet" href="/css/style.css?v=35">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -189,6 +189,12 @@
     .an-bar { flex: 1; height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
     .an-bar span { display: block; height: 100%; background: var(--copper); border-radius: 999px; }
     .an-c { font-size: .82rem; color: var(--muted); width: 30px; text-align: right; }
+    .export-box { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .export-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .export-btns .btn [data-ic] { display: inline-flex; }
+    .export-msg { font-size: .82rem; margin-top: 10px; min-height: 16px; color: var(--muted); }
+    .export-msg.ok { color: #4c5a3f; }
+    .export-msg.err { color: #c0392b; }
   </style>
 </head>
 <body>
@@ -215,6 +221,7 @@
       <button data-view="inbox"><span data-ic="phone"></span> ข้อความติดต่อ <span class="unread-dot" id="unreadDot" style="display:none">0</span></button>
       <button data-view="alerts"><span data-ic="heart"></span> การแจ้งเตือน</button>
       <button data-view="reviews"><span data-ic="star"></span> รีวิวทำเล</button>
+      <button data-view="listingReviews"><span data-ic="star"></span> รีวิวทรัพย์</button>
       <button data-view="reports"><span data-ic="flag"></span> รายงานประกาศ <span class="unread-dot" id="reportDot" style="display:none">0</span></button>
       <button data-view="appts"><span data-ic="calendar"></span> นัดชมทรัพย์ <span class="unread-dot" id="apptDot" style="display:none">0</span></button>
       <button data-view="agents"><span data-ic="user"></span> ทีมเอเจนต์</button>
@@ -236,6 +243,16 @@
         </div>
         <h2 style="font-size:1.05rem;margin-bottom:12px;font-family:var(--font-display)">ประกาศล่าสุด</h2>
         <div id="dashRecent"></div>
+        <div class="export-box">
+          <h2 style="font-size:1.05rem;margin-bottom:4px;font-family:var(--font-display)">ส่งออกข้อมูล (CSV)</h2>
+          <p style="color:var(--muted);font-size:.85rem;margin-bottom:12px">ดาวน์โหลดเป็นไฟล์ Excel ได้ (รองรับภาษาไทย) เก็บไว้เป็นรายงานหรือสำรองข้อมูล</p>
+          <div class="export-btns">
+            <button class="btn btn-ghost btn-sm" data-export="listings"><span data-ic="download"></span> ประกาศทั้งหมด</button>
+            <button class="btn btn-ghost btn-sm" data-export="inquiries"><span data-ic="download"></span> ผู้ติดต่อ</button>
+            <button class="btn btn-ghost btn-sm" data-export="appointments"><span data-ic="download"></span> การนัดชม</button>
+          </div>
+          <div class="export-msg" id="exportMsg"></div>
+        </div>
       </div>
 
       <!-- Alerts (saved searches) -->
@@ -250,6 +267,13 @@
         <h1>รีวิวทำเล</h1>
         <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">รีวิวที่ผู้ใช้เขียนถึงย่านต่าง ๆ — ลบรายการที่ไม่เหมาะสมได้</p>
         <div id="reviewsWrap"></div>
+      </div>
+
+      <!-- Listing Reviews -->
+      <div data-panel="listingReviews" style="display:none">
+        <h1>รีวิวทรัพย์</h1>
+        <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">รีวิวและดาวที่ผู้ใช้ให้กับทรัพย์แต่ละรายการ — ลบรายการที่ไม่เหมาะสมได้</p>
+        <div id="listingReviewsWrap"></div>
       </div>
 
       <!-- Reports -->
@@ -446,7 +470,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=34"></script>
+  <script src="/js/shared.js?v=35"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -514,6 +538,21 @@
       b.onclick = () => show(b.dataset.view));
     $('newBtn').onclick = () => { resetEditor(); show('editor'); };
     $('newAgentBtn').onclick = () => openAgentModal(null);
+    document.querySelectorAll('[data-export]').forEach(b => b.onclick = async () => {
+      const type = b.dataset.export;
+      const msg = $('exportMsg'); msg.textContent = 'กำลังเตรียมไฟล์…'; msg.className = 'export-msg';
+      try {
+        const res = await fetch('/api/admin/export/' + type, { headers: { authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('export failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'yoojai-' + type + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        msg.textContent = 'ดาวน์โหลดเรียบร้อย ✓'; msg.className = 'export-msg ok';
+      } catch (e) { msg.textContent = 'ส่งออกไม่สำเร็จ ลองใหม่อีกครั้ง'; msg.className = 'export-msg err'; }
+    });
     $('cancelBtn').onclick = () => show('listings');
 
     function show(view) {
@@ -524,6 +563,7 @@
       if (view === 'dashboard') loadDash();
       if (view === 'alerts') loadAlerts();
       if (view === 'reviews') loadReviews();
+      if (view === 'listingReviews') loadListingReviews();
       if (view === 'reports') loadReports();
       if (view === 'appts') loadAppts();
       if (view === 'agents') loadAgents();
@@ -751,6 +791,28 @@
         if (!confirm('ลบรีวิวนี้?')) return;
         await api('/api/admin/area-reviews/' + b.dataset.id, { method: 'DELETE' });
         loadReviews();
+      });
+    }
+
+    // ---------- Listing reviews (moderation) ----------
+    async function loadListingReviews() {
+      const d = await api('/api/admin/listing-reviews');
+      if (!d.items.length) { $('listingReviewsWrap').innerHTML = '<p style="color:var(--muted)">ยังไม่มีรีวิวทรัพย์</p>'; return; }
+      const stars = n => '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n);
+      $('listingReviewsWrap').innerHTML = `<div style="overflow-x:auto"><table><thead><tr>
+        <th>ทรัพย์</th><th>คะแนน</th><th>รีวิว</th><th>โดย</th><th>เมื่อ</th><th></th>
+        </tr></thead><tbody>${d.items.map(r => `<tr>
+            <td>${r.title ? `<a href="/listing/${r.listing_id}" target="_blank" style="color:var(--pine)">${TD.esc(r.title)}</a>` : '<span style="color:var(--muted)">ถูกลบแล้ว</span>'}</td>
+            <td style="color:var(--copper);white-space:nowrap">${stars(r.rating)}</td>
+            <td>${r.comment ? TD.esc(r.comment) : '<span style="color:var(--muted)">—</span>'}</td>
+            <td>${TD.esc(r.author || '—')}</td>
+            <td style="font-size:.78rem;color:var(--muted);white-space:nowrap">${new Date(r.created_at).toLocaleDateString('th-TH')}</td>
+            <td><button class="lrv-del" data-id="${r.id}" style="border:1px solid var(--line);background:transparent;color:var(--danger);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.78rem">ลบ</button></td>
+          </tr>`).join('')}</tbody></table></div>`;
+      $('listingReviewsWrap').querySelectorAll('.lrv-del').forEach(b => b.onclick = async () => {
+        if (!confirm('ลบรีวิวนี้?')) return;
+        await api('/api/admin/listing-reviews/' + b.dataset.id, { method: 'DELETE' });
+        loadListingReviews();
       });
     }
 

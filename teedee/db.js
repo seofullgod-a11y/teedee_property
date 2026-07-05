@@ -159,6 +159,17 @@ async function migrate() {
       status TEXT DEFAULT 'pending',
       created_at TIMESTAMPTZ DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS listing_reviews (
+      id SERIAL PRIMARY KEY,
+      listing_id INT REFERENCES listings(id) ON DELETE CASCADE,
+      rating INT NOT NULL,
+      author TEXT DEFAULT '',
+      comment TEXT DEFAULT '',
+      approved BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_listing_reviews ON listing_reviews (listing_id, approved);
   `);
 
   // ค่าเริ่มต้นของแบรนด์ (แก้ได้ในหลังบ้าน)
