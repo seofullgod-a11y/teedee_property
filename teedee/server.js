@@ -2,7 +2,7 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
-const { pool, migrate, seed } = require('./db');
+const { pool, migrate, seed, PROV_COORD } = require('./db');
 const seo = require('./seo');
 
 const app = express();
@@ -981,9 +981,24 @@ function listingParams(b) {
   ];
 }
 
+
+// ถ้าไม่ได้ระบุพิกัด ให้ใช้พิกัดจังหวัดแทน (สุ่มกระจายเล็กน้อย) — ทรัพย์จะขึ้นบนแผนที่เสมอ
+function applyProvinceCoordFallback(p) {
+  // p[5]=province, p[20]=latitude, p[21]=longitude
+  if (p[20] == null && p[21] == null) {
+    const base = PROV_COORD[p[5]];
+    if (base) {
+      const jit = () => (Math.random() - 0.5) * 0.06;
+      p[20] = +(base[0] + jit()).toFixed(6);
+      p[21] = +(base[1] + jit()).toFixed(6);
+    }
+  }
+  return p;
+}
+
 app.post('/api/admin/listings', requireAdmin, async (req, res) => {
   try {
-    const p = listingParams(req.body || {});
+    const p = applyProvinceCoordFallback(listingParams(req.body || {}));
     if (!p[0]) return res.status(400).json({ error: 'กรุณากรอกชื่อประกาศ' });
     const { rows } = await pool.query(
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
@@ -1003,7 +1018,7 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
 app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const p = listingParams(req.body || {});
+    const p = applyProvinceCoordFallback(listingParams(req.body || {}));
     await pool.query(
       `UPDATE listings SET title=$1, listing_type=$2, category=$3, price=$4, location_text=$5,
         province=$6, bedrooms=$7, bathrooms=$8, area_sqm=$9, land_area_sqwah=$10, floor_text=$11,
