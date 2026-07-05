@@ -242,22 +242,128 @@ app.get('/api/area-insight', async (req, res) => {
 
 // ---------- Admin API ----------
 
+// ============ Saved Searches (แจ้งเตือนทรัพย์ตรงใจ) ============
+function matchesCriteria(l, c) {
+  c = c || {};
+  if (c.type && l.listing_type !== c.type) return false;
+  if (c.category && l.category !== c.category) return false;
+  if (c.province && !(l.province || '').includes(c.province)) return false;
+  if (c.q) {
+    const hay = `${l.title} ${l.location_text} ${l.province} ${l.description}`.toLowerCase();
+    if (!hay.includes(String(c.q).toLowerCase())) return false;
+  }
+  const price = Number(l.price) || 0;
+  if (c.min != null && c.min !== '' && price < Number(c.min)) return false;
+  if (c.max != null && c.max !== '' && price > Number(c.max)) return false;
+  if (c.beds != null && c.beds !== '' && (Number(l.bedrooms) || 0) < Number(c.beds)) return false;
+  return true;
+}
+
+// สร้างการแจ้งเตือน (สาธารณะ)
+app.post('/api/saved-searches', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const contact = String(b.contact || '').trim().slice(0, 120);
+    if (!contact) return res.status(400).json({ error: 'กรุณากรอกช่องทางติดต่อ (LINE / อีเมล / เบอร์)' });
+    const channel = ['line', 'email', 'phone'].includes(b.channel) ? b.channel : 'line';
+    const criteria = {
+      q: String(b.q || '').trim().slice(0, 120),
+      type: ['rent', 'sale'].includes(b.type) ? b.type : '',
+      category: ['condo', 'house', 'townhouse', 'land', 'commercial'].includes(b.category) ? b.category : '',
+      province: String(b.province || '').trim().slice(0, 80),
+      min: b.min === '' || b.min == null ? '' : Number(b.min) || '',
+      max: b.max === '' || b.max == null ? '' : Number(b.max) || '',
+      beds: b.beds === '' || b.beds == null ? '' : Number(b.beds) || ''
+    };
+    const label = String(b.label || '').trim().slice(0, 140);
+    const { rows } = await pool.query(
+      `INSERT INTO saved_searches (label, criteria, channel, contact) VALUES ($1,$2,$3,$4) RETURNING id`,
+      [label, JSON.stringify(criteria), channel, contact]);
+    notifyTelegram(`🔔 <b>มีคนตั้งการแจ้งเตือนใหม่</b>\n${label || '(ไม่ระบุ)'}\nติดต่อ: ${channel} ${contact}`);
+    res.json({ ok: true, id: rows[0].id });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+// จับคู่ทรัพย์ใหม่กับการแจ้งเตือนที่บันทึกไว้ (เรียกหลังสร้างประกาศ)
+async function runSavedSearchMatch(listingId) {
+  try {
+    const lr = await pool.query(`SELECT ${LISTING_FIELDS} FROM listings WHERE id = $1`, [listingId]);
+    const l = lr.rows[0];
+    if (!l || l.status !== 'active') return 0;
+    const ss = await pool.query(`SELECT id, label, criteria, channel, contact FROM saved_searches WHERE active = true`);
+    const hits = [];
+    for (const s of ss.rows) {
+      const crit = typeof s.criteria === 'string' ? JSON.parse(s.criteria) : s.criteria;
+      if (!matchesCriteria(l, crit)) continue;
+      const ins = await pool.query(
+        `INSERT INTO search_matches (search_id, listing_id) VALUES ($1,$2)
+         ON CONFLICT DO NOTHING RETURNING search_id`, [s.id, listingId]);
+      if (ins.rows[0]) hits.push(s);
+    }
+    if (hits.length) {
+      const who = hits.map(h => `• ${h.channel} ${h.contact}`).join('\n');
+      notifyTelegram(`🔔 <b>ทรัพย์ใหม่ตรงกับ ${hits.length} การแจ้งเตือน</b>\n“${l.title}”\n${BASE_URL}/listing/${l.id}\n\nติดต่อลูกค้าเหล่านี้ได้เลย:\n${who}`);
+    }
+    return hits.length;
+  } catch (e) { console.error('saved-search match error:', e); return 0; }
+}
+
+// ดึงหลายประกาศตาม id (สำหรับหน้าเปรียบเทียบ — ไม่นับ views)
+app.get('/api/listings-by-ids', async (req, res) => {
+  try {
+    const ids = String(req.query.ids || '').split(',').map(n => Number(n)).filter(Boolean).slice(0, 4);
+    if (!ids.length) return res.json({ items: [] });
+    const { rows } = await pool.query(
+      `SELECT ${LISTING_FIELDS} FROM listings WHERE id = ANY($1) AND status = 'active'`, [ids]);
+    const order = new Map(ids.map((id, i) => [id, i]));
+    rows.sort((a, b) => order.get(a.id) - order.get(b.id));
+    res.json({ items: rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
 app.post('/api/admin/login', (req, res) => {
   if ((req.body?.password || '') === ADMIN_PASSWORD) return res.json({ token: adminToken() });
   res.status(401).json({ error: 'รหัสผ่านไม่ถูกต้อง' });
 });
 
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
-  const [l, i, v] = await Promise.all([
+  const [l, i, v, t, top, trend, ss] = await Promise.all([
     pool.query(`SELECT status, COUNT(*)::int c FROM listings GROUP BY status`),
     pool.query(`SELECT COUNT(*)::int c, COUNT(*) FILTER (WHERE NOT is_read)::int unread FROM inquiries`),
-    pool.query(`SELECT COALESCE(SUM(views),0)::int v FROM listings`)
+    pool.query(`SELECT COALESCE(SUM(views),0)::int v FROM listings`),
+    pool.query(`SELECT listing_type, COUNT(*)::int c FROM listings WHERE status='active' GROUP BY listing_type`),
+    pool.query(`SELECT id, title, views, listing_type, category, price FROM listings ORDER BY views DESC NULLS LAST LIMIT 5`),
+    pool.query(`SELECT to_char(created_at::date,'YYYY-MM-DD') d, COUNT(*)::int c
+                FROM inquiries WHERE created_at >= now() - interval '13 days'
+                GROUP BY 1 ORDER BY 1`),
+    pool.query(`SELECT COUNT(*)::int c, COUNT(*) FILTER (WHERE active)::int active FROM saved_searches`)
   ]);
   const byStatus = Object.fromEntries(l.rows.map(r => [r.status, r.c]));
+  const byType = Object.fromEntries(t.rows.map(r => [r.listing_type, r.c]));
+  const series = [];
+  const map = Object.fromEntries(trend.rows.map(r => [r.d, r.c]));
+  for (let k = 13; k >= 0; k--) {
+    const dt = new Date(Date.now() - k * 864e5).toISOString().slice(0, 10);
+    series.push({ d: dt, c: map[dt] || 0 });
+  }
   res.json({
     active: byStatus.active || 0, draft: byStatus.draft || 0, closed: byStatus.closed || 0,
-    inquiries: i.rows[0].c, unread: i.rows[0].unread, views: v.rows[0].v
+    inquiries: i.rows[0].c, unread: i.rows[0].unread, views: v.rows[0].v,
+    rent: byType.rent || 0, sale: byType.sale || 0,
+    topViewed: top.rows, inquiryTrend: series,
+    savedSearches: ss.rows[0].c, savedSearchesActive: ss.rows[0].active
   });
+});
+
+app.get('/api/admin/saved-searches', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT s.id, s.label, s.criteria, s.channel, s.contact, s.active, s.created_at,
+              COUNT(m.listing_id)::int AS matches
+       FROM saved_searches s LEFT JOIN search_matches m ON m.search_id = s.id
+       GROUP BY s.id ORDER BY s.created_at DESC LIMIT 200`);
+    res.json({ items: rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
 });
 
 app.get('/api/admin/listings', requireAdmin, async (req, res) => {
@@ -309,6 +415,7 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
        RETURNING id`, p);
     res.json({ ok: true, id: rows[0].id });
+    runSavedSearchMatch(rows[0].id);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server error' });
@@ -793,6 +900,7 @@ app.get('/favicon', async (req, res) => {
 });
 app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon'));
 app.get('/search', (req, res) => res.sendFile(path.join(__dirname, 'public/listings.html')));
+app.get('/compare', (req, res) => res.sendFile(path.join(__dirname, 'public/compare.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 

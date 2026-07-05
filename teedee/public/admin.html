@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=12">
+  <link rel="stylesheet" href="/css/style.css?v=13">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -149,6 +149,17 @@
       .frm-grid { grid-template-columns: 1fr; }
       .main-area { padding: 18px; }
     }
+    .dash-2col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 26px; }
+    @media (max-width: 900px) { .dash-2col { grid-template-columns: 1fr; } }
+    .dash-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+    .dash-card-h { font-size: .9rem; color: var(--muted); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; }
+    .dash-card-h b { color: var(--pine); font-family: var(--font-display); font-size: 1.05rem; }
+    .dash-x { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); margin-top: 6px; }
+    .top-row { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
+    .top-row:last-child { border-bottom: 0; }
+    .top-rank { width: 22px; height: 22px; border-radius: 6px; background: var(--sand, #f4eee2); color: var(--copper); font-weight: 600; font-size: .8rem; display: grid; place-items: center; flex-shrink: 0; }
+    .top-title { flex: 1; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top-views { font-size: .8rem; color: var(--muted); white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -173,6 +184,7 @@
       <button data-view="listings"><span data-ic="building"></span> ประกาศทั้งหมด</button>
       <button data-view="editor"><span data-ic="sparkles"></span> เพิ่มประกาศใหม่</button>
       <button data-view="inbox"><span data-ic="phone"></span> ข้อความติดต่อ <span class="unread-dot" id="unreadDot" style="display:none">0</span></button>
+      <button data-view="alerts"><span data-ic="heart"></span> การแจ้งเตือน</button>
       <button data-view="settings"><span data-ic="settings"></span> ตั้งค่าเว็บไซต์</button>
       <span class="spacer"></span>
       <a class="menu foot-link" href="/" target="_blank"><span data-ic="arrowRight"></span> ดูหน้าเว็บ</a>
@@ -184,8 +196,19 @@
       <div data-panel="dashboard">
         <h1>ภาพรวมระบบ</h1>
         <div class="stat-grid" id="statGrid"></div>
+        <div class="dash-2col">
+          <div id="dashChart"></div>
+          <div id="dashTop"></div>
+        </div>
         <h2 style="font-size:1.05rem;margin-bottom:12px;font-family:var(--font-display)">ประกาศล่าสุด</h2>
         <div id="dashRecent"></div>
+      </div>
+
+      <!-- Alerts (saved searches) -->
+      <div data-panel="alerts" style="display:none">
+        <h1>การแจ้งเตือนทรัพย์ตรงใจ</h1>
+        <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">รายชื่อผู้ที่ฝากเงื่อนไขไว้ เมื่อมีประกาศใหม่ตรงเงื่อนไข ระบบจะแจ้งเตือนผ่าน Telegram พร้อมช่องทางติดต่อลูกค้า</p>
+        <div id="alertsWrap"></div>
       </div>
 
       <!-- Listings -->
@@ -338,7 +361,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=12"></script>
+  <script src="/js/shared.js?v=13"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -403,6 +426,7 @@
       document.querySelectorAll('[data-panel]').forEach(p =>
         p.style.display = p.dataset.panel === view ? 'block' : 'none');
       if (view === 'dashboard') loadDash();
+      if (view === 'alerts') loadAlerts();
       if (view === 'listings') loadListings();
       if (view === 'inbox') loadInbox();
       if (view === 'settings') loadSettings();
@@ -414,15 +438,77 @@
       const s = await api('/api/admin/stats');
       $('statGrid').innerHTML = `
         <div class="stat-card"><div class="n">${s.active}</div><div class="l">ประกาศเผยแพร่</div></div>
-        <div class="stat-card"><div class="n">${s.draft}</div><div class="l">ฉบับร่าง</div></div>
         <div class="stat-card"><div class="n">${s.views.toLocaleString()}</div><div class="l">ยอดเข้าชมรวม</div></div>
         <div class="stat-card"><div class="n">${s.inquiries}</div><div class="l">ข้อความติดต่อ</div></div>
-        <div class="stat-card"><div class="n" style="color:var(--copper)">${s.unread}</div><div class="l">ยังไม่ได้อ่าน</div></div>`;
+        <div class="stat-card"><div class="n" style="color:var(--copper)">${s.unread}</div><div class="l">ยังไม่ได้อ่าน</div></div>
+        <div class="stat-card"><div class="n">${s.savedSearchesActive}</div><div class="l">การแจ้งเตือนที่เปิดอยู่</div></div>`;
       $('unreadDot').style.display = s.unread ? 'inline-block' : 'none';
       $('unreadDot').textContent = s.unread;
+
+      // กราฟข้อความติดต่อ 14 วัน (inline SVG bar chart)
+      const tr = s.inquiryTrend || [];
+      const max = Math.max(1, ...tr.map(d => d.c));
+      const W = 100, gap = 1.4, bw = (W - gap * (tr.length - 1)) / tr.length;
+      const bars = tr.map((d, i) => {
+        const h = d.c / max * 46;
+        const x = i * (bw + gap);
+        const label = d.d.slice(8) + '/' + d.d.slice(5, 7);
+        return `<g>
+          <rect x="${x.toFixed(2)}" y="${(52 - h).toFixed(2)}" width="${bw.toFixed(2)}" height="${Math.max(h, 0.6).toFixed(2)}"
+            rx="1" fill="${d.c ? 'var(--copper)' : 'var(--line)'}"><title>${label}: ${d.c} ข้อความ</title></rect>
+        </g>`;
+      }).join('');
+      $('dashChart').innerHTML = `
+        <div class="dash-card">
+          <div class="dash-card-h">ข้อความติดต่อ 14 วันล่าสุด <b>${tr.reduce((a, b) => a + b.c, 0)} รายการ</b></div>
+          <svg viewBox="0 0 100 58" preserveAspectRatio="none" style="width:100%;height:120px">${bars}</svg>
+          <div class="dash-x"><span>${tr[0]?.d.slice(5).replace('-', '/') || ''}</span><span>วันนี้</span></div>
+        </div>`;
+
+      // ทรัพย์ยอดเข้าชมสูงสุด
+      const tv = s.topViewed || [];
+      $('dashTop').innerHTML = `
+        <div class="dash-card">
+          <div class="dash-card-h">ทรัพย์ยอดนิยม (เข้าชมสูงสุด)</div>
+          ${tv.length ? tv.map((l, i) => `
+            <a class="top-row" href="/listing/${l.id}" target="_blank">
+              <span class="top-rank">${i + 1}</span>
+              <span class="top-title">${TD.esc(l.title)}</span>
+              <span class="top-views">${(l.views || 0).toLocaleString()} ครั้ง</span>
+            </a>`).join('') : '<p style="color:var(--muted);font-size:.85rem">ยังไม่มีข้อมูล</p>'}
+        </div>`;
+
       const l = await api('/api/admin/listings');
       $('dashRecent').innerHTML = renderTable(l.items.slice(0, 5));
       bindTable($('dashRecent'));
+    }
+
+    // ---------- Saved searches (การแจ้งเตือน) ----------
+    async function loadAlerts() {
+      const d = await api('/api/admin/saved-searches');
+      const chLabel = { line: 'LINE', email: 'อีเมล', phone: 'โทร' };
+      const catLabel = { condo: 'คอนโด', house: 'บ้านเดี่ยว', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' };
+      const typeLabel = { rent: 'เช่า', sale: 'ขาย' };
+      if (!d.items.length) { $('alertsWrap').innerHTML = '<p style="color:var(--muted)">ยังไม่มีใครตั้งการแจ้งเตือน</p>'; return; }
+      $('alertsWrap').innerHTML = `<div style="overflow-x:auto"><table><thead><tr>
+        <th>เงื่อนไข</th><th>ช่องทางติดต่อ</th><th>ตรงกัน</th><th>สถานะ</th><th>เมื่อ</th>
+        </tr></thead><tbody>${d.items.map(s => {
+          const c = typeof s.criteria === 'string' ? JSON.parse(s.criteria) : (s.criteria || {});
+          const parts = [];
+          if (c.type) parts.push(typeLabel[c.type] || c.type);
+          if (c.category) parts.push(catLabel[c.category] || c.category);
+          if (c.province) parts.push(c.province);
+          if (c.q) parts.push('"' + c.q + '"');
+          if (c.max) parts.push('≤ ' + Number(c.max).toLocaleString());
+          if (c.beds) parts.push(c.beds + '+ นอน');
+          return `<tr>
+            <td>${TD.esc(s.label || parts.join(' · ') || 'ทุกประกาศ')}<div style="font-size:.75rem;color:var(--muted)">${TD.esc(parts.join(' · '))}</div></td>
+            <td>${chLabel[s.channel] || s.channel} · ${TD.esc(s.contact)}</td>
+            <td><b>${s.matches}</b></td>
+            <td>${s.active ? '<span style="color:#4c5a3f">เปิด</span>' : '<span style="color:var(--muted)">ปิด</span>'}</td>
+            <td style="font-size:.78rem;color:var(--muted)">${new Date(s.created_at).toLocaleDateString('th-TH')}</td>
+          </tr>`;
+        }).join('')}</tbody></table></div>`;
     }
 
     // ---------- Listings table ----------

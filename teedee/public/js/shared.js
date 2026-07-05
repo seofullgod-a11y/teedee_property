@@ -37,7 +37,9 @@ const TD = {
     route: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"/><path d="M17 17m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z"/><path d="M5 17v-4a4 4 0 0 1 4 -4h6a4 4 0 0 0 4 -4"/></svg>',
     sun: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"/></svg>',
     moon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/></svg>',
-    translate: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7"/><path d="M9 3v2c0 4.418 -2.239 8 -5 8"/><path d="M5 9c0 2.144 2.952 3.908 6.7 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/></svg>'
+    translate: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7"/><path d="M9 3v2c0 4.418 -2.239 8 -5 8"/><path d="M5 9c0 2.144 2.952 3.908 6.7 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/></svg>',
+    compare: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M7 8l-4 4l4 4"/><path d="M17 8l4 4l-4 4"/></svg>',
+    bell: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>'
   },
 
   brand: { main: 'อยู่', accent: 'ใจ', sub: 'yoojai.com', logo: '' },
@@ -120,6 +122,17 @@ const TD = {
   favs() {
     try { return JSON.parse(localStorage.getItem('teedee_favs') || '[]'); } catch { return []; }
   },
+  compareList() {
+    try { return JSON.parse(localStorage.getItem('yj_compare') || '[]'); } catch { return []; }
+  },
+  toggleCompare(id) {
+    id = Number(id);
+    let c = this.compareList();
+    if (c.includes(id)) c = c.filter(x => x !== id);
+    else { if (c.length >= 3) return { list: c, full: true }; c = [...c, id]; }
+    localStorage.setItem('yj_compare', JSON.stringify(c));
+    return { list: c, full: false };
+  },
   toggleFav(id) {
     id = Number(id);
     let f = this.favs();
@@ -163,11 +176,13 @@ const TD = {
       `<div class="nb"><span class="pill">ใกล้</span>${this.esc(n.label)} <span style="opacity:.7">(${this.esc(n.dist)})</span></div>`).join('');
 
     const faved = this.favs().includes(Number(l.id));
+    const cmp = this.compareList().includes(Number(l.id));
     return `
     <a class="card" href="/listing/${l.id}">
       <div class="thumb">
         ${img ? `<img src="${this.esc(img)}" alt="${this.esc(l.title)}" loading="lazy">` : ''}
         <button class="fav-btn ${faved ? 'on' : ''}" data-fav="${l.id}" type="button" aria-label="บันทึกรายการโปรด">${this.icons.heart}</button>
+        <button class="cmp-btn ${cmp ? 'on' : ''}" data-cmp="${l.id}" type="button" aria-label="เปรียบเทียบ" title="เปรียบเทียบ">${this.icons.compare}<span>เทียบ</span></button>
         <span class="badge-type ${l.listing_type}">${this.icons[this.catIcon[l.category] || 'home']} ${this.typeLabel[l.listing_type] || ''}${this.catLabel[l.category] ? ' · ' + this.catLabel[l.category] : ''}</span>
         <span class="price-tag">
           <span class="p">${this.price(l.price, l.listing_type)}</span>
@@ -262,6 +277,121 @@ if (typeof document !== 'undefined') {
     b.classList.toggle('on', on);
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
   });
+
+  // global: compare toggle + floating tray
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-cmp]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const r = TD.toggleCompare(b.dataset.cmp);
+    if (r.full) { TD.toast && TD.toast('เปรียบเทียบได้สูงสุด 3 รายการ'); return; }
+    document.querySelectorAll(`[data-cmp="${b.dataset.cmp}"]`).forEach(x =>
+      x.classList.toggle('on', r.list.includes(Number(b.dataset.cmp))));
+    TD.renderCompareTray();
+  });
+}
+
+TD.openAlertModal = function (criteria) {
+  criteria = criteria || {};
+  const catL = { condo: 'คอนโด', house: 'บ้านเดี่ยว', townhouse: 'ทาวน์เฮาส์', land: 'ที่ดิน', commercial: 'อาคารพาณิชย์' };
+  const typeL = { rent: 'เช่า', sale: 'ขาย' };
+  const parts = [];
+  if (criteria.type) parts.push(typeL[criteria.type]);
+  if (criteria.category) parts.push(catL[criteria.category]);
+  if (criteria.province) parts.push(criteria.province);
+  if (criteria.q) parts.push('“' + criteria.q + '”');
+  if (criteria.max) parts.push('ไม่เกิน ' + Number(criteria.max).toLocaleString());
+  if (criteria.beds) parts.push(criteria.beds + '+ ห้องนอน');
+  const summary = parts.join(' · ') || 'ทุกประกาศใหม่';
+
+  const ov = document.createElement('div');
+  ov.className = 'yj-modal-ov';
+  ov.innerHTML = `
+    <div class="yj-modal" role="dialog" aria-modal="true">
+      <button class="yj-modal-x" aria-label="ปิด">✕</button>
+      <div class="yj-modal-ic">${TD.icons.bell}</div>
+      <h3>แจ้งเตือนทรัพย์ตรงใจ</h3>
+      <p class="yj-modal-sub">เมื่อมีประกาศใหม่ตรงเงื่อนไขนี้ ทีมงานจะติดต่อแจ้งคุณทันที</p>
+      <div class="yj-crit">${TD.esc(summary)}</div>
+      <div class="yj-field">
+        <label>ช่องทางให้ติดต่อกลับ</label>
+        <div class="yj-chan">
+          <button type="button" class="yj-chan-b on" data-chan="line">LINE</button>
+          <button type="button" class="yj-chan-b" data-chan="phone">เบอร์โทร</button>
+          <button type="button" class="yj-chan-b" data-chan="email">อีเมล</button>
+        </div>
+      </div>
+      <input class="yj-input" id="yjContact" placeholder="LINE ID ของคุณ">
+      <div class="yj-msg" id="yjAlertMsg"></div>
+      <button class="btn btn-primary" id="yjAlertSubmit" style="width:100%;justify-content:center">ตั้งการแจ้งเตือน</button>
+    </div>`;
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+
+  let chan = 'line';
+  const ph = { line: 'LINE ID ของคุณ', phone: 'เบอร์โทรของคุณ', email: 'อีเมลของคุณ' };
+  const input = ov.querySelector('#yjContact');
+  const close = () => { ov.remove(); document.body.style.overflow = ''; };
+  ov.querySelector('.yj-modal-x').onclick = close;
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelectorAll('.yj-chan-b').forEach(b => b.onclick = () => {
+    ov.querySelectorAll('.yj-chan-b').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); chan = b.dataset.chan;
+    input.placeholder = ph[chan]; input.type = chan === 'email' ? 'email' : 'text';
+  });
+  ov.querySelector('#yjAlertSubmit').onclick = async () => {
+    const contact = input.value.trim();
+    const msg = ov.querySelector('#yjAlertMsg');
+    if (!contact) { msg.textContent = 'กรุณากรอกช่องทางติดต่อ'; msg.className = 'yj-msg err'; input.focus(); return; }
+    const btn = ov.querySelector('#yjAlertSubmit');
+    btn.disabled = true; msg.textContent = 'กำลังบันทึก…'; msg.className = 'yj-msg';
+    try {
+      await TD.post('/api/saved-searches', { ...criteria, label: summary, channel: chan, contact });
+      ov.querySelector('.yj-modal').innerHTML = `
+        <div class="yj-modal-ic ok">${TD.icons.check}</div>
+        <h3>ตั้งการแจ้งเตือนแล้ว!</h3>
+        <p class="yj-modal-sub">พอมีทรัพย์ใหม่ตรงเงื่อนไข “${TD.esc(summary)}” เราจะรีบติดต่อกลับทาง ${chan.toUpperCase()} ทันที</p>
+        <button class="btn btn-primary" id="yjDone" style="width:100%;justify-content:center;margin-top:6px">เรียบร้อย</button>`;
+      ov.querySelector('#yjDone').onclick = close;
+    } catch (e) {
+      btn.disabled = false; msg.textContent = e.message || 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง'; msg.className = 'yj-msg err';
+    }
+  };
+  input.focus();
+};
+
+TD.toast = function (msg) {
+  let t = document.getElementById('yjToast');
+  if (!t) { t = document.createElement('div'); t.id = 'yjToast'; t.className = 'yj-toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(TD._toastT); TD._toastT = setTimeout(() => t.classList.remove('show'), 2200);
+};
+
+TD.renderCompareTray = function () {
+  if (typeof document === 'undefined') return;
+  let tray = document.getElementById('cmpTray');
+  const list = this.compareList();
+  if (!list.length) { if (tray) tray.remove(); return; }
+  if (!tray) {
+    tray = document.createElement('div');
+    tray.id = 'cmpTray'; tray.className = 'cmp-tray';
+    document.body.appendChild(tray);
+  }
+  tray.innerHTML = `
+    <span class="cmp-tray-count">${this.icons.compare} เลือกเทียบ ${list.length}/3</span>
+    <div class="cmp-tray-actions">
+      <button type="button" class="cmp-clear">ล้าง</button>
+      <a class="cmp-go" href="/compare">เปรียบเทียบ ${this.icons.arrowRight}</a>
+    </div>`;
+  tray.querySelector('.cmp-clear').onclick = () => {
+    localStorage.setItem('yj_compare', '[]');
+    document.querySelectorAll('[data-cmp].on').forEach(x => x.classList.remove('on'));
+    this.renderCompareTray();
+  };
+};
+if (typeof document !== 'undefined') {
+  const bootTray = () => TD.renderCompareTray();
+  if (document.body) bootTray(); else document.addEventListener('DOMContentLoaded', bootTray);
 }
 
 
@@ -384,6 +514,25 @@ TD.EN = {
   'ไม่พบประกาศนี้': 'Listing not found', 'ประกาศอาจถูกปิดไปแล้ว': 'This listing may have been removed',
   'ดูประกาศอื่น': 'Browse other listings', 'บันทึกรายการโปรด': 'Save to favorites',
   'รูปก่อนหน้า': 'Previous image', 'รูปถัดไป': 'Next image', 'ปิด': 'Close',
+  // ---- Compare ----
+  'เทียบ': 'Compare', 'ล้าง': 'Clear', 'เปรียบเทียบ': 'Compare', 'เปรียบเทียบทรัพย์': 'Compare Properties',
+  'ดูข้อมูลเทียบกันแบบเคียงข้าง เลือกทรัพย์ที่ใช่ได้ง่ายขึ้น': 'See properties side by side to pick the right one more easily',
+  'ราคา': 'Price', 'ประเภท': 'Type', 'ทำเล': 'Location', 'ห้องน้ำ': 'Bathrooms',
+  'ผ่อน/เดือน (ประเมิน)': 'Est. monthly', 'สิ่งอำนวยความสะดวก': 'Facilities', 'ดูประกาศ': 'View listing',
+  'ยังไม่ได้เลือกทรัพย์เพื่อเปรียบเทียบ': 'No properties selected to compare',
+  'กดปุ่ม “เทียบ” บนการ์ดประกาศ (เลือกได้สูงสุด 3 รายการ) แล้วกลับมาที่นี่': 'Tap “Compare” on listing cards (up to 3), then come back here',
+  'ไปเลือกทรัพย์': 'Browse properties', 'เอาออก': 'Remove', 'เปรียบเทียบได้สูงสุด 3 รายการ': 'You can compare up to 3',
+  // ---- Alerts ----
+  'แจ้งเตือนทรัพย์แบบนี้': 'Alert me for similar', 'ตั้งแจ้งเตือนไว้': 'Set an alert',
+  'แจ้งเตือนทรัพย์ตรงใจ': 'Property Alerts', 'ตั้งการแจ้งเตือน': 'Set alert',
+  'เมื่อมีประกาศใหม่ตรงเงื่อนไขนี้ ทีมงานจะติดต่อแจ้งคุณทันที': 'When a new listing matches, our team will contact you right away',
+  'ช่องทางให้ติดต่อกลับ': 'How should we reach you?', 'เบอร์โทร': 'Phone', 'อีเมล': 'Email',
+  'ตั้งการแจ้งเตือนแล้ว!': 'Alert set!', 'เรียบร้อย': 'Done', 'กรุณากรอกช่องทางติดต่อ': 'Please enter your contact',
+  'กำลังบันทึก…': 'Saving…', 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง': 'Couldn\u2019t save, please try again',
+  // ---- Calc affordability ----
+  'เช็กว่าผ่อนไหวไหม': 'Can you afford it?', 'รายได้ต่อเดือน': 'Monthly income',
+  'ยอดกู้': 'Loan amount', 'ดอกเบี้ยรวมตลอดสัญญา': 'Total interest over term',
+  'ธนาคารทั่วไปให้ภาระผ่อนไม่เกน ~40% ของรายได้ (DSR)': 'Banks typically cap payments at ~40% of income (DSR)',
   // ---- Chat widget ----
   'แชทสอบถาม': 'Ask a question', 'สอบถาม': 'Ask', 'ปิดแชท': 'Close chat',
   'ตอบทันที · ถามได้ทุกเรื่องเกี่ยวกับทรัพย์นี้': 'Instant answers — ask anything about this property',

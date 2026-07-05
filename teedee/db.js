@@ -70,6 +70,23 @@ async function migrate() {
       insight TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS saved_searches (
+      id SERIAL PRIMARY KEY,
+      label TEXT DEFAULT '',
+      criteria JSONB NOT NULL DEFAULT '{}',
+      channel TEXT DEFAULT 'line',
+      contact TEXT NOT NULL,
+      active BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS search_matches (
+      search_id INT REFERENCES saved_searches(id) ON DELETE CASCADE,
+      listing_id INT REFERENCES listings(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (search_id, listing_id)
+    );
   `);
 
   // ค่าเริ่มต้นของแบรนด์ (แก้ได้ในหลังบ้าน)

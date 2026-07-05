@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var d=document.documentElement,t=localStorage.getItem("yj_theme");d.dataset.theme=t==="dark"?"dark":"light";var l=localStorage.getItem("yj_lang");d.lang=l==="en"?"en":"th";d.dataset.lang=d.lang;}catch(e){}})();</script>
+  <title>เปรียบเทียบทรัพย์ — อยู่ใจ (yoojai.com)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css?v=13">
+  <link rel="icon" href="/favicon">
+  <style>
+    .cmp-wrap { overflow-x: auto; margin-top: 24px; -webkit-overflow-scrolling: touch; }
+    .cmp-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 640px; }
+    .cmp-table th, .cmp-table td { padding: 0; vertical-align: top; }
+    .cmp-col { width: 260px; }
+    .cmp-rowlbl { width: 130px; position: sticky; left: 0; background: var(--bg); z-index: 3; }
+    .cmp-head { padding: 0 8px 14px; }
+    .cmp-card-top { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card); }
+    .cmp-thumb { position: relative; aspect-ratio: 4/3; background: var(--soft); }
+    .cmp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .cmp-rm { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 999px; border: 0; background: rgba(0,0,0,.55); color: #fff; cursor: pointer; font-size: 15px; display: grid; place-items: center; }
+    .cmp-ct-body { padding: 11px 13px; }
+    .cmp-ct-body h3 { font-size: .92rem; font-weight: 500; line-height: 1.4; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .cmp-ct-price { color: var(--gold); font-weight: 600; font-family: var(--font-display); }
+    .cmp-r-label { padding: 13px 10px; font-size: .82rem; color: var(--muted); border-top: 1px solid var(--line); font-weight: 500; }
+    .cmp-r-val { padding: 13px 12px; font-size: .9rem; color: var(--ink); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+    .cmp-r-val.best { background: var(--gold-soft); color: var(--gold); font-weight: 600; }
+    .cmp-view { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: .82rem; color: var(--gold); font-weight: 500; }
+    .cmp-empty { text-align: center; padding: 70px 20px; }
+  </style>
+</head>
+<body>
+  <div id="nav"></div>
+
+  <div class="container">
+    <div class="page-head">
+      <span class="eyebrow-text">Compare</span>
+      <h1>เปรียบเทียบทรัพย์</h1>
+      <p>ดูข้อมูลเทียบกันแบบเคียงข้าง เลือกทรัพย์ที่ใช่ได้ง่ายขึ้น</p>
+    </div>
+    <div id="cmpRoot">
+      <div class="grid" style="margin-top:24px"><div class="skeleton" style="height:380px"></div></div>
+    </div>
+    <div style="height:44px"></div>
+  </div>
+
+  <div id="footer"></div>
+
+  <script src="/js/shared.js?v=13"></script>
+  <script>
+    TD.chrome('');
+
+    const $ = id => document.getElementById(id);
+    const fmtBaht = n => '฿' + Number(n || 0).toLocaleString();
+
+    function monthly(price, type) {
+      if (type !== 'sale' || !price) return null;
+      // ประเมินคร่าว: กู้ 90% ดอกเบี้ย 6%/ปี 30 ปี
+      const P = price * 0.9, r = 0.06 / 12, n = 360;
+      const m = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+      return Math.round(m);
+    }
+
+    async function load() {
+      let ids = TD.compareList();
+      const qs = new URLSearchParams(location.search).get('ids');
+      if (qs) ids = qs.split(',').map(Number).filter(Boolean);
+      if (!ids.length) return empty();
+      let items = [];
+      try {
+        const r = await fetch('/api/listings-by-ids?ids=' + ids.join(',')).then(x => x.json());
+        items = r.items || [];
+      } catch {}
+      if (!items.length) return empty();
+      render(items);
+    }
+
+    function empty() {
+      $('cmpRoot').innerHTML = `
+        <div class="cmp-empty">${TD.icons.compare}
+          <h3 style="font-family:var(--font-display);margin:14px 0 6px">ยังไม่ได้เลือกทรัพย์เพื่อเปรียบเทียบ</h3>
+          <p style="color:var(--muted)">กดปุ่ม “เทียบ” บนการ์ดประกาศ (เลือกได้สูงสุด 3 รายการ) แล้วกลับมาที่นี่</p>
+          <a class="btn btn-primary" href="/search" style="margin-top:18px">ไปเลือกทรัพย์</a>
+        </div>`;
+    }
+
+    function render(items) {
+      const catL = TD._labels.cat[TD.lang()], typeL = TD._labels.type[TD.lang()];
+      const num = (v) => Number(v) || 0;
+      // แถวข้อมูล: [label, getter, bestPicker]  (bestPicker: 'min'|'max'|null)
+      const rows = [
+        ['ราคา', l => l.listing_type === 'rent' ? fmtBaht(l.price) + '/เดือน' : fmtBaht(l.price), null],
+        ['ประเภท', l => (typeL[l.listing_type] || '') + ' · ' + (catL[l.category] || '-'), null],
+        ['ทำเล', l => l.location_text || l.province || '-', null],
+        ['ห้องนอน', l => num(l.bedrooms) || '-', 'max'],
+        ['ห้องน้ำ', l => num(l.bathrooms) || '-', 'max'],
+        ['พื้นที่ใช้สอย', l => num(l.area_sqm) ? num(l.area_sqm) + ' ตร.ม.' : '-', 'max'],
+        ['ขนาดที่ดิน', l => num(l.land_area_sqwah) ? num(l.land_area_sqwah) + ' ตร.ว.' : '-', 'max'],
+        ['ผ่อน/เดือน (ประเมิน)', l => { const m = monthly(l.price, l.listing_type); return m ? '~' + fmtBaht(m) : '—'; }, null],
+        ['สัตว์เลี้ยง', l => l.pets_allowed ? 'เลี้ยงได้' : 'ไม่อนุญาต', null],
+        ['สิ่งอำนวยความสะดวก', l => (l.amenities || []).length + ' รายการ', 'max']
+      ];
+
+      // หา index ที่ดีที่สุดของแต่ละแถว (เช่น ห้องนอนมากสุด)
+      const bestIdx = rows.map(([, get, mode]) => {
+        if (!mode) return -1;
+        const vals = items.map(l => {
+          if (mode === 'max' || mode === 'min') {
+            const raw = get(l); const n = parseFloat(String(raw).replace(/[^\d.]/g, ''));
+            return isNaN(n) ? null : n;
+          }
+          return null;
+        });
+        const valid = vals.filter(v => v != null);
+        if (valid.length < 2) return -1;
+        const target = mode === 'max' ? Math.max(...valid) : Math.min(...valid);
+        // ให้ best เฉพาะเมื่อมีตัวชนะชัด
+        if (vals.filter(v => v === target).length === items.length) return -1;
+        return vals.indexOf(target);
+      });
+
+      const headCells = items.map(l => `
+        <th class="cmp-col"><div class="cmp-head">
+          <div class="cmp-card-top">
+            <div class="cmp-thumb">
+              ${(l.images || [])[0] ? `<img src="${TD.esc(l.images[0])}" alt="${TD.esc(l.title)}">` : ''}
+              <button class="cmp-rm" data-rm="${l.id}" title="เอาออก" aria-label="เอาออก">✕</button>
+            </div>
+            <div class="cmp-ct-body">
+              <h3>${TD.esc(l.title)}</h3>
+              <div class="cmp-ct-price">${l.listing_type === 'rent' ? fmtBaht(l.price) + '/เดือน' : fmtBaht(l.price)}</div>
+              <a class="cmp-view" href="/listing/${l.id}">ดูประกาศ ${TD.icons.arrowRight}</a>
+            </div>
+          </div>
+        </div></th>`).join('');
+
+      const bodyRows = rows.map(([label, get], ri) => `
+        <tr>
+          <td class="cmp-rowlbl"><div class="cmp-r-label">${label}</div></td>
+          ${items.map((l, ci) => `<td class="cmp-r-val ${bestIdx[ri] === ci ? 'best' : ''}">${get(l)}</td>`).join('')}
+        </tr>`).join('');
+
+      $('cmpRoot').innerHTML = `
+        <div class="cmp-wrap"><table class="cmp-table">
+          <thead><tr><th class="cmp-rowlbl"></th>${headCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table></div>`;
+
+      // ปุ่มเอาออก
+      $('cmpRoot').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => {
+        TD.toggleCompare(b.dataset.rm);
+        TD.renderCompareTray();
+        load();
+      });
+    }
+
+    load();
+  </script>
+</body>
+</html>

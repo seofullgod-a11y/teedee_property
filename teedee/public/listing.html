@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=12">
+  <link rel="stylesheet" href="/css/style.css?v=13">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -45,7 +45,7 @@
     <div class="lb-count" id="lbCount"></div>
   </div>
 
-  <script src="/js/shared.js?v=12"></script>
+  <script src="/js/shared.js?v=13"></script>
   <script>
     TD.chrome('');
     const id = Number(location.pathname.split('/').pop());
@@ -399,6 +399,16 @@
               <input type="range" id="yrRange" min="5" max="40" step="5" value="30">
             </div>
             <div class="calc-result"><span class="t">ผ่อนประมาณ</span><span class="v" id="monthly"></span></div>
+            <div class="calc-breakdown" id="calcBreak"></div>
+            <div class="afford">
+              <div class="afford-head"><span class="calc-ico">${TD.icons.calc}</span> เช็กว่าผ่อนไหวไหม</div>
+              <div class="calc-row">
+                <div class="lbl"><span>รายได้ต่อเดือน</span><b id="incVal">฿50,000</b></div>
+                <input type="range" id="incRange" min="15000" max="300000" step="5000" value="50000">
+              </div>
+              <div class="afford-verdict" id="affordVerdict"></div>
+              <p class="calc-sub">ธนาคารทั่วไปให้ภาระผ่อนไม่เกน ~40% ของรายได้ (DSR)</p>
+            </div>
             <p class="calc-sub">ตัวเลขโดยประมาณเพื่อการตัดสินใจเบื้องต้นเท่านั้น เงื่อนไขจริงขึ้นอยู่กับธนาคารและผู้กู้แต่ละราย</p>
           </div>` : ''}
 
@@ -509,7 +519,7 @@
       if (l.listing_type !== 'sale') return;
       const P = Number(l.price) || 0;
       const fmt = (n) => '฿' + Math.round(n).toLocaleString('th-TH');
-      const dpRange = $('dpRange'), irRange = $('irRange'), yrRange = $('yrRange');
+      const dpRange = $('dpRange'), irRange = $('irRange'), yrRange = $('yrRange'), incRange = $('incRange');
       function paintRange(el) {
         const pct = (el.value - el.min) / (el.max - el.min) * 100;
         el.style.setProperty('--fill', pct + '%');
@@ -523,8 +533,33 @@
         const m = r === 0 ? loan / n : loan * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
         $('monthly').textContent = fmt(m) + '/เดือน';
         [dpRange, irRange, yrRange].forEach(paintRange);
+
+        // สรุปยอด: เงินต้นกู้ / ดอกเบี้ยรวม / ยอดชำระทั้งหมด
+        const totalPay = m * n, totalInterest = totalPay - loan;
+        $('calcBreak').innerHTML = `
+          <div class="bd-row"><span>ยอดกู้</span><b>${fmt(loan)}</b></div>
+          <div class="bd-row"><span>ดอกเบี้ยรวมตลอดสัญญา</span><b>${fmt(totalInterest)}</b></div>
+          <div class="bd-row total"><span>ชำระทั้งหมด (${yr} ปี)</span><b>${fmt(totalPay)}</b></div>`;
+
+        // เช็กความสามารถผ่อน
+        const inc = Number(incRange.value);
+        $('incVal').textContent = fmt(inc);
+        paintRange(incRange);
+        const ratio = m / inc;
+        const maxAfford = inc * 0.4;
+        const v = $('affordVerdict');
+        if (ratio <= 0.4) {
+          v.className = 'afford-verdict ok';
+          v.innerHTML = `${TD.icons.check} ผ่อนไหวสบาย — คิดเป็น ${Math.round(ratio * 100)}% ของรายได้`;
+        } else if (ratio <= 0.55) {
+          v.className = 'afford-verdict warn';
+          v.innerHTML = `⚠️ ค่อนข้างตึง — คิดเป็น ${Math.round(ratio * 100)}% ของรายได้ (แนะนำเพิ่มดาวน์ หรือยืดงวด)`;
+        } else {
+          v.className = 'afford-verdict bad';
+          v.innerHTML = `เกินกำลังผ่อน — งวดนี้ ${Math.round(ratio * 100)}% ของรายได้ (ธนาคารมักรับไม่เกินผ่อน ${fmt(maxAfford)}/เดือน)`;
+        }
       }
-      [dpRange, irRange, yrRange].forEach(el => el.addEventListener('input', calc));
+      [dpRange, irRange, yrRange, incRange].forEach(el => el.addEventListener('input', calc));
       calc();
     }
 

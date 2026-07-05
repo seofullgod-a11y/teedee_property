@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=12">
+  <link rel="stylesheet" href="/css/style.css?v=13">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -62,13 +62,16 @@
 
     <div class="result-meta">
       <span class="count" id="resultCount">กำลังโหลด...</span>
-      <select id="sortSel" aria-label="เรียงลำดับ">
-        <option value="">แนะนำก่อน</option>
-        <option value="newest">มาใหม่ล่าสุด</option>
-        <option value="price_asc">ราคาต่ำ → สูง</option>
-        <option value="price_desc">ราคาสูง → ต่ำ</option>
-        <option value="popular">ยอดนิยม</option>
-      </select>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button type="button" class="btn btn-ghost btn-sm" id="alertBtn" style="gap:6px"><span data-ic="bell"></span> แจ้งเตือนทรัพย์แบบนี้</button>
+        <select id="sortSel" aria-label="เรียงลำดับ">
+          <option value="">แนะนำก่อน</option>
+          <option value="newest">มาใหม่ล่าสุด</option>
+          <option value="price_asc">ราคาต่ำ → สูง</option>
+          <option value="price_desc">ราคาสูง → ต่ำ</option>
+          <option value="popular">ยอดนิยม</option>
+        </select>
+      </div>
     </div>
 
     <div class="grid" id="results">
@@ -81,7 +84,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=12"></script>
+  <script src="/js/shared.js?v=13"></script>
   <script>
     const params = new URLSearchParams(location.search);
     TD.chrome(params.get('category') === 'land' ? 'land' : (params.get('type') || ''));
@@ -119,6 +122,17 @@
       location.href = '/search?' + p.toString();
     });
 
+    function currentCriteria() {
+      const p = new URLSearchParams(location.search);
+      const budget = (p.get('budget') || '').split('-');
+      return {
+        q: p.get('q') || '', type: p.get('type') || '', category: p.get('category') || '',
+        min: budget[0] || p.get('min') || '', max: budget[1] || p.get('max') || '',
+        beds: p.get('beds') || ''
+      };
+    }
+    document.getElementById('alertBtn').addEventListener('click', () => TD.openAlertModal(currentCriteria()));
+
     async function load() {
       const p = new URLSearchParams(location.search);
       const r = await fetch('/api/listings?' + p.toString()).then(x => x.json());
@@ -130,8 +144,14 @@
           <div class="empty-state" id="empty">${TD.icons.mapSearch}
             <h3 style="font-family:var(--font-display);margin-bottom:6px">ไม่พบประกาศที่ตรงเงื่อนไข</h3>
             <p>ลองปรับตัวกรอง เช่น ขยายช่วงราคา หรือลบคำค้นบางส่วน</p>
-            <a class="btn btn-ghost" href="/search" style="margin-top:16px">ดูประกาศทั้งหมด</a>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+              <a class="btn btn-ghost" href="/search">ดูประกาศทั้งหมด</a>
+              <button type="button" class="btn btn-primary" id="emptyAlert"><span data-ic="bell"></span> ตั้งแจ้งเตือนไว้</button>
+            </div>
           </div>`);
+        document.querySelectorAll('#empty [data-ic]').forEach(s => { s.innerHTML = TD.icons[s.dataset.ic] || ''; });
+        const ea = document.getElementById('emptyAlert');
+        if (ea) ea.addEventListener('click', () => TD.openAlertModal(currentCriteria()));
         document.getElementById('pagination').innerHTML = '';
         return;
       }
