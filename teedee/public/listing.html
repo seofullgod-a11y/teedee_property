@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=17">
+  <link rel="stylesheet" href="/css/style.css?v=18">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -46,7 +46,7 @@
     <div class="lb-strip" id="lbStrip"></div>
   </div>
 
-  <script src="/js/shared.js?v=17"></script>
+  <script src="/js/shared.js?v=18"></script>
   <script>
     TD.chrome('');
     const id = Number(location.pathname.split('/').pop());
@@ -388,7 +388,7 @@
               <span class="d-badge cat">${TD.catLabel[l.category]}</span>
               ${l.featured ? '<span class="d-badge feat">⭐ แนะนำ</span>' : ''}
             </div>
-            <h1>${TD.esc(l.title)}</h1>
+            <h1>${TD.esc(l.title)}${l.verified ? ` <span class="vfy" title="ทรัพย์ตรวจสอบแล้ว">${TD.icons.verified}</span>` : ''}</h1>
             <div class="loc">${TD.icons.pin} ${TD.esc(l.location_text)}${l.province && !String(l.location_text).includes(l.province) ? ' · ' + TD.esc(l.province) : ''}</div>
             <div class="meta-line">เปิดดู ${Number(l.views).toLocaleString('th-TH')} ครั้ง · ลงประกาศเมื่อ ${new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
           </div>
@@ -457,6 +457,7 @@
               <input id="c-name" placeholder="ชื่อของคุณ *">
               <input id="c-phone" placeholder="เบอร์โทร">
               <input id="c-line" placeholder="LINE ID">
+              <input id="c-website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" aria-hidden="true">
               <textarea id="c-msg" placeholder="ข้อความ เช่น ขอนัดดูห้องวันเสาร์นี้"></textarea>
               <div class="form-msg" id="formMsg"></div>
               <button class="btn btn-primary" id="sendBtn" style="justify-content:center">${TD.icons.phone} ส่งข้อความติดต่อ</button>
@@ -466,6 +467,7 @@
               <button type="button" id="copyLink">${TD.icons.copy} คัดลอกลิงก์</button>
               <a href="https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener">💬 แชร์ LINE</a>
               <button type="button" id="shareBtn">${TD.icons.share} แชร์</button>
+              <button type="button" data-report="${l.id}" class="report-link">${TD.icons.flag} แจ้งประกาศ</button>
             </div>
           </div>
         </div>
@@ -633,6 +635,7 @@
             name: $('c-name').value.trim(),
             phone: $('c-phone').value.trim(),
             line_id: $('c-line').value.trim(),
+            website: $('c-website') ? $('c-website').value : '',
             message: $('c-msg').value.trim()
           });
           msg.textContent = 'ส่งข้อความเรียบร้อย รอการติดต่อกลับได้เลยครับ';

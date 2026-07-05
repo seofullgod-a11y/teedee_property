@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=17">
+  <link rel="stylesheet" href="/css/style.css?v=18">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -186,6 +186,7 @@
       <button data-view="inbox"><span data-ic="phone"></span> ข้อความติดต่อ <span class="unread-dot" id="unreadDot" style="display:none">0</span></button>
       <button data-view="alerts"><span data-ic="heart"></span> การแจ้งเตือน</button>
       <button data-view="reviews"><span data-ic="star"></span> รีวิวทำเล</button>
+      <button data-view="reports"><span data-ic="flag"></span> รายงานประกาศ <span class="unread-dot" id="reportDot" style="display:none">0</span></button>
       <button data-view="settings"><span data-ic="settings"></span> ตั้งค่าเว็บไซต์</button>
       <span class="spacer"></span>
       <a class="menu foot-link" href="/" target="_blank"><span data-ic="arrowRight"></span> ดูหน้าเว็บ</a>
@@ -217,6 +218,13 @@
         <h1>รีวิวทำเล</h1>
         <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">รีวิวที่ผู้ใช้เขียนถึงย่านต่าง ๆ — ลบรายการที่ไม่เหมาะสมได้</p>
         <div id="reviewsWrap"></div>
+      </div>
+
+      <!-- Reports -->
+      <div data-panel="reports" style="display:none">
+        <h1>รายงานประกาศ</h1>
+        <p style="color:var(--muted);margin:-6px 0 18px;font-size:.9rem">ประกาศที่ผู้ใช้แจ้งว่าอาจมีปัญหา — ตรวจสอบแล้วกด "จัดการแล้ว"</p>
+        <div id="reportsWrap"></div>
       </div>
 
       <!-- Listings -->
@@ -276,9 +284,19 @@
               <p id="f-mapHint" style="font-size:.78rem;color:var(--muted);margin-top:5px">ระบบจะแกะพิกัดให้อัตโนมัติ — ถ้าเว้นว่าง แผนที่จะใช้ชื่อทำเลแทน (แม่นน้อยกว่า)</p>
               <input type="hidden" id="f-lat"><input type="hidden" id="f-lng">
             </div>
-            <div style="display:flex;align-items:end;gap:20px;padding-bottom:8px">
+            <div style="display:flex;align-items:end;gap:20px;padding-bottom:8px;flex-wrap:wrap">
               <label class="chk"><input type="checkbox" id="f-pets"> เลี้ยงสัตว์ได้</label>
               <label class="chk"><input type="checkbox" id="f-feat"> ⭐ ประกาศแนะนำ</label>
+              <label class="chk"><input type="checkbox" id="f-verified"> 🛡️ ตรวจสอบแล้ว</label>
+              <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted)">ป้ายโปรโมท
+                <select id="f-badge" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-family:inherit">
+                  <option value="">— ไม่มี —</option>
+                  <option value="hot">🔥 มาแรง</option>
+                  <option value="price_drop">↓ ราคาพิเศษ</option>
+                  <option value="new_project">โครงการใหม่</option>
+                  <option value="urgent">ด่วน!</option>
+                </select>
+              </label>
             </div>
           </div>
 
@@ -369,7 +387,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=17"></script>
+  <script src="/js/shared.js?v=18"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -436,6 +454,7 @@
       if (view === 'dashboard') loadDash();
       if (view === 'alerts') loadAlerts();
       if (view === 'reviews') loadReviews();
+      if (view === 'reports') loadReports();
       if (view === 'listings') loadListings();
       if (view === 'inbox') loadInbox();
       if (view === 'settings') loadSettings();
@@ -490,6 +509,30 @@
       const l = await api('/api/admin/listings');
       $('dashRecent').innerHTML = renderTable(l.items.slice(0, 5));
       bindTable($('dashRecent'));
+    }
+
+    // ---------- Reports ----------
+    async function loadReports() {
+      const d = await api('/api/admin/reports');
+      const pending = d.items.filter(r => !r.resolved).length;
+      $('reportDot').style.display = pending ? 'inline-block' : 'none';
+      $('reportDot').textContent = pending;
+      if (!d.items.length) { $('reportsWrap').innerHTML = '<p style="color:var(--muted)">ยังไม่มีรายงาน</p>'; return; }
+      $('reportsWrap').innerHTML = `<div style="overflow-x:auto"><table><thead><tr>
+        <th>ประกาศ</th><th>เหตุผล</th><th>รายละเอียด</th><th>เมื่อ</th><th>สถานะ</th><th></th>
+        </tr></thead><tbody>${d.items.map(r => `
+          <tr style="${r.resolved ? 'opacity:.5' : ''}">
+            <td>${r.title ? `<a href="/listing/${r.listing_id}" target="_blank" style="color:var(--pine)">${TD.esc(r.title)}</a>` : '#' + r.listing_id + ' (ถูกลบ)'}</td>
+            <td>${TD.esc(r.reason)}</td>
+            <td style="font-size:.82rem;color:var(--muted)">${r.detail ? TD.esc(r.detail) : '—'}</td>
+            <td style="font-size:.78rem;color:var(--muted);white-space:nowrap">${new Date(r.created_at).toLocaleDateString('th-TH')}</td>
+            <td>${r.resolved ? '<span style="color:#4c5a3f">จัดการแล้ว</span>' : '<span style="color:var(--copper)">รอตรวจ</span>'}</td>
+            <td>${r.resolved ? '' : `<button class="rp-resolve" data-id="${r.id}" style="border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.78rem">จัดการแล้ว</button>`}</td>
+          </tr>`).join('')}</tbody></table></div>`;
+      $('reportsWrap').querySelectorAll('.rp-resolve').forEach(b => b.onclick = async () => {
+        await api('/api/admin/reports/' + b.dataset.id + '/resolve', { method: 'POST' });
+        loadReports();
+      });
     }
 
     // ---------- Reviews (moderation) ----------
@@ -694,7 +737,7 @@
       ['f-title', 'f-price', 'f-loc', 'f-prov', 'f-bed', 'f-bath', 'f-sqm', 'f-wah', 'f-floor', 'f-phone', 'f-line', 'f-map', 'f-lat', 'f-lng', 'f-fee', 'f-year', 'f-desc', 'f-hl', 'f-ainotes']
         .forEach(id => $(id).value = '');
       $('f-type').value = 'rent'; $('f-cat').value = 'condo'; $('f-status').value = 'active';
-      $('f-pets').checked = false; $('f-feat').checked = false;
+      $('f-pets').checked = false; $('f-feat').checked = false; $('f-verified').checked = false; $('f-badge').value = '';
       $('imgList').innerHTML = ''; $('imgList').appendChild(imgRow());
       $('nbList').innerHTML = ''; $('nbList').appendChild(nbRow());
       setChecked('amen', []); setChecked('furn', []);
@@ -719,7 +762,7 @@
         applyMapInput();
       } else { $('f-map').value = ''; applyMapInput(); }
       $('f-hl').value = (l.highlights || []).join('\n');
-      $('f-pets').checked = l.pets_allowed; $('f-feat').checked = l.featured;
+      $('f-pets').checked = l.pets_allowed; $('f-feat').checked = l.featured; $('f-verified').checked = !!l.verified; $('f-badge').value = l.badge || '';
       $('f-ainotes').value = '';
       $('imgList').innerHTML = '';
       (l.images?.length ? l.images : ['']).forEach(u => $('imgList').appendChild(imgRow(u)));
@@ -750,6 +793,8 @@
         }).filter(Boolean),
         pets_allowed: $('f-pets').checked,
         featured: $('f-feat').checked,
+        verified: $('f-verified').checked,
+        badge: $('f-badge').value,
         contact_phone: $('f-phone').value.trim(),
         contact_line: $('f-line').value.trim(),
         latitude: $('f-lat').value !== '' ? Number($('f-lat').value) : null,

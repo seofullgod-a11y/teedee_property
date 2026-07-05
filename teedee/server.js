@@ -26,7 +26,16 @@ async function notifyTelegram(text) {
 const tgEsc = (s) => String(s || '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
 app.use(express.json({ limit: '6mb' }));
-app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+app.use(express.static(path.join(__dirname, 'public'), {
+  index: false,
+  maxAge: '7d',
+  setHeaders(res, filePath) {
+    // ไฟล์ที่มี ?v= จะถูก cache นานอยู่แล้ว; ตั้ง cache ปานกลางสำหรับ asset ทั่วไป
+    if (/\.(css|js|png|jpg|jpeg|webp|svg|woff2?)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  }
+}));
 
 // ---------- Helpers ----------
 const adminToken = () =>
@@ -36,6 +45,52 @@ function requireAdmin(req, res, next) {
   const token = (req.headers.authorization || '').replace('Bearer ', '');
   if (token !== adminToken()) return res.status(401).json({ error: 'unauthorized' });
   next();
+}
+
+// ---------- User auth (scrypt + HMAC cookie session) ----------
+const SESSION_SECRET = process.env.SESSION_SECRET || crypto.createHash('sha256').update('yj-sess-' + (ADMIN_PASSWORD || 'x')).digest('hex');
+function hashPassword(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(pw), salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
+function verifyPassword(pw, stored) {
+  const [salt, hash] = String(stored || '').split(':');
+  if (!salt || !hash) return false;
+  const test = crypto.scryptSync(String(pw), salt, 64).toString('hex');
+  const a = Buffer.from(hash, 'hex'), b = Buffer.from(test, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+function signSession(uid) {
+  const exp = Date.now() + 30 * 864e5; // 30 วัน
+  const body = `${uid}.${exp}`;
+  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(body).digest('hex');
+  return `${body}.${sig}`;
+}
+function verifySession(token) {
+  if (!token) return null;
+  const parts = String(token).split('.');
+  if (parts.length !== 3) return null;
+  const [uid, exp, sig] = parts;
+  const good = crypto.createHmac('sha256', SESSION_SECRET).update(`${uid}.${exp}`).digest('hex');
+  if (sig.length !== good.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(good))) return null;
+  if (Number(exp) < Date.now()) return null;
+  return Number(uid);
+}
+function parseCookies(req) {
+  const out = {};
+  (req.headers.cookie || '').split(';').forEach(c => {
+    const i = c.indexOf('=');
+    if (i > -1) out[c.slice(0, i).trim()] = decodeURIComponent(c.slice(i + 1).trim());
+  });
+  return out;
+}
+function currentUser(req) {
+  return verifySession(parseCookies(req).yj_session);
+}
+function setSessionCookie(res, uid) {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `yj_session=${signSession(uid)}; HttpOnly; Path=/; Max-Age=${30 * 86400}; SameSite=Lax${secure}`);
 }
 
 const SETTING_KEYS = ['site_name_main', 'site_name_accent', 'site_subtitle', 'logo_url'];
@@ -51,7 +106,7 @@ const brandName = (s) => `${s.site_name_main || 'อยู่'}${s.site_name_acc
 const LISTING_FIELDS = `id, title, listing_type, category, price, location_text, province,
   bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
   images, nearby, pets_allowed, featured, status, contact_line, contact_phone, views,
-  latitude, longitude, amenities, furnishings, common_fee_text, year_built, created_at, updated_at`;
+  latitude, longitude, amenities, furnishings, common_fee_text, year_built, badge, verified, created_at, updated_at`;
 
 // ---------- Public API ----------
 
@@ -130,9 +185,17 @@ app.get('/api/settings', async (req, res) => {
 
 app.post('/api/inquiries', async (req, res) => {
   try {
-    const { listing_id, name, phone, line_id, message } = req.body || {};
+    const { listing_id, name, phone, line_id, message, website } = req.body || {};
+    // honeypot: บอทมักกรอกช่องซ่อน "website" — ถ้ามีค่าถือว่าเป็นสแปม (ตอบ ok หลอกไว้)
+    if (website) return res.json({ ok: true });
+    // rate limit ต่อ IP
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+    const now = Date.now(); const h = inquiryHits.get(ip) || { c: 0, t: now };
+    if (now - h.t > 3600e3) { h.c = 0; h.t = now; }
+    if (h.c >= 12) return res.status(429).json({ error: 'ส่งข้อความบ่อยเกินไป กรุณาลองใหม่ภายหลัง' });
     if (!name || (!phone && !line_id))
       return res.status(400).json({ error: 'กรุณากรอกชื่อ และเบอร์โทรหรือ LINE ID' });
+    h.c++; inquiryHits.set(ip, h);
     await pool.query(
       `INSERT INTO inquiries (listing_id, name, phone, line_id, message)
        VALUES ($1,$2,$3,$4,$5)`,
@@ -464,6 +527,106 @@ app.delete('/api/admin/area-reviews/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ============ User accounts ============
+const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase().slice(0, 120);
+    const password = String(req.body?.password || '');
+    const name = String(req.body?.name || '').trim().slice(0, 80);
+    if (!emailRe.test(email)) return res.status(400).json({ error: 'อีเมลไม่ถูกต้อง' });
+    if (password.length < 6) return res.status(400).json({ error: 'รหัสผ่านอย่างน้อย 6 ตัวอักษร' });
+    const exists = await pool.query('SELECT 1 FROM users WHERE email=$1', [email]);
+    if (exists.rows[0]) return res.status(409).json({ error: 'อีเมลนี้ถูกใช้แล้ว' });
+    const { rows } = await pool.query(
+      'INSERT INTO users (email, pass_hash, name) VALUES ($1,$2,$3) RETURNING id, email, name',
+      [email, hashPassword(password), name]);
+    // sync รายการโปรดจากเครื่อง (ถ้าส่งมา)
+    const favs = Array.isArray(req.body?.favorites) ? req.body.favorites.map(Number).filter(Boolean).slice(0, 200) : [];
+    for (const fid of favs) await pool.query('INSERT INTO user_favorites (user_id, listing_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [rows[0].id, fid]).catch(() => {});
+    setSessionCookie(res, rows[0].id);
+    res.json({ user: { id: rows[0].id, email: rows[0].email, name: rows[0].name } });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+    const { rows } = await pool.query('SELECT id, email, name, pass_hash FROM users WHERE email=$1', [email]);
+    const u = rows[0];
+    if (!u || !verifyPassword(password, u.pass_hash)) return res.status(401).json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+    const favs = Array.isArray(req.body?.favorites) ? req.body.favorites.map(Number).filter(Boolean).slice(0, 200) : [];
+    for (const fid of favs) await pool.query('INSERT INTO user_favorites (user_id, listing_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [u.id, fid]).catch(() => {});
+    setSessionCookie(res, u.id);
+    res.json({ user: { id: u.id, email: u.email, name: u.name } });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.setHeader('Set-Cookie', 'yj_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax');
+  res.json({ ok: true });
+});
+
+app.get('/api/auth/me', async (req, res) => {
+  const uid = currentUser(req);
+  if (!uid) return res.json({ user: null });
+  try {
+    const { rows } = await pool.query('SELECT id, email, name FROM users WHERE id=$1', [uid]);
+    res.json({ user: rows[0] || null });
+  } catch (e) { res.json({ user: null }); }
+});
+
+// รายการโปรดของผู้ใช้ (ข้ามอุปกรณ์)
+app.get('/api/user/favorites', async (req, res) => {
+  const uid = currentUser(req);
+  if (!uid) return res.status(401).json({ error: 'ยังไม่ได้เข้าสู่ระบบ' });
+  const { rows } = await pool.query('SELECT listing_id FROM user_favorites WHERE user_id=$1', [uid]);
+  res.json({ ids: rows.map(r => r.listing_id) });
+});
+app.post('/api/user/favorites', async (req, res) => {
+  const uid = currentUser(req);
+  if (!uid) return res.status(401).json({ error: 'ยังไม่ได้เข้าสู่ระบบ' });
+  const id = Number(req.body?.listing_id) || 0;
+  if (!id) return res.status(400).json({ error: 'bad id' });
+  if (req.body?.on) await pool.query('INSERT INTO user_favorites (user_id, listing_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [uid, id]);
+  else await pool.query('DELETE FROM user_favorites WHERE user_id=$1 AND listing_id=$2', [uid, id]);
+  res.json({ ok: true });
+});
+
+// ============ Reports (แจ้งประกาศผิดปกติ) ============
+const reportHits = new Map();
+app.post('/api/reports', async (req, res) => {
+  try {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+    const now = Date.now(); const h = reportHits.get(ip) || { c: 0, t: now };
+    if (now - h.t > 3600e3) { h.c = 0; h.t = now; }
+    if (h.c >= 10) return res.status(429).json({ error: 'แจ้งบ่อยเกินไป ลองใหม่ภายหลัง' });
+    const listing_id = Number(req.body?.listing_id) || null;
+    const reason = String(req.body?.reason || '').slice(0, 60).trim();
+    const detail = String(req.body?.detail || '').slice(0, 500).trim();
+    if (!listing_id || !reason) return res.status(400).json({ error: 'ข้อมูลไม่ครบ' });
+    await pool.query('INSERT INTO reports (listing_id, reason, detail) VALUES ($1,$2,$3)', [listing_id, reason, detail]);
+    h.c++; reportHits.set(ip, h);
+    notifyTelegram(`🚩 มีการแจ้งประกาศ #${listing_id}\nเหตุผล: ${reason}${detail ? '\n' + detail : ''}`);
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+app.get('/api/admin/reports', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT r.id, r.listing_id, r.reason, r.detail, r.resolved, r.created_at, l.title
+       FROM reports r LEFT JOIN listings l ON l.id = r.listing_id
+       ORDER BY r.resolved ASC, r.created_at DESC LIMIT 300`);
+    res.json({ items: rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+app.post('/api/admin/reports/:id/resolve', requireAdmin, async (req, res) => {
+  await pool.query('UPDATE reports SET resolved=true WHERE id=$1', [Number(req.params.id)]);
+  res.json({ ok: true });
+});
+
 app.post('/api/admin/login', (req, res) => {
   if ((req.body?.password || '') === ADMIN_PASSWORD) return res.json({ token: adminToken() });
   res.status(401).json({ error: 'รหัสผ่านไม่ถูกต้อง' });
@@ -542,7 +705,9 @@ function listingParams(b) {
     JSON.stringify(Array.isArray(b.amenities) ? b.amenities.slice(0, 30).map(x => String(x).slice(0, 60)) : []),
     JSON.stringify(Array.isArray(b.furnishings) ? b.furnishings.slice(0, 30).map(x => String(x).slice(0, 60)) : []),
     String(b.common_fee_text || '').slice(0, 120),
-    Number.isInteger(Number(b.year_built)) && Number(b.year_built) > 1900 ? Number(b.year_built) : null
+    Number.isInteger(Number(b.year_built)) && Number(b.year_built) > 1900 ? Number(b.year_built) : null,
+    ['', 'hot', 'price_drop', 'new_project', 'urgent'].includes(b.badge) ? b.badge : '',
+    !!b.verified
   ];
 }
 
@@ -554,8 +719,8 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
+        amenities, furnishings, common_fee_text, year_built, badge, verified)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
        RETURNING id`, p);
     res.json({ ok: true, id: rows[0].id });
     runSavedSearchMatch(rows[0].id);
@@ -574,8 +739,8 @@ app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
         province=$6, bedrooms=$7, bathrooms=$8, area_sqm=$9, land_area_sqwah=$10, floor_text=$11,
         description=$12, highlights=$13, images=$14, nearby=$15, pets_allowed=$16, featured=$17,
         status=$18, contact_line=$19, contact_phone=$20, latitude=$21, longitude=$22,
-        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, updated_at=now()
-       WHERE id=$27`, [...p, id]);
+        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, badge=$27, verified=$28, updated_at=now()
+       WHERE id=$29`, [...p, id]);
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -631,11 +796,11 @@ app.post('/api/admin/listings/:id/duplicate', requireAdmin, async (req, res) => 
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built)
+        amenities, furnishings, common_fee_text, year_built, badge, verified)
        SELECT title || ' (สำเนา)', listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, false, 'draft', contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built
+        amenities, furnishings, common_fee_text, year_built, badge, false
        FROM listings WHERE id = $1 RETURNING id`, [Number(req.params.id)]);
     if (!rows[0]) return res.status(404).json({ error: 'not found' });
     res.json({ ok: true, id: rows[0].id });
@@ -669,6 +834,7 @@ app.put('/api/admin/inquiries/:id/read', requireAdmin, async (req, res) => {
 
 // ---------- AI Search (พิมพ์ภาษาคน -> ฟิลเตอร์) ----------
 const aiSearchHits = new Map();
+const inquiryHits = new Map();
 app.post('/api/ai-search', async (req, res) => {
   try {
     if (!ANTHROPIC_API_KEY) return res.json({ fallback: true });
@@ -1011,7 +1177,7 @@ app.get('/sitemap.xml', async (req, res) => {
     ]);
     const seen = new Set();
     const add = (loc) => { if (!seen.has(loc)) seen.add(loc); };
-    add(`${base}/`); add(`${base}/search`); add(`${base}/areas`);
+    add(`${base}/`); add(`${base}/search`); add(`${base}/areas`); add(`${base}/map`);
     for (const r of combos.rows) {
       add(base + seo.areaUrl(r.province));                                  // hub ทำเล
       add(base + seo.areaUrl(r.province, r.listing_type));                  // ทำเล + เช่า/ขาย

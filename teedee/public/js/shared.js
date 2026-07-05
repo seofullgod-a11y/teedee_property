@@ -40,7 +40,10 @@ const TD = {
     translate: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7"/><path d="M9 3v2c0 4.418 -2.239 8 -5 8"/><path d="M5 9c0 2.144 2.952 3.908 6.7 4"/><path d="M12 20l4 -9l4 9"/><path d="M19.1 18h-6.2"/></svg>',
     compare: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M7 8l-4 4l4 4"/><path d="M17 8l4 4l-4 4"/></svg>',
     bell: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></svg>',
-    star: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></svg>'
+    star: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"/></svg>',
+    verified: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 1.8h3l1 3l2.5 1.7l-1 3l1 3l-2.5 1.7l-1 3h-3l-2.5 1.8l-2.5 -1.8h-3l-1 -3l-2.5 -1.7l1 -3l-1 -3l2.5 -1.7l1 -3h3z"/><path d="M9 12l2 2l4 -4"/></svg>',
+    flag: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5v16"/><path d="M5 5h11l-2 4l2 4h-11"/></svg>',
+    user: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0 -4 4 -6 8 -6s8 2 8 6"/></svg>'
   },
 
   brand: { main: 'อยู่', accent: 'ใจ', sub: 'yoojai.com', logo: '' },
@@ -58,6 +61,7 @@ const TD = {
     this._active = active || '';
     this.renderChrome();
     this.initBrand();
+    this.loadUser();
   },
   renderChrome() {
     const nav = document.getElementById('nav');
@@ -126,6 +130,18 @@ const TD = {
   compareList() {
     try { return JSON.parse(localStorage.getItem('yj_compare') || '[]'); } catch { return []; }
   },
+  promoBadge(l) {
+    const map = {
+      hot: { cls: 'b-hot', label: '🔥 มาแรง' },
+      price_drop: { cls: 'b-drop', label: '↓ ราคาพิเศษ' },
+      new_project: { cls: 'b-new', label: 'โครงการใหม่' },
+      urgent: { cls: 'b-urgent', label: 'ด่วน!' }
+    };
+    if (l.badge && map[l.badge]) return map[l.badge];
+    // auto "ใหม่" ถ้าลงประกาศภายใน 7 วัน
+    if (l.created_at && (Date.now() - new Date(l.created_at).getTime()) < 7 * 864e5) return { cls: 'b-fresh', label: 'ใหม่' };
+    return null;
+  },
   toggleCompare(id) {
     id = Number(id);
     let c = this.compareList();
@@ -178,10 +194,12 @@ const TD = {
 
     const faved = this.favs().includes(Number(l.id));
     const cmp = this.compareList().includes(Number(l.id));
+    const promo = this.promoBadge(l);
     return `
     <a class="card" href="/listing/${l.id}">
       <div class="thumb">
         ${img ? `<img src="${this.esc(img)}" alt="${this.esc(l.title)}" loading="lazy">` : ''}
+        ${promo ? `<span class="promo-badge ${promo.cls}">${promo.label}</span>` : ''}
         <button class="fav-btn ${faved ? 'on' : ''}" data-fav="${l.id}" type="button" aria-label="บันทึกรายการโปรด">${this.icons.heart}</button>
         <button class="cmp-btn ${cmp ? 'on' : ''}" data-cmp="${l.id}" type="button" aria-label="เปรียบเทียบ" title="เปรียบเทียบ">${this.icons.compare}<span>เทียบ</span></button>
         <span class="badge-type ${l.listing_type}">${this.icons[this.catIcon[l.category] || 'home']} ${this.typeLabel[l.listing_type] || ''}${this.catLabel[l.category] ? ' · ' + this.catLabel[l.category] : ''}</span>
@@ -191,7 +209,7 @@ const TD = {
         </span>
       </div>
       <div class="body">
-        <h3>${this.esc(l.title)}</h3>
+        <h3>${this.esc(l.title)}${l.verified ? ` <span class="vfy" title="ตรวจสอบแล้ว">${this.icons.verified}</span>` : ''}</h3>
         <div class="loc">${this.icons.pin} ${this.esc(l.location_text || l.province || '-')}</div>
         <div class="spec-row">${specs.map(s => `<span class="spec">${this.icons[s.ic]} ${s.t}</span>`).join('')}</div>
         ${nearby ? `<div class="nearby-row">${nearby}</div>` : ''}
@@ -217,6 +235,7 @@ const TD = {
           <button class="pref-btn" data-lang-toggle type="button" aria-label="Switch language" title="ไทย / English"><span class="lang-code">${TD.lang() === 'en' ? 'ไทย' : 'EN'}</span></button>
         </div>
         <a class="icon-btn" href="/saved" aria-label="รายการโปรด" title="รายการโปรด">${this.icons.heart}</a>
+        <button class="icon-btn" id="acctBtn" data-auth aria-label="บัญชีผู้ใช้" title="บัญชีผู้ใช้">${this.icons.user}</button>
         <a class="btn btn-primary btn-sm nav-cta" href="/#list-cta">ลงประกาศ</a>
       </div>
     </div></div>`;
@@ -278,6 +297,7 @@ if (typeof document !== 'undefined') {
     const on = TD.toggleFav(b.dataset.fav);
     b.classList.toggle('on', on);
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+    if (TD.user) fetch('/api/user/favorites', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ listing_id: Number(b.dataset.fav), on }) }).catch(() => {});
   });
 
   // global: compare toggle + floating tray
@@ -294,6 +314,55 @@ if (typeof document !== 'undefined') {
 }
 
 TD.REVIEW_ASPECTS = ['เดินทางสะดวก', 'ปลอดภัย', 'เงียบสงบ', 'ร้านอาหาร/คาเฟ่เยอะ', 'ใกล้ห้าง/ตลาด', 'น้ำไม่ท่วม', 'ชุมชนน่าอยู่', 'อากาศดี'];
+TD.openReportModal = function (listingId) {
+  if (document.querySelector('.rp-ov')) return;
+  const reasons = ['ข้อมูลไม่ตรงกับความจริง', 'ประกาศซ้ำ/สแปม', 'ทรัพย์ถูกขาย/เช่าแล้ว', 'รูปภาพไม่เหมาะสม', 'สงสัยว่าหลอกลวง', 'อื่น ๆ'];
+  const ov = document.createElement('div');
+  ov.className = 'yj-modal-ov rp-ov';
+  ov.innerHTML = `
+    <div class="yj-modal" role="dialog" aria-modal="true">
+      <button class="yj-modal-x" aria-label="ปิด">✕</button>
+      <div class="yj-modal-ic">${TD.icons.flag}</div>
+      <h3>แจ้งประกาศนี้</h3>
+      <p class="yj-modal-sub">ช่วยเราตรวจสอบคุณภาพประกาศ ข้อมูลของคุณจะถูกส่งให้ทีมงาน</p>
+      <div class="rp-reasons" id="rpReasons">${reasons.map(r => `<button type="button" data-r="${r}">${r}</button>`).join('')}</div>
+      <textarea class="yj-input" id="rpDetail" rows="2" placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)"></textarea>
+      <div class="yj-msg" id="rpMsg"></div>
+      <button class="btn btn-primary" id="rpSubmit" style="width:100%;justify-content:center">ส่งรายงาน</button>
+    </div>`;
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+  const close = () => { ov.remove(); document.body.style.overflow = ''; };
+  ov.querySelector('.yj-modal-x').onclick = close;
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  let reason = '';
+  ov.querySelectorAll('#rpReasons button').forEach(b => b.onclick = () => {
+    ov.querySelectorAll('#rpReasons button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); reason = b.dataset.r;
+  });
+  ov.querySelector('#rpSubmit').onclick = async () => {
+    const msg = ov.querySelector('#rpMsg');
+    if (!reason) { msg.textContent = 'กรุณาเลือกเหตุผล'; msg.className = 'yj-msg err'; return; }
+    const btn = ov.querySelector('#rpSubmit'); btn.disabled = true;
+    msg.textContent = 'กำลังส่ง…'; msg.className = 'yj-msg';
+    try {
+      await TD.post('/api/reports', { listing_id: listingId, reason, detail: ov.querySelector('#rpDetail').value.trim() });
+      ov.querySelector('.yj-modal').innerHTML = `
+        <div class="yj-modal-ic ok">${TD.icons.check}</div>
+        <h3>ขอบคุณที่แจ้ง</h3>
+        <p class="yj-modal-sub">ทีมงานจะตรวจสอบประกาศนี้โดยเร็วครับ</p>
+        <button class="btn btn-primary" id="rpDone" style="width:100%;justify-content:center;margin-top:6px">เรียบร้อย</button>`;
+      ov.querySelector('#rpDone').onclick = close;
+    } catch (e) { btn.disabled = false; msg.textContent = e.message || 'ส่งไม่สำเร็จ'; msg.className = 'yj-msg err'; }
+  };
+};
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-report]');
+    if (b) { e.preventDefault(); TD.openReportModal(Number(b.dataset.report)); }
+  });
+}
+
 TD.openReviewModal = function (province, onDone) {
   if (!province || document.querySelector('.rv-ov')) return;
   const ov = document.createElement('div');
@@ -499,6 +568,123 @@ TD.openAlertModal = function (criteria) {
     }
   };
   input.focus();
+};
+
+// ============ User accounts (login/register) ============
+TD.user = null;
+TD.loadUser = async function () {
+  try {
+    const r = await fetch('/api/auth/me').then(x => x.json());
+    TD.user = r.user || null;
+  } catch { TD.user = null; }
+  TD.renderAcct();
+  if (TD.user) TD.syncFavsFromServer();
+};
+TD.renderAcct = function () {
+  const btn = document.getElementById('acctBtn');
+  if (!btn) return;
+  if (TD.user) {
+    btn.classList.add('signed');
+    btn.title = TD.user.name || TD.user.email;
+    btn.innerHTML = `<span class="acct-ini">${(TD.user.name || TD.user.email || '?').trim().charAt(0).toUpperCase()}</span>`;
+  } else {
+    btn.classList.remove('signed');
+    btn.title = 'เข้าสู่ระบบ';
+    btn.innerHTML = TD.icons.user;
+  }
+};
+TD.syncFavsFromServer = async function () {
+  try {
+    const r = await fetch('/api/user/favorites').then(x => x.json());
+    if (!r.ids) return;
+    const local = TD.favs();
+    const merged = [...new Set([...local, ...r.ids.map(Number)])];
+    localStorage.setItem('teedee_favs', JSON.stringify(merged));
+    document.querySelectorAll('[data-fav]').forEach(b => {
+      if (merged.includes(Number(b.dataset.fav))) b.classList.add('on');
+    });
+  } catch {}
+};
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-auth]')) { e.preventDefault(); TD.user ? TD.openAccountMenu(e.target.closest('[data-auth]')) : TD.openAuthModal('login'); }
+  });
+}
+
+TD.openAccountMenu = function (anchor) {
+  document.getElementById('acctMenu')?.remove();
+  const m = document.createElement('div');
+  m.id = 'acctMenu'; m.className = 'acct-menu';
+  m.innerHTML = `
+    <div class="acct-head">${TD.esc(TD.user.name || 'คุณ')}<span>${TD.esc(TD.user.email)}</span></div>
+    <a href="/saved">${TD.icons.heart} รายการโปรดของฉัน</a>
+    <button type="button" id="logoutU">${TD.icons.user} ออกจากระบบ</button>`;
+  document.body.appendChild(m);
+  const r = anchor.getBoundingClientRect();
+  m.style.top = (r.bottom + 8) + 'px';
+  m.style.right = (window.innerWidth - r.right) + 'px';
+  const close = (ev) => { if (!m.contains(ev.target) && ev.target !== anchor) { m.remove(); document.removeEventListener('click', close); } };
+  setTimeout(() => document.addEventListener('click', close), 0);
+  m.querySelector('#logoutU').onclick = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    TD.user = null; TD.renderAcct(); m.remove();
+    TD.toast && TD.toast('ออกจากระบบแล้ว');
+  };
+};
+
+TD.openAuthModal = function (mode) {
+  if (document.querySelector('.au-ov')) return;
+  mode = mode || 'login';
+  const ov = document.createElement('div');
+  ov.className = 'yj-modal-ov au-ov';
+  const render = () => {
+    const isLogin = mode === 'login';
+    ov.querySelector('.yj-modal').innerHTML = `
+      <button class="yj-modal-x" aria-label="ปิด">✕</button>
+      <div class="yj-modal-ic">${TD.icons.user}</div>
+      <h3>${isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}</h3>
+      <p class="yj-modal-sub">${isLogin ? 'เข้าสู่ระบบเพื่อเก็บรายการโปรดข้ามอุปกรณ์' : 'สมัครฟรี เก็บรายการโปรดและการแจ้งเตือนไว้กับบัญชีคุณ'}</p>
+      ${isLogin ? '' : '<input class="yj-input" id="auName" placeholder="ชื่อ (ไม่บังคับ)">'}
+      <input class="yj-input" id="auEmail" type="email" placeholder="อีเมล" autocomplete="email">
+      <input class="yj-input" id="auPass" type="password" placeholder="รหัสผ่าน${isLogin ? '' : ' (อย่างน้อย 6 ตัว)'}" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
+      <div class="yj-msg" id="auMsg"></div>
+      <button class="btn btn-primary" id="auSubmit" style="width:100%;justify-content:center">${isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}</button>
+      <p class="au-switch">${isLogin ? 'ยังไม่มีบัญชี?' : 'มีบัญชีแล้ว?'} <button type="button" id="auSwitch">${isLogin ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ'}</button></p>`;
+    bind();
+  };
+  ov.innerHTML = '<div class="yj-modal" role="dialog" aria-modal="true"></div>';
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+  const close = () => { ov.remove(); document.body.style.overflow = ''; };
+
+  function bind() {
+    ov.querySelector('.yj-modal-x').onclick = close;
+    ov.querySelector('#auSwitch').onclick = () => { mode = mode === 'login' ? 'register' : 'login'; render(); };
+    ov.querySelector('#auSubmit').onclick = submit;
+    ov.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); }));
+  }
+  ov.addEventListener('click', e => { if (e.target === ov) close(); });
+
+  async function submit() {
+    const msg = ov.querySelector('#auMsg');
+    const email = ov.querySelector('#auEmail').value.trim();
+    const password = ov.querySelector('#auPass').value;
+    const name = ov.querySelector('#auName')?.value.trim() || '';
+    if (!email || !password) { msg.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; msg.className = 'yj-msg err'; return; }
+    const btn = ov.querySelector('#auSubmit'); btn.disabled = true;
+    msg.textContent = 'กำลังดำเนินการ…'; msg.className = 'yj-msg';
+    try {
+      const path = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const r = await TD.post(path, { email, password, name, favorites: TD.favs() });
+      TD.user = r.user; TD.renderAcct(); TD.syncFavsFromServer();
+      close(); TD.toast && TD.toast(mode === 'login' ? 'เข้าสู่ระบบแล้ว' : 'สมัครสมาชิกสำเร็จ!');
+    } catch (e) {
+      btn.disabled = false; msg.textContent = e.message || 'เกิดข้อผิดพลาด'; msg.className = 'yj-msg err';
+    }
+  }
+  render();
+  setTimeout(() => ov.querySelector('#auEmail')?.focus(), 100);
 };
 
 TD.toast = function (msg) {

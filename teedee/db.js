@@ -59,6 +59,8 @@ async function migrate() {
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS furnishings JSONB DEFAULT '[]';
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS common_fee_text TEXT DEFAULT '';
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS year_built INT;
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS badge TEXT DEFAULT '';
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;
 
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
@@ -96,6 +98,30 @@ async function migrate() {
       author TEXT DEFAULT '',
       comment TEXT DEFAULT '',
       approved BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      pass_hash TEXT NOT NULL,
+      name TEXT DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS user_favorites (
+      user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      listing_id INT REFERENCES listings(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      PRIMARY KEY (user_id, listing_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS reports (
+      id SERIAL PRIMARY KEY,
+      listing_id INT REFERENCES listings(id) ON DELETE CASCADE,
+      reason TEXT NOT NULL,
+      detail TEXT DEFAULT '',
+      resolved BOOLEAN DEFAULT false,
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);
