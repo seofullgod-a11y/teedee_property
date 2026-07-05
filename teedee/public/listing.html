@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=21">
+  <link rel="stylesheet" href="/css/style.css?v=24">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -46,7 +46,7 @@
     <div class="lb-strip" id="lbStrip"></div>
   </div>
 
-  <script src="/js/shared.js?v=21"></script>
+  <script src="/js/shared.js?v=24"></script>
   <script>
     TD.chrome('');
     const id = Number(location.pathname.split('/').pop());
@@ -72,7 +72,7 @@
       if (l.listing_type === 'sale' && Number(l.area_sqm) > 0)
         add('ราคาต่อ ตร.ม.', '฿' + Math.round(l.price / Number(l.area_sqm)).toLocaleString('th-TH'));
       add('สัตว์เลี้ยง', l.pets_allowed ? 'เลี้ยงได้' : 'ไม่อนุญาต');
-      add('ลงประกาศเมื่อ', new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }));
+      add('ประกาศเมื่อ', new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }));
       if (!rows.length) return '';
       return `<div class="detail-section reveal"><h2>ข้อมูลทรัพย์</h2><div class="facts-grid">${rows.join('')}</div></div>`;
     }
@@ -389,7 +389,7 @@
             </div>
             <h1>${TD.esc(l.title)}${l.verified ? ` <span class="vfy" title="ทรัพย์ตรวจสอบแล้ว">${TD.icons.verified}</span>` : ''}</h1>
             <div class="loc">${TD.icons.pin} ${TD.esc(l.location_text)}${l.province && !String(l.location_text).includes(l.province) ? ' · ' + TD.esc(l.province) : ''}</div>
-            <div class="meta-line">เปิดดู ${Number(l.views).toLocaleString('th-TH')} ครั้ง · ลงประกาศเมื่อ ${new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+            <div class="meta-line">เปิดดู ${Number(l.views).toLocaleString('th-TH')} ครั้ง · ประกาศเมื่อ ${new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
           </div>
           <div class="detail-specs reveal">${specs.join('')}</div>
           <div class="detail-section reveal">
@@ -465,10 +465,10 @@
               <p style="font-size:.78rem;color:var(--muted);text-align:center">ทีมงานจะส่งต่อให้ผู้ดูแลทรัพย์ติดต่อกลับโดยเร็ว</p>
             </div>
             <div class="share-row">
-              <button type="button" id="copyLink">${TD.icons.copy} คัดลอกลิงก์</button>
-              <a href="https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener">💬 แชร์ LINE</a>
-              <button type="button" id="shareBtn">${TD.icons.share} แชร์</button>
-              <button type="button" data-report="${l.id}" class="report-link">${TD.icons.flag} แจ้งประกาศ</button>
+              <button type="button" id="copyLink">${TD.icons.copy}<span>คัดลอกลิงก์</span></button>
+              <a href="https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener"><span class="sr-ic">${TD.icons.share}</span><span>แชร์ LINE</span></a>
+              <button type="button" id="shareBtn">${TD.icons.share}<span>แชร์</span></button>
+              <button type="button" data-report="${l.id}" class="report-link">${TD.icons.flag}<span>แจ้งประกาศ</span></button>
             </div>
           </div>
         </div>

@@ -233,7 +233,7 @@ const TD = {
         </div>
         <a class="icon-btn" href="/saved" aria-label="รายการโปรด" title="รายการโปรด">${this.icons.heart}</a>
         <button class="icon-btn" id="acctBtn" data-auth aria-label="บัญชีผู้ใช้" title="บัญชีผู้ใช้">${this.icons.user}</button>
-        <a class="btn btn-primary btn-sm nav-cta" href="/#list-cta">ลงประกาศ</a>
+        <a class="btn btn-primary btn-sm nav-cta" href="/#list-cta">ติดต่อเรา</a>
       </div>
     </div></div>`;
   },
@@ -261,7 +261,7 @@ const TD = {
         </div>
         <div><h4>เมนูลัด</h4>
           <a href="/saved">รายการโปรดของฉัน</a>
-          <a href="/#list-cta">ลงประกาศฟรี</a>
+          <a href="/#list-cta">ติดต่อเรา</a>
           <a href="/admin">เข้าสู่ระบบผู้ดูแล</a>
         </div>
       </div>
@@ -743,7 +743,7 @@ TD.setLang = function (l) {
 TD.EN = {
   // ---- Navbar / chrome ----
   'เช่า': 'Rent', 'ซื้อ': 'Buy', 'ขาย': 'Sale', 'ที่ดิน': 'Land', 'ประเภททั้งหมด': 'All Types',
-  'ลงประกาศ': 'List Property', 'รายการโปรด': 'Saved', 'หน้าแรก': 'Home', 'โปรด': 'Saved',
+  'ลงประกาศ': 'List Property', 'ติดต่อเรา': 'Contact us', 'รายการโปรด': 'Saved', 'หน้าแรก': 'Home', 'โปรด': 'Saved',
   // ---- Footer ----
   'ค้นหา': 'Search', 'บ้าน/คอนโดให้เช่า': 'Homes & condos for rent', 'บ้าน/คอนโดขาย': 'Homes & condos for sale',
   'อาคารพาณิชย์': 'Commercial', 'ทำเลยอดนิยม': 'Popular Areas', 'เมนูลัด': 'Quick Links',
@@ -775,7 +775,7 @@ TD.EN = {
   'เลือกดูตามจังหวัดที่มีประกาศมากที่สุด': 'Browse the provinces with the most listings',
   'ทำไมต้องอยู่ใจ': 'Why Yoojai', 'เราตั้งใจให้การหาบ้านเป็นเรื่องง่ายและโปร่งใสที่สุด': 'We make finding a home as simple and transparent as possible',
   'มีบ้านหรือที่ดินอยากปล่อยเช่า/ขาย?': 'Have a home or land to rent or sell?',
-  'ลงประกาศกับเราฟรี ทีมงานช่วยตรวจสอบข้อมูลและเขียนคอนเทนต์ให้น่าสนใจด้วย AI':
+  'ฝากทรัพย์ไว้กับเราฟรี ทีมงานช่วยตรวจสอบข้อมูลและเขียนคอนเทนต์ให้น่าสนใจด้วย AI':
     'List with us for free — our team verifies your details and writes engaging content with AI.',
   'ติดต่อลงประกาศ': 'List your property', 'ฝากข้อมูลไว้ ทีมงานติดต่อกลับ': 'Leave your details and we\u2019ll get back to you',
   'ส่งข้อมูล': 'Submit', 'ยังไม่มีประกาศแนะนำ': 'No featured listings yet',

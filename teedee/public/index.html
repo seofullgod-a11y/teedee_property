@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=21">
+  <link rel="stylesheet" href="/css/style.css?v=24">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -168,9 +168,9 @@
       <div class="cta-list">
         <div>
           <h2>มีบ้านหรือที่ดินอยากปล่อยเช่า/ขาย?</h2>
-          <p>ลงประกาศกับเราฟรี ทีมงานช่วยตรวจสอบข้อมูลและเขียนคอนเทนต์ให้น่าสนใจด้วย AI</p>
+          <p>ฝากทรัพย์ไว้กับเราฟรี ทีมงานช่วยตรวจสอบข้อมูลและเขียนคอนเทนต์ให้น่าสนใจด้วย AI</p>
         </div>
-        <a class="btn btn-copper" href="#contact-owner" id="ownerBtn">ติดต่อลงประกาศ <span id="ic-arrow3"></span></a>
+        <a class="btn btn-copper" href="#contact-owner" id="ownerBtn">ติดต่อเรา <span id="ic-arrow3"></span></a>
       </div>
       <div class="contact-card" id="contact-owner" style="max-width:520px;margin:22px auto 0;display:none">
         <h3>ฝากข้อมูลไว้ ทีมงานติดต่อกลับ</h3>
@@ -188,7 +188,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=21"></script>
+  <script src="/js/shared.js?v=24"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
@@ -464,7 +464,7 @@
           name: document.getElementById('o-name').value.trim(),
           phone: document.getElementById('o-phone').value.trim(),
           line_id: document.getElementById('o-line').value.trim(),
-          message: '[ลงประกาศ] ' + document.getElementById('o-msg').value.trim()
+          message: '[ติดต่อเรา] ' + document.getElementById('o-msg').value.trim()
         });
         msg.textContent = 'ส่งข้อมูลเรียบร้อย ทีมงานจะติดต่อกลับโดยเร็วครับ';
         msg.classList.add('ok');
