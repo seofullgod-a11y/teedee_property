@@ -1268,3 +1268,8 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 :root[data-theme="dark"] .afford-verdict.ok { background: #23291c; color: #b7c79a; }
 :root[data-theme="dark"] .afford-verdict.warn { background: #33291a; color: #e0b26a; }
 :root[data-theme="dark"] .afford-verdict.bad { background: #3a201b; color: #eba393; }
+
+/* ปุ่มแชทสอบถาม — ปิดไว้ชั่วคราวตามที่ผู้ใช้ขอ (ลบบรรทัดนี้เพื่อเปิดกลับ) */
+.chat-fab { display: none !important; }
+/* ทรัพย์อื่นในทำเล — ย้ายมาเต็มความกว้างใต้กริด */
+.same-area-sec { margin-top: 18px; }

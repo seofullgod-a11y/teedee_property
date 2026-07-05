@@ -100,7 +100,7 @@ function pageShell({ title, description, canonical, ogImage, robots, headExtra, 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=13">
+  <link rel="stylesheet" href="/css/style.css?v=14">
   <link rel="icon" href="/favicon">
   ${headExtra || ''}
 </head>
@@ -108,7 +108,7 @@ function pageShell({ title, description, canonical, ogImage, robots, headExtra, 
   <div id="nav"></div>
   ${main}
   <div id="footer"></div>
-  <script src="/js/shared.js?v=13"></script>
+  <script src="/js/shared.js?v=14"></script>
   <script>
     TD.chrome(${JSON.stringify(active || '')});
     document.querySelectorAll('[data-fav]').forEach(function(b){
