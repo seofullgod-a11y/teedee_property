@@ -209,9 +209,9 @@ p  { font-size: var(--fs-base); }
 /* ============ ปุ่มค้นหา — แอนิเมชันชวนกด ============ */
 /* มาสคอตบ้านน้อยยิ้มได้ โผล่มาเกาะขอบปุ่มแล้วชี้/จิ้ม */
 .search-mascot {
-  position: absolute; top: -56px; right: 6px; width: 78px; height: auto;
+  position: absolute; top: -46px; right: 10px; width: 60px; height: auto;
   z-index: 4; pointer-events: none;
-  filter: drop-shadow(0 6px 10px rgba(40, 30, 20, .16));
+  filter: drop-shadow(0 5px 7px rgba(40, 30, 20, .14));
   animation: m-pop .5s cubic-bezier(.34, 1.56, .64, 1) both;
 }
 .search-mascot svg { width: 100%; height: auto; display: block; overflow: visible; }
@@ -250,7 +250,8 @@ p  { font-size: var(--fs-base); }
   .search-bar .s-btn, .search-mascot, .search-mascot * { animation: none !important; }
 }
 @media (max-width: 640px) {
-  .search-mascot { width: 60px; top: -44px; right: 2px; }
+  .search-mascot { width: 46px; top: -34px; right: 10px; }
+  .seg { margin-bottom: 40px; }
 }
 
 /* secondary filters — quiet pills under the bar */

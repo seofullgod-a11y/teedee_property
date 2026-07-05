@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=25">
+  <link rel="stylesheet" href="/css/style.css?v=26">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -49,28 +49,26 @@
           <div class="s-panel" id="sPanel" role="listbox" hidden></div>
           <button class="s-btn" type="submit" aria-label="ค้นหา"><span id="ic-search2"></span><span class="t">ค้นหา</span></button>
           <div class="search-mascot" aria-hidden="true">
-            <svg viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg">
-              <ellipse class="m-shadow" cx="60" cy="120" rx="30" ry="6"/>
+            <svg viewBox="0 0 120 132" xmlns="http://www.w3.org/2000/svg">
+              <ellipse class="m-shadow" cx="60" cy="122" rx="26" ry="5.5"/>
               <g class="m-body">
-                <rect x="78" y="26" width="12" height="20" rx="3" fill="#E8613F"/>
-                <path d="M20 54 L60 20 L100 54 Z" fill="#FF7A59" stroke="#3A3330" stroke-width="3.2" stroke-linejoin="round"/>
-                <circle cx="60" cy="16" r="6" fill="#E7B75A" stroke="#3A3330" stroke-width="2.4"/>
-                <circle cx="60" cy="16" r="1.8" fill="#3A3330"/>
-                <rect x="28" y="52" width="64" height="52" rx="10" fill="#FFF6E9" stroke="#3A3330" stroke-width="3.2"/>
-                <circle cx="42" cy="80" r="6" fill="#FFB3A0"/>
-                <circle cx="78" cy="80" r="6" fill="#FFB3A0"/>
+                <path d="M60 30 C33 30 24 56 24 82 C24 108 40 120 60 120 C80 120 96 108 96 82 C96 56 87 30 60 30 Z" fill="#2F3A44" stroke="#20272E" stroke-width="2.5"/>
+                <ellipse cx="60" cy="86" rx="24" ry="30" fill="#FFF9F0"/>
+                <circle cx="42" cy="80" r="6" fill="#FFB3C1"/>
+                <circle cx="78" cy="80" r="6" fill="#FFB3C1"/>
                 <g class="m-eyes">
-                  <circle cx="49" cy="72" r="4.2" fill="#3A3330"/>
-                  <circle cx="71" cy="72" r="4.2" fill="#3A3330"/>
-                  <circle cx="50.4" cy="70.6" r="1.3" fill="#fff"/>
-                  <circle cx="72.4" cy="70.6" r="1.3" fill="#fff"/>
+                  <circle cx="50" cy="70" r="4.6" fill="#20272E"/>
+                  <circle cx="70" cy="70" r="4.6" fill="#20272E"/>
+                  <circle cx="51.6" cy="68.4" r="1.5" fill="#fff"/>
+                  <circle cx="71.6" cy="68.4" r="1.5" fill="#fff"/>
                 </g>
-                <path d="M52 84 Q60 92 68 84" fill="none" stroke="#3A3330" stroke-width="3" stroke-linecap="round"/>
+                <path d="M54 78 L66 78 L60 86 Z" fill="#F5A623" stroke="#D98C10" stroke-width="1.5" stroke-linejoin="round"/>
+                <ellipse cx="49" cy="118" rx="8" ry="4" fill="#F5A623"/>
+                <ellipse cx="71" cy="118" rx="8" ry="4" fill="#F5A623"/>
               </g>
               <g class="m-arm">
-                <path d="M30 84 Q16 92 12 108" fill="none" stroke="#3A3330" stroke-width="7.5" stroke-linecap="round"/>
-                <path d="M30 84 Q16 92 12 108" fill="none" stroke="#FFF6E9" stroke-width="3.4" stroke-linecap="round"/>
-                <circle cx="12" cy="110" r="6.5" fill="#FFF6E9" stroke="#3A3330" stroke-width="3"/>
+                <path d="M28 74 C14 82 10 98 12 110" fill="none" stroke="#2F3A44" stroke-width="10" stroke-linecap="round"/>
+                <circle cx="12" cy="111" r="6" fill="#2F3A44"/>
               </g>
             </svg>
           </div>
@@ -214,7 +212,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=25"></script>
+  <script src="/js/shared.js?v=26"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
