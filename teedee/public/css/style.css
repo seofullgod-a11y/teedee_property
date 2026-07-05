@@ -211,13 +211,13 @@ p  { font-size: var(--fs-base); }
 .search-stage { position: relative; }
 .search-stage .search-bar { position: relative; z-index: 2; }
 .search-mascot {
-  position: absolute; width: 82px; right: -6px; top: -72px; z-index: 3;
+  position: absolute; width: 72px; right: 16px; top: -48px; z-index: 1;
   pointer-events: none; transform-origin: bottom center;
   animation: m-pop .5s cubic-bezier(.34, 1.56, .64, 1) both, mc-bob 3s ease-in-out infinite .5s;
 }
-.search-mascot img { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 8px rgba(40, 30, 20, .14)); }
-@keyframes m-pop { 0% { opacity: 0; transform: translateY(12px) scale(.6); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes mc-bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-5px) rotate(2deg); } }
+.search-mascot img { width: 100%; height: auto; display: block; }
+@keyframes m-pop { 0% { opacity: 0; transform: translateY(12px) scale(.7); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes mc-bob { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
 /* hover ช่องค้นหา → เด้งเร็วขึ้น */
 .searchbox:hover .search-mascot { animation-duration: .5s, 1.1s; }
 
@@ -237,8 +237,8 @@ p  { font-size: var(--fs-base); }
   .search-bar .s-btn, .search-mascot { animation: none !important; }
 }
 @media (max-width: 640px) {
-  .search-mascot { width: 58px; top: -50px; right: 0; }
-  .seg { margin-bottom: 40px; }
+  .search-mascot { width: 54px; top: -36px; right: 12px; }
+  .seg { margin-bottom: 30px; }
 }
 
 /* secondary filters — quiet pills under the bar */
