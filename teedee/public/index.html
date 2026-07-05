@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=35">
+  <link rel="stylesheet" href="/css/style.css?v=36">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -54,24 +54,16 @@
           <img src="/img/mascot.png?v=3" alt="" width="442" height="512">
         </div>
         </div>
-        <p class="ai-hint">
-          <span id="ic-spark" style="color:var(--gold);display:inline-flex;width:13px;height:13px"></span>
-          พิมพ์ภาษาคนได้เลย เช่น "คอนโดเลี้ยงแมวได้ ใกล้ BTS ไม่เกิน 2 หมื่น" — AI จะตีความให้
-        </p>
 
         <div class="quick-chips" id="chips">
-          <span class="lbl">ยอดนิยม</span>
+          <button class="chip-ai" data-concierge type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/></svg>
+            ให้ AI ช่วยหา
+          </button>
           <button data-q="ใกล้ BTS">คอนโดใกล้ BTS</button>
           <button data-q="นครปฐม">บ้านนครปฐม</button>
           <button data-q="เชียงใหม่">บ้านเช่าเชียงใหม่</button>
-          <button data-cat="land">ที่ดินทั้งหมด</button>
           <button data-q="เลี้ยงสัตว์">เลี้ยงสัตว์ได้</button>
-        </div>
-        <div style="text-align:center">
-          <button class="ai-cta" data-concierge type="button">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/></svg>
-            ให้ AI ช่วยหาบ้านให้
-          </button>
         </div>
       </div>
 
@@ -193,12 +185,11 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=35"></script>
+  <script src="/js/shared.js?v=36"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
     ['ic-arrow', 'ic-arrow2', 'ic-arrow3'].forEach(id => document.getElementById(id).innerHTML = TD.icons.arrowRight);
-    document.getElementById('ic-spark').innerHTML = TD.icons.sparkles;
 
     // Category tiles
     const cats = [

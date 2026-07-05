@@ -870,7 +870,7 @@ TD.EN = {
   'เช่า · ไม่เกิน 15,000': 'Rent · up to ฿15,000', 'เช่า · 15,000 – 30,000': 'Rent · ฿15,000–30,000',
   'เช่า · 30,000 – 60,000': 'Rent · ฿30,000–60,000', 'ซื้อ · ไม่เกิน 3 ล้าน': 'Buy · up to ฿3M',
   'ซื้อ · 3 – 6 ล้าน': 'Buy · ฿3M–6M', 'ซื้อ · 6 ล้านขึ้นไป': 'Buy · ฿6M+',
-  'ยอดนิยม': 'Popular', 'คอนโดใกล้ BTS': 'Condos near BTS', 'บ้านนครปฐม': 'Houses in Nakhon Pathom',
+  'ยอดนิยม': 'Popular', 'ให้ AI ช่วยหา': 'Ask AI', 'คอนโดใกล้ BTS': 'Condos near BTS', 'บ้านนครปฐม': 'Houses in Nakhon Pathom',
   'บ้านเช่าเชียงใหม่': 'Rentals in Chiang Mai', 'ที่ดินทั้งหมด': 'All land', 'เลี้ยงสัตว์ได้': 'Pet-friendly',
   // ---- Home sections ----
   'ประกาศแนะนำ': 'Featured Listings', 'คัดมาให้เฉพาะประกาศเด่น ข้อมูลครบ พร้อมติดต่อ': 'Hand-picked standout listings, full details, ready to contact',
