@@ -1405,7 +1405,8 @@ app.get('/listing/:id', async (req, res) => {
         : `฿${Number(l.price).toLocaleString('th-TH')}`;
       const title = `${htmlEsc(l.title)} · ${priceTxt} — ${htmlEsc(brandName(await getSettings().catch(() => ({}))))}`;
       const desc = htmlEsc(String(l.description || '').slice(0, 160));
-      const img = htmlEsc((l.images || [])[0] || '');
+      const img = htmlEsc((l.images || [])[0] || '') || `${base}/img/og-default.png`;
+      const gsv = process.env.GOOGLE_SITE_VERIFICATION;
       const og = `<title>${title}</title>
   <meta name="description" content="${desc}">
   <link rel="canonical" href="${base}/listing/${id}">
@@ -1413,9 +1414,11 @@ app.get('/listing/:id', async (req, res) => {
   <meta property="og:locale" content="th_TH">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${desc}">
-  ${img ? `<meta property="og:image" content="${img}">` : ''}
+  <meta property="og:image" content="${img}">
   <meta property="og:url" content="${base}/listing/${id}">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="${img}">
+  ${gsv ? `<meta name="google-site-verification" content="${htmlEsc(gsv)}">` : ''}
   ${seo.listingLd(l, base)}`;
       return res.send(listingTpl.replace(/<title>[^<]*<\/title>/, og));
     }
@@ -1428,7 +1431,22 @@ app.get('/', async (req, res) => {
   try {
     const base = baseUrl(req);
     const brand = brandName(await getSettings().catch(() => ({})));
-    const inject = `  <link rel="canonical" href="${base}/">\n  ${seo.homeLd(base, brand)}\n</head>`;
+    const gsv = process.env.GOOGLE_SITE_VERIFICATION;
+    const inject = `  <link rel="canonical" href="${base}/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="th_TH">
+  <meta property="og:site_name" content="${htmlEsc(brand)}">
+  <meta property="og:title" content="${htmlEsc(brand)} — ที่ที่ใช่ สำหรับชีวิตที่ดี">
+  <meta property="og:description" content="รวมบ้านเช่า คอนโด บ้านขาย และที่ดินทั่วไทย ข้อมูลครบ ติดต่อตรง ดูแลโดยทีมงานมืออาชีพ">
+  <meta property="og:url" content="${base}/">
+  <meta property="og:image" content="${base}/img/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="${base}/img/og-default.png">
+  ${gsv ? `<meta name="google-site-verification" content="${htmlEsc(gsv)}">` : ''}
+  ${seo.homeLd(base, brand)}
+</head>`;
     return res.send(homeTpl.replace('</head>', inject));
   } catch (e) {
     return res.sendFile(path.join(__dirname, 'public/index.html'));
@@ -1511,6 +1529,8 @@ app.get('/sitemap.xml', async (req, res) => {
     const seen = new Set();
     const add = (loc) => { if (!seen.has(loc)) seen.add(loc); };
     add(`${base}/`); add(`${base}/search`); add(`${base}/areas`); add(`${base}/map`);
+    add(`${base}/discover`); add(`${base}/about`); add(`${base}/contact`);
+    add(`${base}/privacy`); add(`${base}/terms`);
     for (const r of combos.rows) {
       add(base + seo.areaUrl(r.province));                                  // hub ทำเล
       add(base + seo.areaUrl(r.province, r.listing_type));                  // ทำเล + เช่า/ขาย
@@ -1525,9 +1545,9 @@ app.get('/sitemap.xml', async (req, res) => {
 });
 
 app.get('/robots.txt', (req, res) =>
-  res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: ${baseUrl(req)}/sitemap.xml`));
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /saved\nDisallow: /compare\nSitemap: ${baseUrl(req)}/sitemap.xml`));
 
-app.get('/saved', (req, res) => res.sendFile(path.join(__dirname, 'public/saved.html')));
+app.get('/saved', servePage('saved.html', { path: '/saved', title: 'รายการโปรดของฉัน', desc: 'ทรัพย์ที่คุณบันทึกไว้', robots: 'noindex' }));
 
 // Favicon เชื่อมกับโลโก้ที่อัปโหลด (fallback = ไอคอนบ้านโทนเข้ม)
 app.get('/favicon', async (req, res) => {
@@ -1541,15 +1561,47 @@ app.get('/favicon', async (req, res) => {
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="24" fill="#191917"/><path d="M50 24 L78 48 L72 48 L72 74 L58 74 L58 58 L42 58 L42 74 L28 74 L28 48 L22 48 Z" fill="#b08d57"/></svg>`);
 });
 app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon'));
-app.get('/search', (req, res) => res.sendFile(path.join(__dirname, 'public/listings.html')));
-app.get('/compare', (req, res) => res.sendFile(path.join(__dirname, 'public/compare.html')));
-app.get('/map', (req, res) => res.sendFile(path.join(__dirname, 'public/map.html')));
+// ---------- SEO: เสิร์ฟหน้า static พร้อม OG/canonical/robots ครบ ----------
+const pageTplCache = new Map();
+function servePage(file, meta) {
+  return async (req, res) => {
+    try {
+      if (!pageTplCache.has(file)) pageTplCache.set(file, fs.readFileSync(path.join(__dirname, 'public/' + file), 'utf8'));
+      const tpl = pageTplCache.get(file);
+      const base = baseUrl(req);
+      const brand = brandName(await getSettings().catch(() => ({})));
+      const title = `${meta.title} — ${brand}`;
+      const url = base + meta.path;
+      const gsv = process.env.GOOGLE_SITE_VERIFICATION;
+      const inject = `  <link rel="canonical" href="${url}">
+  ${meta.robots ? `<meta name="robots" content="${meta.robots}">` : ''}
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="th_TH">
+  <meta property="og:site_name" content="${htmlEsc(brand)}">
+  <meta property="og:title" content="${htmlEsc(title)}">
+  <meta property="og:description" content="${htmlEsc(meta.desc || '')}">
+  <meta property="og:url" content="${url}">
+  <meta property="og:image" content="${base}/img/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="${base}/img/og-default.png">
+  ${gsv ? `<meta name="google-site-verification" content="${htmlEsc(gsv)}">` : ''}
+</head>`;
+      return res.send(tpl.replace('</head>', inject));
+    } catch (e) { return res.sendFile(path.join(__dirname, 'public/' + file)); }
+  };
+}
+
+app.get('/search', servePage('listings.html', { path: '/search', title: 'ค้นหาอสังหาริมทรัพย์', desc: 'ค้นหาบ้านเช่า บ้านขาย คอนโด และที่ดินทั่วไทย กรองตามงบ ทำเล และไลฟ์สไตล์' }));
+app.get('/compare', servePage('compare.html', { path: '/compare', title: 'เปรียบเทียบทรัพย์', desc: 'เปรียบเทียบทรัพย์ที่สนใจแบบชัด ๆ ทุกมิติ', robots: 'noindex' }));
+app.get('/map', servePage('map.html', { path: '/map', title: 'ค้นหาบ้านจากแผนที่', desc: 'ดูทรัพย์ทั้งหมดบนแผนที่ เลือกทำเลที่ใช่ได้ในคลิกเดียว' }));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.html')));
-app.get('/about', (req, res) => res.sendFile(path.join(__dirname, 'public/about.html')));
-app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public/contact.html')));
-app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public/privacy.html')));
-app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'public/terms.html')));
-app.get('/discover', (req, res) => res.sendFile(path.join(__dirname, 'public/discover.html')));
+app.get('/about', servePage('about.html', { path: '/about', title: 'เกี่ยวกับเรา', desc: 'อยู่ใจ แพลตฟอร์มอสังหาริมทรัพย์ที่รวมบ้านเช่า บ้านขาย และที่ดินทั่วไทย ดูแลโดยทีมงานมืออาชีพ' }));
+app.get('/contact', servePage('contact.html', { path: '/contact', title: 'ติดต่อเรา', desc: 'ติดต่อทีมงานอยู่ใจ ฝากทรัพย์ สอบถาม หรือให้เราช่วยหาบ้าน' }));
+app.get('/privacy', servePage('privacy.html', { path: '/privacy', title: 'นโยบายความเป็นส่วนตัว', desc: 'นโยบายความเป็นส่วนตัวตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)' }));
+app.get('/terms', servePage('terms.html', { path: '/terms', title: 'เงื่อนไขการใช้งาน', desc: 'เงื่อนไขการใช้งานเว็บไซต์อยู่ใจ' }));
+app.get('/discover', servePage('discover.html', { path: '/discover', title: 'ปัดหาบ้านที่ใช่ 🃏', desc: 'ปัดขวาถ้าถูกใจ! ค้นหาบ้านในฝันแบบสนุก ๆ ทีละหลัง เก็บเข้ารายการโปรดอัตโนมัติ' }));
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 // ---------- Boot ----------
