@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=41">
+  <link rel="stylesheet" href="/css/style.css?v=43">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -47,7 +47,7 @@
   </div>
 
   <div id="footer"></div>
-  <script src="/js/shared.js?v=41"></script>
+  <script src="/js/shared.js?v=43"></script>
   <script>
     TD.chrome('discover');
     const $ = id => document.getElementById(id);
@@ -193,7 +193,7 @@
       history.push({ l, action, wasFav: TD.favs().includes(Number(l.id)) });
       if (action === 'like') {
         if (!TD.favs().includes(Number(l.id))) TD.toggleFav(l.id);
-        TD.taste.bump(l, 3); // ปัดขวา = ชอบชัดเจน สอนระบบแรง ๆ
+        if (TD.taste) try { TD.taste.bump(l, 3); } catch (e) {} // ปัดขวา = สอนระบบแรง ๆ
       }
       setTimeout(() => { cards.shift(); busy = false; render(); }, 300);
     }

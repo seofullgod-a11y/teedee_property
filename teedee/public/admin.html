@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=41">
+  <link rel="stylesheet" href="/css/style.css?v=43">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -209,6 +209,7 @@
     .biz-row:last-child { border-bottom: 0; }
     .biz-row-title { color: var(--pine); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 60%; }
     .biz-row-stat { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+    .logo-preview-box.dark-prev { background: #1c1b17; border-color: #3a382f; }
   </style>
 </head>
 <body>
@@ -462,6 +463,23 @@
               <input type="hidden" id="s-logo">
               <p style="font-size:.78rem;color:var(--muted);margin-top:8px">โลโก้จะแสดงบน navbar และ footer แทนไอคอนบ้าน — เว้นว่างเพื่อกลับไปใช้ไอคอนเริ่มต้น</p>
             </div>
+            <div class="full">
+              <label>โลโก้สำหรับ Dark Mode (ไม่บังคับ)</label>
+              <input type="file" id="s-logoFileD" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+              <div class="logo-drop" id="logoDropD">
+                <span class="lp-ico" id="lpIcoD"></span>
+                <span class="lp-text">อัปโหลดโลโก้เวอร์ชันสีอ่อน สำหรับพื้นหลังมืด</span>
+                <span class="lp-hint">ถ้าไม่อัปโหลด ระบบจะใช้โลโก้หลักทั้งสองโหมด</span>
+              </div>
+              <div class="logo-preview-box dark-prev" id="logoPreviewBoxD" style="margin-top:10px">
+                <img id="s-logoPrevD" alt="โลโก้ Dark Mode">
+                <div class="lpb-actions">
+                  <button class="mini-btn" id="logoChangeD" type="button">เปลี่ยนรูป</button>
+                  <button class="mini-btn danger" id="logoRemoveD" type="button">ลบโลโก้</button>
+                </div>
+              </div>
+              <input type="hidden" id="s-logoD">
+            </div>
             <div><label>ชื่อเว็บ (ส่วนหน้า)</label><input id="s-main" placeholder="อยู่"></div>
             <div><label>ชื่อเว็บ (ส่วนเน้นสีทอง)</label><input id="s-accent" placeholder="ใจ"></div>
             <div class="full"><label>ข้อความรองข้างชื่อ (เช่นโดเมน)</label><input id="s-sub" placeholder="yoojai.com"></div>
@@ -486,7 +504,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=41"></script>
+  <script src="/js/shared.js?v=43"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -1200,7 +1218,7 @@
 
     // ---------- Settings ----------
     $('lpIco').innerHTML = TD.icons.share; // placeholder icon (จะใช้ image icon)
-    $('lpIco').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8h.01"/><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"/><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"/><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"/></svg>';
+    $('lpIcoD').innerHTML = $('lpIco').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8h.01"/><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"/><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"/><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"/></svg>';
 
     const logoDrop = $('logoDrop'), logoFile = $('s-logoFile');
     logoDrop.onclick = () => logoFile.click();
@@ -1223,7 +1241,28 @@
     });
     logoFile.onchange = () => { if (logoFile.files[0]) handleLogoFile(logoFile.files[0]); };
 
-    async function handleLogoFile(file) {
+    // โลโก้ Dark Mode
+    const logoDropD = $('logoDropD'), logoFileD = $('s-logoFileD');
+    logoDropD.onclick = () => logoFileD.click();
+    $('logoChangeD').onclick = () => logoFileD.click();
+    $('logoRemoveD').onclick = async () => {
+      try {
+        await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({ logo_url_dark: '' }) });
+        $('s-logoD').value = ''; logoFileD.value = '';
+        localStorage.removeItem('yj_settings');
+        paintSettingsPreview();
+        toast('ลบโลโก้ Dark Mode แล้ว ✓ จะใช้โลโก้หลักแทน');
+      } catch (e) { toast(e.message, true); }
+    };
+    logoDropD.addEventListener('dragover', e => { e.preventDefault(); logoDropD.classList.add('drag'); });
+    logoDropD.addEventListener('dragleave', () => logoDropD.classList.remove('drag'));
+    logoDropD.addEventListener('drop', e => {
+      e.preventDefault(); logoDropD.classList.remove('drag');
+      if (e.dataTransfer.files[0]) handleLogoFile(e.dataTransfer.files[0], 'dark');
+    });
+    logoFileD.onchange = () => { if (logoFileD.files[0]) handleLogoFile(logoFileD.files[0], 'dark'); };
+
+    async function handleLogoFile(file, variant) {
       if (!/^image\/(png|jpeg|jpg|webp|svg\+xml)$/.test(file.type))
         return toast('รองรับเฉพาะ PNG, JPG, WEBP, SVG', true);
       if (file.size > 1_500_000) return toast('ไฟล์ใหญ่เกินไป (ไม่เกิน 1.5MB)', true);
@@ -1231,11 +1270,11 @@
       reader.onload = async () => {
         try {
           toast('กำลังอัปโหลดโลโก้...');
-          const j = await api('/api/admin/upload-logo', { method: 'POST', body: JSON.stringify({ dataUrl: reader.result }) });
-          $('s-logo').value = j.logo_url;
+          const j = await api('/api/admin/upload-logo', { method: 'POST', body: JSON.stringify({ dataUrl: reader.result, variant: variant || '' }) });
+          $(variant === 'dark' ? 's-logoD' : 's-logo').value = j.logo_url;
           localStorage.removeItem('yj_settings');
           paintSettingsPreview();
-          toast('อัปโหลดโลโก้เรียบร้อย ✓ หน้าเว็บอัปเดตแล้ว');
+          toast(variant === 'dark' ? 'อัปโหลดโลโก้ Dark Mode เรียบร้อย ✓' : 'อัปโหลดโลโก้เรียบร้อย ✓ หน้าเว็บอัปเดตแล้ว');
         } catch (e) { toast(e.message, true); }
       };
       reader.readAsDataURL(file);
@@ -1248,6 +1287,9 @@
       if (logo) prev.src = logo;
       const box = $('logoPreviewBox');
       if (logo) { box.classList.add('show'); prev.src = logo; } else { box.classList.remove('show'); }
+      const logoD = $('s-logoD').value.trim();
+      const boxD = $('logoPreviewBoxD'), prevD = $('s-logoPrevD');
+      if (logoD) { boxD.classList.add('show'); prevD.src = logoD; } else { boxD.classList.remove('show'); }
       $('s-preview').innerHTML =
         (logo ? `<img src="${TD.esc(logo)}" style="height:30px;vertical-align:middle;margin-right:9px" onerror="this.style.display='none'">` : '') +
         `<span>${TD.esc($('s-main').value || 'อยู่')}<span style="color:var(--gold)">${TD.esc($('s-accent').value || 'ใจ')}</span></span>` +
@@ -1257,6 +1299,7 @@
       try {
         const s = await fetch('/api/settings').then(r => r.json());
         $('s-logo').value = s.logo_url || '';
+        $('s-logoD').value = s.logo_url_dark || '';
         $('s-main').value = s.site_name_main || '';
         $('s-accent').value = s.site_name_accent || '';
         $('s-sub').value = s.site_subtitle || '';

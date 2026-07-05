@@ -1586,3 +1586,11 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 /* ชิปเข้าโหมดปัดหาบ้าน */
 .quick-chips a.chip-swipe { text-decoration: none; background: var(--card); border-color: var(--line-strong); color: var(--ink-2); }
 .quick-chips a.chip-swipe:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-1px); }
+
+/* PWA pill — Dark Mode */
+:root[data-theme="dark"] .pwa-pill {
+  background: #26251f; color: #f2efe8;
+  border: 1px solid #3d3b32;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+}
+:root[data-theme="dark"] .pwa-pill .pwa-x { color: rgba(242, 239, 232, .6); }

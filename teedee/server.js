@@ -130,7 +130,7 @@ function setSessionCookie(res, uid) {
   res.setHeader('Set-Cookie', `yj_session=${signSession(uid)}; HttpOnly; Path=/; Max-Age=${30 * 86400}; SameSite=Lax${secure}`);
 }
 
-const SETTING_KEYS = ['site_name_main', 'site_name_accent', 'site_subtitle', 'logo_url'];
+const SETTING_KEYS = ['site_name_main', 'site_name_accent', 'site_subtitle', 'logo_url', 'logo_url_dark'];
 let settingsCache = null;
 async function getSettings() {
   if (settingsCache) return settingsCache;
@@ -1089,14 +1089,15 @@ app.delete('/api/admin/listings/:id', requireAdmin, async (req, res) => {
 app.post('/api/admin/upload-logo', requireAdmin, async (req, res) => {
   try {
     const dataUrl = String(req.body?.dataUrl || '').trim();
+    const key = req.body?.variant === 'dark' ? 'logo_url_dark' : 'logo_url';
     if (dataUrl.length > 5_000_000) return res.status(400).json({ error: 'ไฟล์ใหญ่เกินไป (ไม่เกิน ~1.5MB)' });
     const m = dataUrl.match(/^data:image\/(png|jpe?g|webp|svg\+xml)(;charset=[\w-]+)?;base64,[A-Za-z0-9+/=\s]+$/i);
     if (!m) return res.status(400).json({ error: 'ไฟล์ไม่ถูกต้อง (รองรับ PNG, JPG, WEBP, SVG)' });
     await pool.query(
-      `INSERT INTO settings (key, value) VALUES ('logo_url', $1)
-       ON CONFLICT (key) DO UPDATE SET value = $1`, [dataUrl]);
+      `INSERT INTO settings (key, value) VALUES ($1, $2)
+       ON CONFLICT (key) DO UPDATE SET value = $2`, [key, dataUrl]);
     settingsCache = null;
-    res.json({ ok: true, logo_url: dataUrl });
+    res.json({ ok: true, key, logo_url: dataUrl });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server error' });

@@ -51,8 +51,10 @@ const TD = {
 
   brandHtml(dark) {
     const b = this.brand;
-    const logo = b.logo
-      ? `<img class="logo-img" src="${this.esc(b.logo)}" alt="${this.esc(b.main + b.accent)}">`
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    const src = (isDark && b.logoDark) ? b.logoDark : b.logo;
+    const logo = src
+      ? `<img class="logo-img" src="${this.esc(src)}" alt="${this.esc(b.main + b.accent)}">`
       : `<span class="mark">${this.icons.home}</span>`;
     return `<a class="brand" ${dark ? 'style="color:#fff"' : ''} href="/">${logo}${this.esc(b.main)}<em>${this.esc(b.accent)}</em>${b.sub ? `<span class="sub-th">${this.esc(b.sub)}</span>` : ''}</a>`;
   },
@@ -148,7 +150,8 @@ const TD = {
       main: s.site_name_main || 'อยู่',
       accent: s.site_name_accent || 'ใจ',
       sub: s.site_subtitle || '',
-      logo: s.logo_url || ''
+      logo: s.logo_url || '',
+      logoDark: s.logo_url_dark || ''
     };
     if (JSON.stringify(next) === JSON.stringify(this.brand)) return;
     this.brand = next;
