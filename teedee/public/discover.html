@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=40">
+  <link rel="stylesheet" href="/css/style.css?v=41">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -33,15 +33,21 @@
     </div>
 
     <div class="sw-actions" id="swActions" style="visibility:hidden">
-      <button class="sw-btn sw-nope" id="btnNope" type="button" aria-label="ข้าม">✕</button>
-      <button class="sw-btn sw-undo" id="btnUndo" type="button" aria-label="ย้อนกลับ">↩</button>
-      <button class="sw-btn sw-like" id="btnLike" type="button" aria-label="ถูกใจ">♥</button>
+      <button class="sw-btn sw-nope" id="btnNope" type="button" aria-label="ข้าม">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <button class="sw-btn sw-undo" id="btnUndo" type="button" aria-label="ย้อนกลับ">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      </button>
+      <button class="sw-btn sw-like" id="btnLike" type="button" aria-label="ถูกใจ">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </button>
     </div>
     <p class="sw-hint">ลากการ์ด หรือกดปุ่ม · ใช้คีย์บอร์ด ← → ได้</p>
   </div>
 
   <div id="footer"></div>
-  <script src="/js/shared.js?v=40"></script>
+  <script src="/js/shared.js?v=41"></script>
   <script>
     TD.chrome('discover');
     const $ = id => document.getElementById(id);
