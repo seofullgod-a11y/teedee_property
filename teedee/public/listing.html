@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=49">
+  <link rel="stylesheet" href="/css/style.css?v=50">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -46,7 +46,7 @@
     <div class="lb-strip" id="lbStrip"></div>
   </div>
 
-  <script src="/js/shared.js?v=49"></script>
+  <script src="/js/shared.js?v=50"></script>
   <script>
     TD.chrome('');
     const id = Number(location.pathname.split('/').pop());
@@ -362,6 +362,48 @@
       TD.pushRecent(l.id);
       if (TD.taste) try { TD.taste.bump(l, 1); } catch (e) {}
 
+      // 🏡 โหมดใช้ชีวิต — ใช้ delegation เพราะปุ่มถูกเรนเดอร์ทีหลัง
+      document.addEventListener('click', (ev) => {
+        if (!ev.target.closest('#dayStoryBtn')) return;
+        openDayStory();
+      });
+      async function openDayStory() {
+        if (document.querySelector('.ds-ov')) return;
+        const ov = document.createElement('div');
+        ov.className = 'ds-ov';
+        ov.innerHTML = `
+          <div class="ds-modal" role="dialog" aria-label="หนึ่งวันที่นี่">
+            <button class="ds-x" type="button" aria-label="ปิด">✕</button>
+            <div class="ds-head">
+              <div class="ds-kicker">โหมดใช้ชีวิต</div>
+              <h3>หนึ่งวันธรรมดา…ที่ได้อยู่ที่นี่ 🏡</h3>
+            </div>
+            <div class="ds-body" id="dsBody">
+              <div class="ds-loading"><span class="ds-dot"></span><span class="ds-dot"></span><span class="ds-dot"></span> กำลังวาดภาพชีวิตของคุณที่นี่…</div>
+            </div>
+          </div>`;
+        document.body.appendChild(ov);
+        const close = () => ov.remove();
+        ov.querySelector('.ds-x').onclick = close;
+        ov.addEventListener('click', e => { if (e.target === ov) close(); });
+        try {
+          const r = await fetch(`/api/listings/${l.id}/day-story`, { method: 'POST' });
+          const d = await r.json();
+          if (!r.ok || !d.story) throw new Error(d.error || 'ไม่สำเร็จ');
+          const s = d.story;
+          const block = (ic, name, txt) => txt ? `<div class="ds-part"><div class="ds-time">${ic} ${name}</div><p>${TD.esc(txt)}</p></div>` : '';
+          document.getElementById('dsBody').innerHTML =
+            block('🌅', 'เช้า', s.morning) + block('☀️', 'กลางวัน', s.afternoon) +
+            block('🌇', 'เย็น', s.evening) + block('🌙', 'ค่ำคืน', s.night) +
+            `<div class="ds-cta"><button class="btn btn-primary" type="button" id="dsContact">อยากใช้ชีวิตแบบนี้ — ติดต่อเลย</button></div>`;
+          const cta = document.getElementById('dsContact');
+          if (cta) cta.onclick = () => { close(); const cc = document.querySelector('.contact-card'); if (cc) cc.scrollIntoView({ behavior: 'smooth' }); };
+        } catch (e) {
+          const body = document.getElementById('dsBody');
+          if (body) body.innerHTML = `<p style="color:var(--muted);text-align:center;padding:20px 0">${TD.esc(e.message === 'ไม่สำเร็จ' ? 'ขออภัย ระบบไม่พร้อมชั่วคราว ลองใหม่อีกครั้งครับ' : e.message)}</p>`;
+        }
+      }
+
       $('crumb').innerHTML = `
         <a href="/">หน้าแรก</a> › <a href="/search?type=${l.listing_type}">${TD.typeLabel[l.listing_type]}</a>
         › <a href="/search?category=${l.category}">${TD.catLabel[l.category]}</a> › <span>${TD.esc(l.title)}</span>`;
@@ -417,6 +459,8 @@
             </div>
             <h1>${TD.esc(l.title)}${l.verified ? ` <span class="vfy" title="ทรัพย์ตรวจสอบแล้ว">${TD.icons.verified}</span>` : ''}</h1>
             <div class="loc">${TD.icons.pin} ${TD.esc(l.location_text)}${l.province && !String(l.location_text).includes(l.province) ? ' · ' + TD.esc(l.province) : ''}</div>
+            ${(() => { const pt = TD.personaTags ? TD.personaTags(l) : []; return pt.length ? `<div class="persona-tags">${pt.map(p => `<span class="pt-chip"><span class="pt-ic">${p.ic}</span>${p.t}</span>`).join('')}</div>` : ''; })()}
+            <button class="day-story-btn" id="dayStoryBtn" type="button">🏡 ลองใช้ชีวิตที่นี่หนึ่งวัน</button>
             <div class="meta-line">เปิดดู ${Number(l.views).toLocaleString('th-TH')} ครั้ง · ประกาศเมื่อ ${new Date(l.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
           </div>
           <div class="detail-specs reveal">${specs.join('')}</div>
@@ -647,7 +691,11 @@
           v.innerHTML = `⚠️ ค่อนข้างตึง — คิดเป็น ${Math.round(ratio * 100)}% ของรายได้ (แนะนำเพิ่มดาวน์ หรือยืดงวด)`;
         } else {
           v.className = 'afford-verdict bad';
-          v.innerHTML = `เกินกำลังผ่อน — งวดนี้ ${Math.round(ratio * 100)}% ของรายได้ (ธนาคารมักรับไม่เกินผ่อน ${fmt(maxAfford)}/เดือน)`;
+          // คำนวณราคาบ้านสูงสุดที่ผ่อนไหว (จากงวด 40% ของรายได้ เงื่อนไขดอกเบี้ย/งวดเดียวกัน) → ชวนไปดูหลังที่ใช่กับกระเป๋า
+          const affordLoan = r === 0 ? maxAfford * n : maxAfford * (Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n));
+          const affordPrice = Math.floor(affordLoan / (1 - dp / 100) / 100000) * 100000;
+          v.innerHTML = `เกินกำลังผ่อน — งวดนี้ ${Math.round(ratio * 100)}% ของรายได้ (ธนาคารมักรับไม่เกินผ่อน ${fmt(maxAfford)}/เดือน)`
+            + (affordPrice > 500000 ? `<a class="afford-cta" href="/search?type=sale&max=${affordPrice}">💡 ดูบ้านในงบที่ผ่อนไหว (~${fmt(affordPrice)})</a>` : '');
         }
       }
       [dpRange, irRange, yrRange, incRange].forEach(el => el.addEventListener('input', calc));

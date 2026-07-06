@@ -250,6 +250,32 @@ const TD = {
     }
   },
 
+  // ---------- 🎭 บ้านนี้เหมาะกับใคร — วิเคราะห์บุคลิกทรัพย์จากข้อมูลจริง ----------
+  personaTags(l) {
+    if (!l) return [];
+    const tags = [];
+    const txt = [l.title, l.description, (l.highlights || []).join(' '), (l.amenities || []).join(' '),
+      (l.nearby || []).map(n => n.name || n).join(' '), l.location_text].join(' ').toLowerCase();
+    const has = (...words) => words.some(w => txt.includes(w));
+
+    if (l.pets_allowed) tags.push({ ic: '🐾', t: 'ทาสหมาแมวอยู่ได้สบาย' });
+    if (has('bts', 'mrt', 'รถไฟฟ้า', 'สถานี')) tags.push({ ic: '🚆', t: 'สายเดินทางรถไฟฟ้า' });
+    if (Number(l.bedrooms) >= 3) tags.push({ ic: '👨‍👩‍👧‍👦', t: 'ครอบครัวใหญ่อยู่สบาย' });
+    if (has('สระ', 'ฟิตเนส', 'gym', 'pool', 'ออกกำลัง', 'วิ่ง')) tags.push({ ic: '💪', t: 'สายสุขภาพ ชอบออกกำลัง' });
+    if (has('สวน', 'ต้นไม้', 'ธรรมชาติ', 'เงียบ', 'สงบ', 'ร่มรื่น')) tags.push({ ic: '🌿', t: 'รักความสงบและธรรมชาติ' });
+    if (has('มหาวิทยาลัย', 'ม.', 'วิทยาลัย', 'โรงเรียน')) tags.push({ ic: '🎓', t: 'นักศึกษา / ครอบครัวมีลูก' });
+    if (has('ตลาด', 'ห้าง', 'เซ็นทรัล', 'โลตัส', 'บิ๊กซี', 'ร้านอาหาร', 'คาเฟ่')) tags.push({ ic: '🛍️', t: 'สายกิน-ช้อป ใกล้ของครบ' });
+    if (l.category === 'condo' && Number(l.area_sqm) > 0 && Number(l.area_sqm) <= 35) tags.push({ ic: '💼', t: 'คนเมืองเริ่มต้นชีวิตเอง' });
+    if (Number(l.area_sqm) >= 120 || has('โฮมออฟฟิศ', 'home office', 'ทำงานที่บ้าน')) tags.push({ ic: '💻', t: 'สาย Work From Home' });
+    if (l.category === 'land') tags.push({ ic: '🏗️', t: 'นักลงทุน / สร้างบ้านในฝัน' });
+    if (l.category === 'commercial') tags.push({ ic: '🏪', t: 'ทำธุรกิจ-ค้าขาย' });
+    if (has('รีโนเวท', 'ตกแต่งใหม่', 'built-in', 'บิวท์อิน')) tags.push({ ic: '✨', t: 'ชอบของใหม่ พร้อมเข้าอยู่' });
+    if (l.listing_type === 'rent' && Number(l.price) > 0 && Number(l.price) <= 8000) tags.push({ ic: '🪙', t: 'งบเบา ๆ ก็อยู่ดีได้' });
+
+    // เรียงตามลำดับที่เจอ เอาไม่เกิน 3 ป้ายเด่นสุด
+    return tags.slice(0, 3);
+  },
+
   esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, m =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));

@@ -1608,3 +1608,48 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .err-page h1 { font-family: var(--font-display); font-size: 1.6rem; margin: 10px 0 12px; }
 .err-page p { color: var(--muted); line-height: 1.8; margin-bottom: 28px; }
 .err-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* ============ 🎭 บ้านนี้เหมาะกับใคร ============ */
+.persona-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.pt-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--gold-soft); border: 1px solid var(--gold); color: var(--ink); border-radius: 999px; padding: 6px 13px; font-size: var(--fs-xs); font-weight: 500; }
+.pt-chip .pt-ic { font-size: .95rem; }
+
+/* ============ 🏡 โหมดใช้ชีวิต ============ */
+.day-story-btn { display: inline-flex; align-items: center; gap: 8px; margin: 10px 0 4px; background: linear-gradient(135deg, var(--gold-soft), var(--card)); border: 1.5px solid var(--gold); color: var(--ink); border-radius: 999px; padding: 10px 20px; font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 500; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+.day-story-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(176, 141, 87, .25); }
+.ds-ov, .ft-ov { position: fixed; inset: 0; background: rgba(20, 16, 10, .55); backdrop-filter: blur(3px); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn .2s ease; }
+.ds-modal, .ft-modal { position: relative; background: var(--card); border-radius: 22px; max-width: 520px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 28px 26px 24px; box-shadow: 0 24px 60px rgba(20, 14, 6, .35); animation: popIn .25s cubic-bezier(.22,.9,.36,1.2); }
+.ds-x, .ft-x { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; font-size: .95rem; }
+.ds-x:hover, .ft-x:hover { color: var(--ink); border-color: var(--line-strong); }
+.ds-kicker, .ft-kicker { font-family: var(--font-display); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.ds-head h3, .ft-head h3 { font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 4px; }
+.ds-body { margin-top: 18px; }
+.ds-part { padding: 14px 0; border-bottom: 1px dashed var(--line); }
+.ds-part:last-of-type { border-bottom: 0; }
+.ds-time { font-family: var(--font-display); font-weight: 600; font-size: .92rem; margin-bottom: 5px; color: var(--gold); }
+.ds-part p { line-height: 1.85; color: var(--ink-2); font-size: .93rem; }
+.ds-cta { text-align: center; margin-top: 16px; }
+.ds-loading { text-align: center; color: var(--muted); padding: 26px 0; font-size: .9rem; }
+.ds-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); margin: 0 2px; animation: dsPulse 1s infinite; }
+.ds-dot:nth-child(2) { animation-delay: .18s; } .ds-dot:nth-child(3) { animation-delay: .36s; }
+@keyframes dsPulse { 0%, 100% { opacity: .25; transform: scale(.85); } 50% { opacity: 1; transform: scale(1.15); } }
+
+/* ============ 🌟 ดวงบ้าน ============ */
+.chip-fortune { background: linear-gradient(135deg, #f6efdf, var(--card)) !important; }
+.ft-sub { color: var(--muted); font-size: .85rem; }
+.ft-days { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0 6px; }
+.ft-day { border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 10px 4px; font-family: var(--font-display); font-size: .88rem; color: var(--ink-2); cursor: pointer; transition: all .15s; }
+.ft-day:hover { border-color: var(--gold); }
+.ft-day.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.ft-card { margin-top: 14px; border: 1px solid var(--line); border-left: 4px solid var(--fc, var(--gold)); border-radius: 14px; padding: 16px 18px; background: var(--bg); animation: fadeIn .25s ease; }
+.ft-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: .92rem; }
+.ft-lb { color: var(--muted); }
+.ft-vl { font-weight: 600; display: inline-flex; align-items: center; gap: 7px; }
+.ft-swatch { width: 14px; height: 14px; border-radius: 50%; background: var(--fc); display: inline-block; }
+.ft-vibe { margin: 10px 0 12px; line-height: 1.8; font-size: .9rem; color: var(--ink-2); }
+.ft-provs { font-size: .88rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); }
+.ft-prov { background: var(--gold-soft); border: 1px solid var(--gold); color: var(--ink); border-radius: 999px; padding: 4px 13px; font-size: var(--fs-xs); }
+.ft-prov:hover { background: var(--gold); color: #fff; }
+.ft-note { margin-top: 14px; font-size: .74rem; color: var(--muted); text-align: center; }
+@media (max-width: 480px) { .ft-days { grid-template-columns: repeat(4, 1fr); } .ft-day { font-size: .8rem; } }
+.afford-cta { display: block; margin-top: 10px; font-size: .84rem; color: inherit; text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }

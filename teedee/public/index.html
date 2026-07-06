@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=49">
+  <link rel="stylesheet" href="/css/style.css?v=50">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -61,6 +61,7 @@
             ให้ AI ช่วยหา
           </button>
           <a class="chip-ai chip-swipe" href="/discover">🃏 ปัดหาบ้าน</a>
+          <button class="chip-ai chip-fortune" data-fortune type="button">🌟 ดวงบ้าน</button>
           <button data-q="ใกล้ BTS">คอนโดใกล้ BTS</button>
           <button data-q="นครปฐม">บ้านนครปฐม</button>
           <button data-q="เชียงใหม่">บ้านเช่าเชียงใหม่</button>
@@ -200,7 +201,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=49"></script>
+  <script src="/js/shared.js?v=50"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
@@ -409,12 +410,53 @@
     document.getElementById('chips').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.hasAttribute('data-concierge')) return; // ปุ่ม AI: ปล่อยให้ตัวเปิดแชทจัดการ ไม่เด้งไปค้นหา
+      if (b.hasAttribute('data-fortune')) { openFortune(); return; } // 🌟 ดวงบ้าน
       const p = new URLSearchParams();
       if (b.dataset.q) p.set('q', b.dataset.q);
       if (b.dataset.cat) p.set('category', b.dataset.cat);
       if (![...p].length) return; // ไม่มีเงื่อนไขค้นหา ไม่ต้องเปลี่ยนหน้า
       location.href = '/search?' + p.toString();
     });
+
+    // ---------- 🌟 ดวงบ้าน — กิมมิคโหราไทย (เพื่อความสนุก) ----------
+    const FORTUNE = {
+      sun:  { day: 'อาทิตย์',  color: 'แดง',   colorHex: '#d64545', dir: 'ทิศตะวันออกเฉียงเหนือ', region: 'อีสานตอนบน', provs: ['ขอนแก่น', 'อุดรธานี', 'นครราชสีมา'], vibe: 'คนวันอาทิตย์เป็นผู้นำ ใจร้อนแต่ใจถึง — บ้านโปร่ง แสงเข้าดี จะยิ่งเสริมพลัง' },
+      mon:  { day: 'จันทร์',   color: 'เหลือง', colorHex: '#e0b23a', dir: 'ทิศตะวันออก', region: 'ภาคตะวันออก', provs: ['ชลบุรี', 'ระยอง', 'จันทบุรี'], vibe: 'คนวันจันทร์อ่อนโยน รักสงบ — ทำเลใกล้ทะเลหรือธรรมชาติช่วยให้ใจนิ่ง งานลื่น' },
+      tue:  { day: 'อังคาร',   color: 'ชมพู',  colorHex: '#e07a9a', dir: 'ทิศตะวันออกเฉียงใต้', region: 'ตะวันออก-ชายฝั่ง', provs: ['ชลบุรี', 'ระยอง', 'ตราด'], vibe: 'คนวันอังคารมุ่งมั่น กล้าลุย — บ้านที่มีพื้นที่ให้ขยับตัว/ออกกำลัง คือคู่ดวง' },
+      wed:  { day: 'พุธ',      color: 'เขียว',  colorHex: '#4f9d69', dir: 'ทิศใต้', region: 'ภาคใต้', provs: ['สุราษฎร์ธานี', 'สงขลา', 'ภูเก็ต'], vibe: 'คนวันพุธหัวไว เจรจาเก่ง — ทำเลใกล้แหล่งค้าขาย/ชุมชนจะหนุนเรื่องเงินทอง' },
+      thu:  { day: 'พฤหัสบดี', color: 'ส้ม',   colorHex: '#e08a3a', dir: 'ทิศตะวันตก', region: 'ภาคตะวันตก', provs: ['กาญจนบุรี', 'ราชบุรี', 'เพชรบุรี'], vibe: 'คนวันพฤหัสฯ เป็นครูของคนรอบตัว — บ้านสงบ มีมุมอ่านหนังสือ/สวนเล็ก ๆ เสริมปัญญา' },
+      fri:  { day: 'ศุกร์',    color: 'ฟ้า',    colorHex: '#4a90c2', dir: 'ทิศเหนือ', region: 'ภาคเหนือ', provs: ['เชียงใหม่', 'เชียงราย', 'ลำพูน'], vibe: 'คนวันศุกร์รักสวยรักงาม มีเสน่ห์ — เมืองที่มีคาเฟ่ งานคราฟต์ อากาศดี คือบ้านของดวงคุณ' },
+      sat:  { day: 'เสาร์',    color: 'ม่วง',   colorHex: '#8a5fb0', dir: 'ทิศตะวันตกเฉียงใต้', region: 'ตะวันตก-ใต้ตอนบน', provs: ['เพชรบุรี', 'ประจวบคีรีขันธ์', 'ชุมพร'], vibe: 'คนวันเสาร์อดทน หนักแน่น — บ้านติดธรรมชาติ ทะเล/ภูเขา ช่วยคลายความเครียดสะสม' }
+    };
+    function openFortune() {
+      const ov = document.createElement('div');
+      ov.className = 'ft-ov';
+      const days = [['sun','อาทิตย์'],['mon','จันทร์'],['tue','อังคาร'],['wed','พุธ'],['thu','พฤหัสฯ'],['fri','ศุกร์'],['sat','เสาร์']];
+      ov.innerHTML = `
+        <div class="ft-modal" role="dialog" aria-label="ดวงบ้าน">
+          <button class="ft-x" type="button" aria-label="ปิด">✕</button>
+          <div class="ft-head"><div class="ft-kicker">ดวงบ้าน</div><h3>คุณเกิดวันอะไร? 🌟</h3>
+          <p class="ft-sub">เลือกวันเกิด แล้วดูว่าทำเลไหน "ถูกโฉลก" กับคุณ</p></div>
+          <div class="ft-days">${days.map(d => `<button class="ft-day" data-d="${d[0]}" type="button">${d[1]}</button>`).join('')}</div>
+          <div class="ft-result" id="ftResult"></div>
+          <p class="ft-note">✨ เพื่อความสนุกและแรงบันดาลใจในการหาบ้าน อิงสีสัน-ทิศตามคติวันเกิดแบบไทย</p>
+        </div>`;
+      document.body.appendChild(ov);
+      const close = () => ov.remove();
+      ov.querySelector('.ft-x').onclick = close;
+      ov.addEventListener('click', e => { if (e.target === ov) close(); });
+      ov.querySelectorAll('.ft-day').forEach(b => b.onclick = () => {
+        ov.querySelectorAll('.ft-day').forEach(x => x.classList.toggle('on', x === b));
+        const f = FORTUNE[b.dataset.d];
+        document.getElementById('ftResult').innerHTML = `
+          <div class="ft-card" style="--fc:${f.colorHex}">
+            <div class="ft-row"><span class="ft-lb">สีมงคล</span><span class="ft-vl"><span class="ft-swatch"></span> ${f.color}</span></div>
+            <div class="ft-row"><span class="ft-lb">ทิศมงคล</span><span class="ft-vl">${f.dir} (${f.region})</span></div>
+            <p class="ft-vibe">${f.vibe}</p>
+            <div class="ft-provs">ทำเลเสริมดวง: ${f.provs.map(p => `<a class="ft-prov" href="/search?province=${encodeURIComponent(p)}">${p}</a>`).join('')}</div>
+          </div>`;
+      });
+    }
 
     // Load data
     (async () => {

@@ -515,6 +515,58 @@ async function conciergeFilters(q) {
   return JSON.parse(text);
 }
 
+// ============ 🏡 โหมดใช้ชีวิต — เล่าหนึ่งวันในบ้านหลังนี้ ============
+function dayStoryFallback(l) {
+  const place = l.location_text || l.province || 'ย่านนี้';
+  const near = (l.nearby || []).map(n => n.name || n).slice(0, 3);
+  const isCondo = l.category === 'condo';
+  return {
+    morning: `ตื่นเช้าใน${isCondo ? 'ห้อง' : 'บ้าน'}ของคุณที่${place} ชงกาแฟอุ่น ๆ รับแสงแรกของวัน${near[0] ? ` ก่อนออกไปเริ่มวันง่าย ๆ เพราะอยู่ใกล้${near[0]}` : ''}`,
+    afternoon: `กลางวันสะดวกทุกอย่าง${near[1] ? ` — แวะ${near[1]}ได้ในไม่กี่นาที` : ' ร้านอาหารและของกินรอบ ๆ ให้เลือกเพียบ'} ใช้ชีวิตได้ไม่รีบร้อน`,
+    evening: `เย็นกลับมาพักผ่อน${l.bedrooms > 1 ? ' มีพื้นที่ให้ทุกคนในครอบครัว' : ' ในมุมสงบของคุณเอง'}${near[2] ? ` หรือออกไปเดินเล่นแถว${near[2]}` : ''}`,
+    night: `ค่ำคืนที่${place}สงบพอให้หลับสบาย พร้อมตื่นมาใช้ชีวิตดี ๆ แบบนี้อีกครั้งพรุ่งนี้ 🌙`
+  };
+}
+
+app.post('/api/listings/:id/day-story', makeLimiter(15, 60 * 60e3, 'ขอเรื่องเล่าบ่อยเกินไป กรุณารอสักครู่ครับ'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'bad id' });
+    const { rows } = await pool.query(`SELECT ${LISTING_FIELDS}, day_story FROM listings WHERE id=$1 AND status='active'`, [id]);
+    if (!rows.length) return res.status(404).json({ error: 'not found' });
+    const l = rows[0];
+    if (l.day_story && l.day_story.morning) return res.json({ story: l.day_story, cached: true });
+
+    let story = null;
+    if (ANTHROPIC_API_KEY) {
+      try {
+        const near = (l.nearby || []).map(n => `${n.name || n}${n.dist ? ' (' + n.dist + ')' : ''}`).join(', ');
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+          body: JSON.stringify({
+            model: ANTHROPIC_MODEL, max_tokens: 600,
+            system: 'คุณคือนักเล่าเรื่องของเว็บอสังหาฯ "อยู่ใจ" เล่าภาพชีวิตจริงในบ้าน อบอุ่น เห็นภาพ ไม่โอเวอร์ ไม่ขายของโต้ง ๆ ใช้ข้อมูลจริงที่ให้เท่านั้น ห้ามแต่งสถานที่ที่ไม่มีในข้อมูล',
+            messages: [{
+              role: 'user',
+              content: `ทรัพย์: ${l.title}\nประเภท: ${l.category} (${l.listing_type === 'rent' ? 'เช่า' : 'ขาย'})\nทำเล: ${l.location_text || ''} จ.${l.province || ''}\nห้องนอน ${l.bedrooms || '-'} ห้องน้ำ ${l.bathrooms || '-'} ขนาด ${l.area_sqm || '-'} ตร.ม.\nจุดเด่น: ${(l.highlights || []).join(', ')}\nสิ่งอำนวยความสะดวก: ${(l.amenities || []).join(', ')}\nใกล้: ${near || '-'}\n\nเล่า "หนึ่งวันธรรมดาที่ได้ใช้ชีวิตที่นี่" ตอบเป็น JSON เท่านั้น:\n{"morning":"เช้า 1-2 ประโยค","afternoon":"กลางวัน 1-2 ประโยค","evening":"เย็น 1-2 ประโยค","night":"ค่ำคืน 1 ประโยคปิดอบอุ่น"}`
+            }]
+          })
+        });
+        const out = await r.json();
+        if (r.ok) {
+          const text = (out.content || []).filter(c => c.type === 'text').map(c => c.text).join('').replace(/```json|```/g, '').trim();
+          const p = JSON.parse(text);
+          if (p.morning && p.night) story = { morning: String(p.morning).slice(0, 400), afternoon: String(p.afternoon || '').slice(0, 400), evening: String(p.evening || '').slice(0, 400), night: String(p.night).slice(0, 400) };
+        }
+      } catch (e) { console.error('day-story ai:', e.message); }
+    }
+    if (!story) story = dayStoryFallback(l);
+    pool.query('UPDATE listings SET day_story=$1 WHERE id=$2', [JSON.stringify(story), id]).catch(() => {});
+    res.json({ story, cached: false });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
 app.post('/api/concierge', makeLimiter(25, 60 * 60e3, 'ใช้งาน AI บ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่ครับ'), async (req, res) => {
   try {
     const q = String(req.body?.message || '').slice(0, 300).trim();
@@ -1229,7 +1281,7 @@ app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
         province=$6, bedrooms=$7, bathrooms=$8, area_sqm=$9, land_area_sqwah=$10, floor_text=$11,
         description=$12, highlights=$13, images=$14, nearby=$15, pets_allowed=$16, featured=$17,
         status=$18, contact_line=$19, contact_phone=$20, latitude=$21, longitude=$22,
-        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, badge=$27, verified=$28, agent_id=$29, updated_at=now()
+        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, badge=$27, verified=$28, agent_id=$29, updated_at=now(), day_story=NULL
        WHERE id=$30`, [...p, id]);
     res.json({ ok: true });
   } catch (e) {
