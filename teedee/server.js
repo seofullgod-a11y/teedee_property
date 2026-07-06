@@ -62,6 +62,39 @@ function notifyOwner(subject, body) {
 }
 const tgEsc = (s) => String(s || '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
+app.use(require('compression')()); // gzip ทุก response ที่บีบได้ — หน้าเว็บ/API เบาลงมาก
+
+// ---------- Security headers ----------
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');           // กันโดนฝังใน iframe เว็บอื่น (clickjacking)
+  res.setHeader('X-Content-Type-Options', 'nosniff');        // กันเบราว์เซอร์เดา content type
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), payment=()');
+  if (req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
+// ---------- Rate limiter กลาง (in-memory ต่อ IP) ----------
+function makeLimiter(max, windowMs, msg) {
+  const hits = new Map();
+  // เก็บกวาดทุก 10 นาที กัน memory โต
+  setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of hits) if (now - v.t > windowMs) hits.delete(k);
+  }, 600e3).unref();
+  return (req, res, next) => {
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+    const now = Date.now();
+    const h = hits.get(ip) || { c: 0, t: now };
+    if (now - h.t > windowMs) { h.c = 0; h.t = now; }
+    h.c++; hits.set(ip, h);
+    if (h.c > max) return res.status(429).json({ error: msg || 'มีการเรียกใช้บ่อยเกินไป กรุณาลองใหม่ภายหลัง' });
+    next();
+  };
+}
+
 app.use(express.json({ limit: '6mb' }));
 app.use(express.static(path.join(__dirname, 'public'), {
   index: false,
@@ -482,7 +515,7 @@ async function conciergeFilters(q) {
   return JSON.parse(text);
 }
 
-app.post('/api/concierge', async (req, res) => {
+app.post('/api/concierge', makeLimiter(25, 60 * 60e3, 'ใช้งาน AI บ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่ครับ'), async (req, res) => {
   try {
     const q = String(req.body?.message || '').slice(0, 300).trim();
     if (q.length < 2) return res.json({ reply: 'ลองพิมพ์บอกความต้องการได้เลยครับ เช่น "คอนโดเช่าใกล้ BTS งบ 2 หมื่น"', items: [] });
@@ -689,7 +722,7 @@ app.get('/api/admin/export/:type', requireAdmin, async (req, res) => {
 
 // ============ User accounts ============
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', makeLimiter(10, 60 * 60e3, 'สมัครสมาชิกบ่อยเกินไป กรุณาลองใหม่ภายหลัง'), async (req, res) => {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase().slice(0, 120);
     const password = String(req.body?.password || '');
@@ -709,7 +742,7 @@ app.post('/api/auth/register', async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', makeLimiter(15, 15 * 60e3, 'พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่'), async (req, res) => {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase();
     const password = String(req.body?.password || '');
@@ -951,7 +984,7 @@ app.get('/api/admin/business-summary', requireAdmin, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
 });
 
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', makeLimiter(8, 15 * 60e3, 'พยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอ 15 นาที'), (req, res) => {
   if ((req.body?.password || '') === ADMIN_PASSWORD) return res.json({ token: adminToken() });
   res.status(401).json({ error: 'รหัสผ่านไม่ถูกต้อง' });
 });

@@ -1039,7 +1039,7 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .vw-grid input, .vw-grid select { padding: 11px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--card); font-size: var(--fs-sm); color: var(--ink-2); outline: none; font-family: inherit; }
 .vw-grid input:focus, .vw-grid select:focus { border-color: var(--gold); }
 .vw-success { text-align: center; padding: 20px 10px; }
-.vw-success svg { width: 44px; height: 44px; color: #4c5a3f; background: var(--ok-bg); border-radius: 50%; padding: 9px; margin-bottom: 12px; }
+.vw-success svg { width: 44px; height: 44px; color: var(--ok-tx); background: var(--ok-bg); border-radius: 50%; padding: 9px; margin-bottom: 12px; }
 .vw-success h3 { font-family: var(--font-display); font-size: var(--fs-md); font-weight: 500; margin-bottom: 6px; }
 .vw-success p { font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.7; }
 
@@ -1317,7 +1317,7 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .yj-modal-x:hover { color: var(--ink); border-color: var(--line-strong); }
 .yj-modal-ic { width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 16px; background: var(--gold-soft); color: var(--gold); display: grid; place-items: center; }
 .yj-modal-ic svg { width: 28px; height: 28px; }
-.yj-modal-ic.ok { background: var(--ok-bg); color: #4c5a3f; }
+.yj-modal-ic.ok { background: var(--ok-bg); color: var(--ok-tx); }
 .yj-modal h3 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; margin-bottom: 6px; }
 .yj-modal-sub { font-size: var(--fs-sm); color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
 .yj-crit { background: var(--soft); border: 1px dashed var(--line-strong); border-radius: 12px; padding: 11px 14px; font-size: var(--fs-sm); color: var(--ink); font-weight: 500; margin-bottom: 18px; }
@@ -1344,7 +1344,7 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .afford-head .calc-ico { width: 26px; height: 26px; }
 .afford-verdict { border-radius: 10px; padding: 11px 13px; font-size: var(--fs-sm); font-weight: 500; display: flex; align-items: center; gap: 7px; line-height: 1.5; margin-bottom: 8px; }
 .afford-verdict svg { width: 17px; height: 17px; flex-shrink: 0; }
-.afford-verdict.ok { background: var(--ok-bg); color: #4c5a3f; }
+.afford-verdict.ok { background: var(--ok-bg); color: var(--ok-tx); }
 .afford-verdict.warn { background: #fbf1dd; color: #9a6b1c; }
 .afford-verdict.bad { background: #f8e8e4; color: var(--danger); }
 :root[data-theme="dark"] .afford-verdict.ok { background: #23291c; color: #b7c79a; }

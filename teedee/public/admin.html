@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=47">
+  <link rel="stylesheet" href="/css/style.css?v=49">
   <link rel="icon" href="/favicon">
   <style>
     body { background: #f2f1ec; }
@@ -30,10 +30,10 @@
     .main-area { padding: 28px 32px; overflow-x: hidden; }
     .main-area h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 20px; }
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 26px; }
-    .stat-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+    .stat-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
     .stat-card .n { font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; color: var(--pine); }
     .stat-card .l { font-size: .82rem; color: var(--muted); }
-    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
     th, td { padding: 12px 14px; text-align: left; font-size: .9rem; border-bottom: 1px solid #f0ede3; vertical-align: middle; }
     th { background: var(--sand); font-family: var(--font-display); font-weight: 500; font-size: .85rem; }
     tr:hover td { background: #fbfaf6; }
@@ -42,13 +42,13 @@
     .st.active { background: var(--pine-soft); color: var(--pine-deep); }
     .st.draft { background: #f3efe2; color: #8a7634; }
     .st.closed { background: #f2e4e0; color: var(--danger); }
-    .mini-btn { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; font-size: .82rem; margin-right: 5px; }
+    .mini-btn { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 12px; font-size: .82rem; margin-right: 5px; }
     .mini-btn:hover { border-color: var(--pine); color: var(--pine); }
     .mini-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
     .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
 
     /* Editor */
-    .editor { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 26px; max-width: 860px; }
+    .editor { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 26px; max-width: 860px; }
     .frm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .frm-grid .full { grid-column: 1 / -1; }
     .frm-grid label { display: block; font-size: .83rem; font-weight: 500; margin-bottom: 5px; color: #41524b; font-family: var(--font-display); }
@@ -56,7 +56,7 @@
       width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
       background: var(--sand); outline: none;
     }
-    .frm-grid input:focus, .frm-grid select:focus, .frm-grid textarea:focus { border-color: var(--pine); background: #fff; }
+    .frm-grid input:focus, .frm-grid select:focus, .frm-grid textarea:focus { border-color: var(--pine); background: var(--card); }
     .frm-grid textarea { resize: vertical; min-height: 120px; }
     .chk { display: flex; align-items: center; gap: 8px; font-size: .92rem; }
     .chk input { width: auto; }
@@ -69,7 +69,7 @@
     .ai-box p { font-size: .83rem; color: var(--muted); margin-bottom: 12px; }
     .ai-actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .ai-actions button {
-      background: #fff; border: 1px solid var(--pine); color: var(--pine-deep);
+      background: var(--card); border: 1px solid var(--pine); color: var(--pine-deep);
       border-radius: 999px; padding: 8px 16px; font-size: .86rem; font-family: var(--font-display);
     }
     .ai-actions button:hover { background: var(--pine); color: #fff; }
@@ -77,12 +77,12 @@
     .ai-result { margin-top: 14px; display: none; }
     .ai-result.show { display: block; }
     .ai-result .opt {
-      background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px;
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px;
       margin-bottom: 8px; cursor: pointer; font-size: .92rem; display: flex; justify-content: space-between; gap: 10px; align-items: center;
     }
     .ai-result .opt:hover { border-color: var(--copper); background: var(--copper-soft); }
     .ai-result .opt .use { font-size: .78rem; color: var(--copper); font-family: var(--font-display); white-space: nowrap; }
-    .ai-result pre { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; white-space: pre-wrap; font-family: var(--font-body); font-size: .92rem; }
+    .ai-result pre { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; white-space: pre-wrap; font-family: var(--font-body); font-size: .92rem; }
     .img-list { display: flex; flex-direction: column; gap: 8px; }
     .img-row { display: flex; gap: 8px; align-items: center; }
     .img-row img { width: 60px; height: 42px; object-fit: cover; border-radius: 7px; background: var(--pine-soft); }
@@ -128,7 +128,7 @@
 
     /* Login */
     .login-wrap { min-height: 100vh; display: grid; place-items: center; }
-    .login-card { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 40px; width: min(400px, 92vw); box-shadow: var(--shadow); text-align: center; }
+    .login-card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 40px; width: min(400px, 92vw); box-shadow: var(--shadow); text-align: center; }
     .login-card .mark { width: 54px; height: 54px; border-radius: 15px; background: var(--pine); color: #fff; display: grid; place-items: center; margin: 0 auto 16px; }
     .login-card .mark svg { width: 28px; height: 28px; }
     .login-card h1 { font-size: 1.3rem; margin-bottom: 6px; }
@@ -136,7 +136,7 @@
     .login-card input { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; margin-bottom: 12px; background: var(--sand); outline: none; }
     .login-card input:focus { border-color: var(--pine); }
     .unread-dot { display: inline-block; min-width: 20px; height: 20px; line-height: 20px; background: var(--copper); color: #fff; font-size: .72rem; border-radius: 999px; text-align: center; padding: 0 5px; font-family: var(--font-display); }
-    .inq-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+    .inq-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
     .inq-card.unread { border-left: 4px solid var(--copper); }
     .inq-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
     .inq-head b { font-family: var(--font-display); font-weight: 500; }
@@ -151,7 +151,7 @@
     }
     .dash-2col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 26px; }
     @media (max-width: 900px) { .dash-2col { grid-template-columns: 1fr; } }
-    .dash-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+    .dash-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
     .dash-card-h { font-size: .9rem; color: var(--muted); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; }
     .dash-card-h b { color: var(--pine); font-family: var(--font-display); font-size: 1.05rem; }
     .dash-x { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); margin-top: 6px; }
@@ -162,7 +162,7 @@
     .top-views { font-size: .8rem; color: var(--muted); white-space: nowrap; }
     /* agents */
     .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-    .agent-admin-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; text-align: center; }
+    .agent-admin-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; text-align: center; }
     .aac-photo { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; display: block; }
     .aac-ph { display: grid; place-items: center; background: #f4eee2; color: var(--copper); font-weight: 600; font-size: 1.5rem; font-family: var(--font-display); }
     .aac-name { font-weight: 600; font-family: var(--font-display); }
@@ -175,7 +175,7 @@
     .aac-actions .del { color: #c0392b; }
     /* admin modal */
     .admin-modal-ov { position: fixed; inset: 0; background: rgba(20,19,15,.5); display: grid; place-items: center; z-index: 300; padding: 20px; }
-    .admin-modal { background: #fff; border-radius: 16px; padding: 26px; width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto; }
+    .admin-modal { background: var(--card); border-radius: 16px; padding: 26px; width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto; }
     .admin-modal h2 { font-family: var(--font-display); margin-bottom: 16px; }
     .admin-modal label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 12px; }
     .admin-modal label.chk { display: flex; align-items: center; gap: 8px; color: var(--ink); }
@@ -231,6 +231,22 @@
     .danger-btn { color: var(--danger); }
     .danger-btn:hover { border-color: var(--danger); }
     button:disabled { opacity: .45; cursor: not-allowed; }
+    :root[data-theme="dark"] .imp-errs { background: #3a2626; color: #f0a9a3; }
+    :root[data-theme="dark"] .stat-card, :root[data-theme="dark"] table, :root[data-theme="dark"] .editor { background: var(--card); }
+    .guide-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .gt-btn { border: 1px solid var(--line); background: var(--card); color: var(--ink-2); border-radius: 999px; padding: 9px 20px; font-family: var(--font-display); font-size: .9rem; cursor: pointer; transition: all .18s; }
+    .gt-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .guide-dl { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--gold-soft); border: 1px solid var(--gold); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; font-size: .88rem; color: var(--ink-2); }
+    .gd-body { max-width: 760px; line-height: 1.85; }
+    .gd-body h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 26px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gold); color: var(--ink); }
+    .gd-body h3 { font-family: var(--font-display); font-size: .98rem; margin: 16px 0 6px; color: var(--gold); }
+    .gd-body ul, .gd-body ol { margin: 6px 0 14px; padding-left: 22px; }
+    .gd-body li { margin-bottom: 6px; }
+    .gd-body p { margin: 6px 0 14px; color: var(--ink-2); }
+    .gd-body code { background: var(--soft); padding: 2px 7px; border-radius: 5px; font-size: .85em; font-family: Consolas, monospace; }
+    .gd-tip { background: var(--gold-soft); border-left: 3px solid var(--gold); border-radius: 8px; padding: 10px 14px; margin: 12px 0 16px; font-size: .88rem; }
+    .gd-warn { background: #fbeeee; border-left: 3px solid #c0392b; border-radius: 8px; padding: 10px 14px; margin: 12px 0 16px; font-size: .88rem; color: #922; }
+    :root[data-theme="dark"] .gd-warn { background: #3a2626; color: #f0a9a3; }
   </style>
 </head>
 <body>
@@ -263,6 +279,7 @@
       <button data-view="agents"><span data-ic="user"></span> ทีมเอเจนต์</button>
       <button data-view="analytics"><span data-ic="sparkles"></span> สถิติผู้ใช้</button>
       <button data-view="import"><span data-ic="download"></span> นำเข้า / ตัวอย่าง</button>
+      <button data-view="guide"><span data-ic="star"></span> คู่มือการใช้งาน</button>
       <button data-view="settings"><span data-ic="settings"></span> ตั้งค่าเว็บไซต์</button>
       <span class="spacer"></span>
       <a class="menu foot-link" href="/" target="_blank"><span data-ic="arrowRight"></span> ดูหน้าเว็บ</a>
@@ -406,7 +423,7 @@
               <label class="chk"><input type="checkbox" id="f-feat"> ⭐ ประกาศแนะนำ</label>
               <label class="chk"><input type="checkbox" id="f-verified"> 🛡️ ตรวจสอบแล้ว</label>
               <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted)">ป้ายโปรโมท
-                <select id="f-badge" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-family:inherit">
+                <select id="f-badge" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-family:inherit">
                   <option value="">— ไม่มี —</option>
                   <option value="hot">🔥 มาแรง</option>
                   <option value="price_drop">↓ ราคาพิเศษ</option>
@@ -415,7 +432,7 @@
                 </select>
               </label>
               <label style="display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted)">ผู้ดูแลทรัพย์
-                <select id="f-agent" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-family:inherit;min-width:150px">
+                <select id="f-agent" style="padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-family:inherit;min-width:150px">
                   <option value="">— ไม่ระบุ —</option>
                 </select>
               </label>
@@ -426,7 +443,7 @@
           <div class="ai-box">
             <h3><span data-ic="sparkles"></span> AI ช่วยคิดคอนเทนต์</h3>
             <p>กรอกข้อมูลด้านบนให้ครบก่อน แล้วให้ AI ช่วยเขียน — ยิ่งข้อมูลละเอียด ผลลัพธ์ยิ่งดี</p>
-            <input id="f-ainotes" placeholder="โน้ตเพิ่มเติมให้ AI (ถ้ามี) เช่น เพิ่งรีโนเวท, วิวสระ, เจ้าของใจดี" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px;background:#fff">
+            <input id="f-ainotes" placeholder="โน้ตเพิ่มเติมให้ AI (ถ้ามี) เช่น เพิ่งรีโนเวท, วิวสระ, เจ้าของใจดี" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px;background:var(--card);color:var(--ink)">
             <div class="ai-actions">
               <button data-ai="title">✨ คิดชื่อประกาศ</button>
               <button data-ai="description">📝 เขียนคำอธิบาย</button>
@@ -503,6 +520,139 @@
         </div>
       </div>
 
+      <!-- Guide -->
+      <div data-panel="guide" style="display:none">
+        <h1>คู่มือการใช้งาน</h1>
+        <div class="guide-tabs">
+          <button class="gt-btn active" data-guide="team" type="button">📖 คู่มือทีมงาน</button>
+          <button class="gt-btn" data-guide="admin" type="button">🔧 คู่มือผู้ดูแลระบบ</button>
+        </div>
+
+        <div class="guide-doc" data-guide-doc="team">
+          <div class="guide-dl">
+            <span>อยากได้ไฟล์ไว้แชร์ทีมหรือพิมพ์?</span>
+            <a class="btn btn-ghost btn-sm" href="/docs/team-manual.docx" download>ดาวน์โหลด Word</a>
+          </div>
+          <div class="gd-body">
+            <h2>1. การเข้าใช้งานหลังบ้าน</h2>
+            <ol>
+              <li>เปิดเบราว์เซอร์ไปที่ <b>yoojai.com/admin</b> แล้วกรอกรหัสผ่านทีมงาน</li>
+              <li>เมนูทั้งหมดอยู่แถบด้านซ้าย (บนมือถือ: ปุ่มเมนูมุมบน)</li>
+            </ol>
+            <div class="gd-warn">⚠ ระบบจำกัดการลองรหัสผิดไม่เกิน 8 ครั้งต่อ 15 นาที — พิมพ์ผิดหลายครั้งให้รอสักครู่ อย่ากดรัว</div>
+            <div class="gd-tip">💡 ติดตั้งเป็นแอปบนมือถือได้: เปิดเว็บ → เมนูเบราว์เซอร์ → "เพิ่มลงหน้าจอหลัก"</div>
+
+            <h2>2. การลงประกาศทรัพย์ (ทีละรายการ)</h2>
+            <h3>2.1 ชื่อประกาศ</h3>
+            <ul>
+              <li>เขียนให้เห็นภาพใน 1 บรรทัด: ประเภท + จุดเด่น + ทำเล เช่น "คอนโด 1 นอน วิวแม่น้ำ ใกล้ BTS กรุงธนบุรี 300 ม."</li>
+              <li>หลีกเลี่ยงตัวพิมพ์ใหญ่ทั้งหมด/เครื่องหมายตกใจเยอะ ๆ — ดูเป็นสแปม</li>
+            </ul>
+            <h3>2.2 รูปภาพ (สำคัญมาก)</h3>
+            <ul>
+              <li>ใส่อย่างน้อย 3–5 รูปต่อรายการ รูปแรกคือรูปปก — เลือกมุมสวยสุด แสงดีสุด</li>
+              <li>วางลิงก์รูป (URL) ทีละบรรทัด แนะนำรูปแนวนอน (4:3 หรือ 16:9)</li>
+            </ul>
+            <h3>2.3 ตำแหน่งบนแผนที่</h3>
+            <ul>
+              <li>เปิด Google Maps → ปักหมุดที่ตัวบ้าน → กด "แชร์" → คัดลอกลิงก์ → วางในช่อง "ตำแหน่ง Google Maps"</li>
+              <li>ระบบจะแกะพิกัดให้อัตโนมัติ หมุดตรงหลังเป๊ะ — ถ้าเว้นว่างจะปักโดยประมาณตามจังหวัด</li>
+            </ul>
+            <h3>2.4 ผู้ดูแลและป้ายพิเศษ</h3>
+            <ul>
+              <li>เลือกผู้ดูแลทรัพย์ทุกครั้ง — ชื่อและช่องทางติดต่อจะแสดงบนหน้าทรัพย์</li>
+              <li>ทรัพย์เด่นติ๊ก "ประกาศแนะนำ" (ขึ้นหน้าแรก) หรือเลือกป้าย เช่น "มาแรง"</li>
+            </ul>
+            <div class="gd-tip">💡 กดปุ่ม AI ช่วยเขียนคำโปรยได้ — ใส่โน้ตสั้น ๆ เช่น "เพิ่งรีโนเวท เจ้าของใจดี" แล้วให้ AI เรียบเรียง</div>
+
+            <h2>3. การลงทรัพย์ทีละหลายรายการ (นำเข้า CSV)</h2>
+            <ol>
+              <li>เมนู "นำเข้า / ตัวอย่าง" → "ดาวน์โหลดเทมเพลต CSV"</li>
+              <li>เปิดด้วย Excel หรือ Google Sheets (มีตัวอย่าง 2 แถวให้ดู)</li>
+              <li>กรอกข้อมูลจริง — หัวตารางใช้ไทยหรืออังกฤษก็ได้</li>
+              <li>ช่อง images: วางลิงก์รูปหลายรูปคั่นด้วย | (เส้นตั้ง)</li>
+              <li>ช่อง map_url: วางลิงก์ Google Maps ของแต่ละหลัง</li>
+              <li>บันทึกเป็น .csv → อัปโหลด → ตรวจตัวอย่างที่ระบบแสดง</li>
+              <li>แนะนำ "ไม่ติ๊ก" เผยแพร่ทันที → เก็บเป็นร่างให้ตรวจก่อน</li>
+            </ol>
+            <div class="gd-warn">⚠ ราคากรอกเป็นตัวเลขล้วน เช่น 3500000 (ไม่ต้องใส่คอมมาหรือคำว่าบาท)</div>
+
+            <h2>4. การดูแลลูกค้า (สำคัญที่สุด)</h2>
+            <ul>
+              <li><b>ข้อความติดต่อ</b> — รวมทุกคนที่ทักมา พร้อมเบอร์/LINE มีแจ้งเตือนเข้า Telegram ควรตอบใน 1–2 ชั่วโมง</li>
+              <li><b>นัดชมทรัพย์</b> — โทรยืนยันแล้วอัปเดตสถานะ: รอยืนยัน → ยืนยันแล้ว → เสร็จสิ้น</li>
+              <li><b>รีวิว</b> — ลบได้เฉพาะรีวิวไม่เหมาะสม (คำหยาบ/สแปม) ไม่ควรลบรีวิวติเพื่อก่อ</li>
+            </ul>
+
+            <h2>5. อ่านภาพรวมธุรกิจ</h2>
+            <ul>
+              <li>หน้าแรกหลังบ้านสรุป: ประกาศที่เผยแพร่, มูลค่าพอร์ต, ผู้ติดต่อเดือนนี้, นัดชมค้าง, คะแนนรีวิว</li>
+              <li>เมนู "สถิติผู้ใช้" → "ทรัพย์ที่ควรปรับปรุง" = ยอดดูน้อย/ไม่มีรูป ควรเพิ่มรูปหรือปรับชื่อ</li>
+              <li>ปุ่ม "ส่งออกข้อมูล (CSV)" — ดาวน์โหลดประกาศ/ผู้ติดต่อ/นัดชมเป็น Excel</li>
+            </ul>
+
+            <h2>6. คำถามพบบ่อย</h2>
+            <ul>
+              <li><b>ลงประกาศแล้วไม่ขึ้น?</b> เช็คสถานะเป็น "เผยแพร่" ไม่ใช่ "ร่าง" แล้วรีเฟรช</li>
+              <li><b>หมุดไม่ตรงบ้าน?</b> แก้ไขประกาศ วางลิงก์ Google Maps ของหลังนั้น</li>
+              <li><b>รูปไม่แสดง?</b> ลิงก์ต้องเปิดดูรูปได้ตรง ๆ (ลงท้าย .jpg .png .webp)</li>
+              <li><b>เผลอลบประกาศ?</b> แจ้งผู้ดูแลระบบทันที (กู้ได้จาก backup รายวัน)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="guide-doc" data-guide-doc="admin" style="display:none">
+          <div class="guide-dl">
+            <span>ไฟล์ Word ฉบับเต็ม (มีตารางตรวจรับให้ติ๊ก)</span>
+            <a class="btn btn-ghost btn-sm" href="/docs/admin-guide.docx" download>ดาวน์โหลด Word</a>
+          </div>
+          <div class="gd-body">
+            <h2>1. สำรองข้อมูล (ทำครั้งเดียว อุ่นใจตลอด)</h2>
+            <ul>
+              <li><b>Railway Backup:</b> เข้า Railway → service ฐานข้อมูล → แท็บ "Backups" → เปิด Daily backups</li>
+              <li><b>สำรองด้วยมือ (เดือนละครั้ง):</b> ใช้ปุ่ม "ส่งออกข้อมูล (CSV)" ใน Dashboard เก็บใส่ Google Drive บริษัท</li>
+            </ul>
+            <div class="gd-tip">💡 ตั้งเตือนปฏิทินทุกวันที่ 1: "ดาวน์โหลด CSV สำรองข้อมูล" ใช้เวลาไม่ถึง 2 นาที</div>
+
+            <h2>2. เฝ้าระวังเว็บล่ม (ฟรี)</h2>
+            <ol>
+              <li>สมัคร <b>uptimerobot.com</b> (แผนฟรีพอ)</li>
+              <li>Add New Monitor → ชนิด HTTP(s)</li>
+              <li>URL ใส่: <code>https://yoojai.com/healthz</code></li>
+              <li>Interval 5 นาที → ใส่อีเมลรับแจ้งเตือน → Save</li>
+            </ol>
+            <p>ถ้าเว็บเข้าไม่ได้เกิน 5 นาที จะมีอีเมลเตือนทันที ไม่ต้องรอลูกค้าทักมาบอก</p>
+
+            <h2>3. Deploy รวบยอด (v48 + ความปลอดภัย + ความเร็ว)</h2>
+            <ul>
+              <li>แนะนำอัปโหลด "ทั้งโฟลเดอร์จาก zip" ทับของเดิม — กันไฟล์ผสมเวอร์ชัน</li>
+              <li><b>จุดห้ามตกหล่น:</b> package.json + package-lock.json (มี "compression" ใหม่ ถ้าไม่อัปเซิร์ฟเวอร์บูตไม่ขึ้น)</li>
+              <li>รอ Railway build จน Success → ดู Logs เห็น "TeeDee running on :3000"</li>
+            </ul>
+
+            <h2>4. ตรวจรับหลัง Deploy (เปิดแบบ hard refresh)</h2>
+            <ul>
+              <li>หน้า /about /contact /privacy /terms มี navbar + footer ครบ</li>
+              <li>สลับ Dark Mode → เข้า /admin อ่านได้ชัด</li>
+              <li>กด EN → footer, /discover, ตัวกรอง /search แปลครบ</li>
+              <li>ใส่รหัสแอดมินผิด 9 ครั้ง → ครั้งที่ 9 ขึ้นให้รอ (rate limit)</li>
+              <li>/map มีหมุดครบ · /discover ปัดได้ · ปุ่ม AI เปิดแชทค้าง</li>
+              <li>พิมพ์ URL มั่ว → เจอหน้า 404 · นำเข้า CSV ได้ · กดติดต่อ → เข้า Telegram</li>
+            </ul>
+
+            <h2>5. Environment Variables ที่ควรมีครบ</h2>
+            <ul>
+              <li><code>DATABASE_URL</code> — Railway ใส่ให้อัตโนมัติ</li>
+              <li><code>ADMIN_PASSWORD</code> — ตั้งยาว 12+ ตัว ผสมตัวเลข/สัญลักษณ์</li>
+              <li><code>BASE_URL</code> — โดเมนจริง เช่น https://yoojai.com (มีผลกับ SEO/ลิงก์แชร์)</li>
+              <li><code>ANTHROPIC_API_KEY</code> — สำหรับ AI</li>
+              <li><code>TELEGRAM_BOT_TOKEN</code> + <code>TELEGRAM_CHAT_ID</code> — แจ้งเตือนลูกค้า</li>
+              <li><code>GOOGLE_SITE_VERIFICATION</code> — ยืนยัน Google Search Console</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <!-- Settings -->
       <div data-panel="settings" style="display:none">
         <h1>ตั้งค่าเว็บไซต์</h1>
@@ -567,7 +717,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/js/shared.js?v=47"></script>
+  <script src="/js/shared.js?v=49"></script>
   <script>
     let token = localStorage.getItem('teedee_token') || '';
     let editingId = null;
@@ -959,6 +1109,13 @@
         loadReviews();
       });
     }
+
+    // ---------- Guide tabs ----------
+    document.querySelectorAll('.gt-btn').forEach(btn => btn.onclick = () => {
+      document.querySelectorAll('.gt-btn').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('[data-guide-doc]').forEach(doc =>
+        doc.style.display = doc.dataset.guideDoc === btn.dataset.guide ? 'block' : 'none');
+    });
 
     // ---------- Import / Demo ----------
     let impRows = [];
