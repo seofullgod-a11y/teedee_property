@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=50">
+  <link rel="stylesheet" href="/css/style.css?v=52">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -46,7 +46,7 @@
     <div class="lb-strip" id="lbStrip"></div>
   </div>
 
-  <script src="/js/shared.js?v=50"></script>
+  <script src="/js/shared.js?v=52"></script>
   <script>
     TD.chrome('');
     const id = Number(location.pathname.split('/').pop());
@@ -361,6 +361,18 @@
       document.title = `${l.title} — ${TD.brand.main}${TD.brand.accent}`;
       TD.pushRecent(l.id);
       if (TD.taste) try { TD.taste.bump(l, 1); } catch (e) {}
+
+      // ปุ่มลอย "ติดต่อ" บนมือถือ — พาไปฟอร์มติดต่อโดยไม่ต้องเลื่อนไกล
+      if (!document.querySelector('.contact-fab')) {
+        const fab = document.createElement('button');
+        fab.className = 'contact-fab'; fab.type = 'button';
+        fab.innerHTML = '💬 สนใจทรัพย์นี้';
+        fab.onclick = () => {
+          const cc = document.querySelector('.contact-card');
+          if (cc) cc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+        document.body.appendChild(fab);
+      }
 
       // 🏡 โหมดใช้ชีวิต — ใช้ delegation เพราะปุ่มถูกเรนเดอร์ทีหลัง
       document.addEventListener('click', (ev) => {

@@ -172,6 +172,9 @@ async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_listing_reviews ON listing_reviews (listing_id, approved);
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT false;
     ALTER TABLE listings ADD COLUMN IF NOT EXISTS day_story JSONB;
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS seo_title TEXT DEFAULT '';
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS seo_description TEXT DEFAULT '';
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS slug TEXT DEFAULT '';
   `);
 
   // ค่าเริ่มต้นของแบรนด์ (แก้ได้ในหลังบ้าน)

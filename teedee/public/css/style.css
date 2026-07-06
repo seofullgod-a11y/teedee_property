@@ -1653,3 +1653,44 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .ft-note { margin-top: 14px; font-size: .74rem; color: var(--muted); text-align: center; }
 @media (max-width: 480px) { .ft-days { grid-template-columns: repeat(4, 1fr); } .ft-day { font-size: .8rem; } }
 .afford-cta { display: block; margin-top: 10px; font-size: .84rem; color: inherit; text-decoration: underline; text-underline-offset: 3px; font-weight: 600; }
+
+/* ============ UX Polish Pass ============ */
+/* กัน iOS ซูมเด้งตอนแตะช่องพิมพ์ (Safari ซูมอัตโนมัติเมื่อ input < 16px) */
+@media (max-width: 640px) {
+  input[type="text"], input[type="search"], input[type="number"], input[type="email"],
+  input[type="tel"], input[type="password"], input[type="date"], select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ปุ่มกดแล้ว "รู้สึกได้" — หดนิด ๆ ทุกปุ่มทั่วเว็บ */
+.btn:active, .chip-ai:active, .quick-chips button:active, .sw-btn:active, .ft-day:active { transform: scale(.97); }
+
+/* ปุ่มกลับขึ้นบนสุด */
+.to-top {
+  position: fixed; right: 16px; bottom: 86px; z-index: 90;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--line-strong); color: var(--ink-2);
+  box-shadow: 0 8px 22px rgba(40, 30, 20, .18);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  opacity: 0; visibility: hidden; transform: translateY(8px);
+  transition: opacity .25s ease, transform .25s ease, visibility .25s;
+}
+.to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+.to-top:hover { border-color: var(--gold); color: var(--gold); }
+.to-top svg { width: 18px; height: 18px; }
+@media (min-width: 641px) { .to-top { bottom: 26px; right: 24px; } }
+
+/* ปุ่มลอย "ติดต่อ" บนหน้าทรัพย์ (มือถือ) — contact card อยู่ล่างสุด เลื่อนไกล */
+.contact-fab {
+  position: fixed; left: 16px; bottom: 86px; z-index: 90;
+  display: none; align-items: center; gap: 8px;
+  background: var(--ink); color: var(--bg); border: none; border-radius: 999px;
+  padding: 12px 20px; font-family: var(--font-display); font-size: .9rem; font-weight: 500;
+  box-shadow: 0 10px 26px rgba(20, 14, 6, .35); cursor: pointer;
+  animation: fabIn .4s cubic-bezier(.22,.9,.36,1.2) both;
+}
+.contact-fab:active { transform: scale(.96); }
+@keyframes fabIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 900px) { .contact-fab { display: inline-flex; } }
+@media (prefers-reduced-motion: reduce) { .contact-fab { animation: none; } .to-top { transition: none; } }

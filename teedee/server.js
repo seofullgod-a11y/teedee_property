@@ -176,7 +176,7 @@ const brandName = (s) => `${s.site_name_main || 'อยู่'}${s.site_name_acc
 const LISTING_FIELDS = `id, title, listing_type, category, price, location_text, province,
   bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
   images, nearby, pets_allowed, featured, status, contact_line, contact_phone, views,
-  latitude, longitude, amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id, created_at, updated_at`;
+  latitude, longitude, amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id, seo_title, seo_description, slug, created_at, updated_at`;
 
 // ---------- Public API ----------
 
@@ -1155,8 +1155,22 @@ function listingParams(b) {
     Number.isInteger(Number(b.year_built)) && Number(b.year_built) > 1900 ? Number(b.year_built) : null,
     ['', 'hot', 'price_drop', 'new_project', 'urgent'].includes(b.badge) ? b.badge : '',
     !!b.verified,
-    Number(b.agent_id) > 0 ? Number(b.agent_id) : null
+    Number(b.agent_id) > 0 ? Number(b.agent_id) : null,
+    String(b.seo_title || '').slice(0, 120),
+    String(b.seo_description || '').slice(0, 300),
+    sanitizeSlug(b.slug)
   ];
+}
+
+// slug สำหรับ URL: ไทย/อังกฤษ/ตัวเลข คั่นด้วยขีด — "คอนโด สุขุมวิท 2 นอน" → "คอนโด-สุขุมวิท-2-นอน"
+function sanitizeSlug(s) {
+  return String(s || '')
+    .trim().toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\u0E00-\u0E7F-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
 }
 
 
@@ -1199,8 +1213,8 @@ app.post('/api/admin/listings', requireAdmin, async (req, res) => {
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29)
+        amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id, seo_title, seo_description, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32)
        RETURNING id`, p);
     res.json({ ok: true, id: rows[0].id });
     runSavedSearchMatch(rows[0].id);
@@ -1249,8 +1263,8 @@ app.post('/api/admin/listings/bulk', requireAdmin, async (req, res) => {
           `INSERT INTO listings (title, listing_type, category, price, location_text, province,
             bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
             images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
-            amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29)
+            amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id, seo_title, seo_description, slug)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32)
            RETURNING id`, p);
         results.ids.push(ins[0].id); results.ok++;
       } catch (e) { results.failed++; results.errors.push(`แถว ${i + 1}: ${e.message}`); }
@@ -1281,8 +1295,9 @@ app.put('/api/admin/listings/:id', requireAdmin, async (req, res) => {
         province=$6, bedrooms=$7, bathrooms=$8, area_sqm=$9, land_area_sqwah=$10, floor_text=$11,
         description=$12, highlights=$13, images=$14, nearby=$15, pets_allowed=$16, featured=$17,
         status=$18, contact_line=$19, contact_phone=$20, latitude=$21, longitude=$22,
-        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, badge=$27, verified=$28, agent_id=$29, updated_at=now(), day_story=NULL
-       WHERE id=$30`, [...p, id]);
+        amenities=$23, furnishings=$24, common_fee_text=$25, year_built=$26, badge=$27, verified=$28, agent_id=$29,
+        seo_title=$30, seo_description=$31, slug=$32, updated_at=now(), day_story=NULL
+       WHERE id=$33`, [...p, id]);
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -1339,11 +1354,11 @@ app.post('/api/admin/listings/:id/duplicate', requireAdmin, async (req, res) => 
       `INSERT INTO listings (title, listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, featured, status, contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id)
+        amenities, furnishings, common_fee_text, year_built, badge, verified, agent_id, seo_title, seo_description, slug)
        SELECT title || ' (สำเนา)', listing_type, category, price, location_text, province,
         bedrooms, bathrooms, area_sqm, land_area_sqwah, floor_text, description, highlights,
         images, nearby, pets_allowed, false, 'draft', contact_line, contact_phone, latitude, longitude,
-        amenities, furnishings, common_fee_text, year_built, badge, false, agent_id
+        amenities, furnishings, common_fee_text, year_built, badge, false, agent_id, '', '', ''
        FROM listings WHERE id = $1 RETURNING id`, [Number(req.params.id)]);
     if (!rows[0]) return res.status(404).json({ error: 'not found' });
     res.json({ ok: true, id: rows[0].id });
@@ -1602,30 +1617,34 @@ const htmlEsc = (s) => String(s || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', 
 const baseUrl = (req) => process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
 
 app.get('/listing/:id', async (req, res) => {
-  const id = Number(req.params.id);
+  const id = parseInt(req.params.id, 10); // รองรับ /listing/123 และ /listing/123-ชื่อ-slug
   try {
     const { rows } = await pool.query(
-      `SELECT id, title, description, images, price, listing_type, category, province
+      `SELECT id, title, description, images, price, listing_type, category, province,
+              seo_title, seo_description, slug
        FROM listings WHERE id = $1 AND status = 'active'`, [id]);
     if (rows[0]) {
       const l = rows[0];
       const base = baseUrl(req);
+      const canonPath = l.slug ? `/listing/${id}-${encodeURIComponent(l.slug)}` : `/listing/${id}`;
       const priceTxt = l.listing_type === 'rent'
         ? `฿${Number(l.price).toLocaleString('th-TH')}/เดือน`
         : `฿${Number(l.price).toLocaleString('th-TH')}`;
-      const title = `${htmlEsc(l.title)} · ${priceTxt} — ${htmlEsc(brandName(await getSettings().catch(() => ({}))))}`;
-      const desc = htmlEsc(String(l.description || '').slice(0, 160));
+      const brand = htmlEsc(brandName(await getSettings().catch(() => ({}))));
+      // ถ้าตั้ง SEO เองในหลังบ้าน ใช้ค่านั้น; ไม่งั้นสร้างอัตโนมัติเหมือนเดิม
+      const title = l.seo_title ? htmlEsc(l.seo_title) : `${htmlEsc(l.title)} · ${priceTxt} — ${brand}`;
+      const desc = htmlEsc(String(l.seo_description || l.description || '').slice(0, 160));
       const img = htmlEsc((l.images || [])[0] || '') || `${base}/img/og-default.png`;
       const gsv = process.env.GOOGLE_SITE_VERIFICATION;
       const og = `<title>${title}</title>
   <meta name="description" content="${desc}">
-  <link rel="canonical" href="${base}/listing/${id}">
+  <link rel="canonical" href="${base}${canonPath}">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="th_TH">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${desc}">
   <meta property="og:image" content="${img}">
-  <meta property="og:url" content="${base}/listing/${id}">
+  <meta property="og:url" content="${base}${canonPath}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="${img}">
   ${gsv ? `<meta name="google-site-verification" content="${htmlEsc(gsv)}">` : ''}
@@ -1731,7 +1750,7 @@ app.get('/sitemap.xml', async (req, res) => {
   try {
     const base = baseUrl(req);
     const [listings, combos] = await Promise.all([
-      pool.query(`SELECT id, updated_at FROM listings WHERE status='active' ORDER BY id`),
+      pool.query(`SELECT id, slug, updated_at FROM listings WHERE status='active' ORDER BY id`),
       pool.query(`SELECT province, listing_type, category, COUNT(*)::int AS c
                   FROM listings WHERE status='active' AND province <> ''
                   GROUP BY province, listing_type, category`)
@@ -1748,7 +1767,7 @@ app.get('/sitemap.xml', async (req, res) => {
     }
     const urls = [
       ...[...seen].map(u => `<url><loc>${u}</loc></url>`),
-      ...listings.rows.map(r => `<url><loc>${base}/listing/${r.id}</loc><lastmod>${new Date(r.updated_at).toISOString().slice(0, 10)}</lastmod></url>`)
+      ...listings.rows.map(r => `<url><loc>${base}/listing/${r.id}${r.slug ? '-' + encodeURIComponent(r.slug) : ''}</loc><lastmod>${new Date(r.updated_at).toISOString().slice(0, 10)}</lastmod></url>`)
     ].join('');
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}</urlset>`);
   } catch (e) { console.error(e); res.status(500).send(''); }

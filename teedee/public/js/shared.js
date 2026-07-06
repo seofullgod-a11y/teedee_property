@@ -1144,3 +1144,39 @@ if (typeof document !== 'undefined') {
     if (lg) { e.preventDefault(); TD.setLang(TD.lang() === 'en' ? 'th' : 'en'); return; }
   });
 }
+
+/* ============ UX: Esc ปิด modal บนสุด + ปุ่มกลับขึ้นบน ============ */
+if (typeof document !== 'undefined') {
+  // Esc ปิด overlay ที่เปิดอยู่ (ตัวล่าสุดก่อน) — ครอบคลุมทุก modal ในเว็บ
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var overlays = document.querySelectorAll('.ds-ov, .ft-ov, .cc-ov, .yj-modal-ov');
+    if (overlays.length) {
+      e.preventDefault();
+      overlays[overlays.length - 1].remove();
+    }
+  });
+
+  // ปุ่มกลับขึ้นบนสุด — โผล่เมื่อเลื่อนลงเกิน 600px (ยกเว้นหลังบ้าน/หน้าแผนที่ที่ล็อกสกรอลล์)
+  (function () {
+    function initToTop() {
+      if (document.querySelector('.to-top')) return;
+      if (/^\/(admin|map)/.test(location.pathname)) return;
+      var b = document.createElement('button');
+      b.className = 'to-top'; b.type = 'button'; b.setAttribute('aria-label', 'กลับขึ้นด้านบน');
+      b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+      b.onclick = function () { window.scrollTo({ top: 0, behavior: 'smooth' }); };
+      document.body.appendChild(b);
+      var ticking = false;
+      window.addEventListener('scroll', function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+          b.classList.toggle('show', window.scrollY > 600);
+          ticking = false;
+        });
+      }, { passive: true });
+    }
+    if (document.body) initToTop(); else document.addEventListener('DOMContentLoaded', initToTop);
+  })();
+}
