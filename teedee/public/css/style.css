@@ -563,9 +563,6 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   .seg button { flex: 1; padding: 9px 0; }
   .search-bar { padding: 4px 4px 4px 15px; }
   .search-bar input { font-size: var(--fs-sm); padding: 9px 0; }
-  .search-bar .s-btn { padding: 10px; width: 38px; height: 38px; }
-  .search-bar .s-btn .t { display: none; }
-  .search-bar .s-btn svg { width: 16px; height: 16px; }
   .search-filters { gap: 7px; margin-top: 13px; }
   .pill-select select { font-size: var(--fs-xs); padding: 6px 26px 6px 12px; }
   .pill-select::after { right: 11px; }
@@ -1190,22 +1187,29 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 
   .search-bar {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
-      "icon input btn"
-      "filters filters filters";
+      "icon input"
+      "filters filters"
+      "btn btn";
     align-items: center;
-    padding: 6px 6px 4px 14px;
+    padding: 8px 8px 8px 16px;
     gap: 0 8px;
-    border-radius: 24px; /* บาร์ 2 ชั้น ใช้มุมโค้งพอดี ไม่ใช่แคปซูล */
+    border-radius: 22px; /* บาร์หลายชั้น ใช้มุมโค้งพอดี ไม่ใช่แคปซูล */
   }
   .search-bar .s-icon { grid-area: icon; }
-  .search-bar input { grid-area: input; width: 100%; min-width: 0; font-size: var(--fs-base); padding: 12px 0; }
-  .search-bar .s-btn { grid-area: btn; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; }
+  .search-bar input { grid-area: input; width: 100%; min-width: 0; font-size: var(--fs-base); padding: 11px 0; }
+  /* ปุ่มค้นหาเต็มความกว้าง มีข้อความ กดง่ายด้วยนิ้ว ไม่ใช่วงกลมเบียด */
+  .search-bar .s-btn {
+    grid-area: btn; width: 100%; height: auto; padding: 13px 0;
+    justify-content: center; gap: 8px; margin-top: 8px; font-size: var(--fs-md);
+  }
+  .search-bar .s-btn .t { display: inline !important; }
+  .search-bar .s-btn svg { width: 18px; height: 18px; }
   .s-filters {
     grid-area: filters; display: flex;
     border-top: 1px solid var(--line);
-    margin-top: 5px; padding: 2px 0 0;
+    margin-top: 6px; padding: 4px 0 0;
   }
   .s-filters .s-div { display: none; }
   .s-select { flex: 1 1 50%; min-width: 0; }

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=45">
+  <link rel="stylesheet" href="/css/style.css?v=47">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -200,7 +200,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=45"></script>
+  <script src="/js/shared.js?v=47"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
@@ -408,9 +408,11 @@
     });
     document.getElementById('chips').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-concierge')) return; // ปุ่ม AI: ปล่อยให้ตัวเปิดแชทจัดการ ไม่เด้งไปค้นหา
       const p = new URLSearchParams();
       if (b.dataset.q) p.set('q', b.dataset.q);
       if (b.dataset.cat) p.set('category', b.dataset.cat);
+      if (![...p].length) return; // ไม่มีเงื่อนไขค้นหา ไม่ต้องเปลี่ยนหน้า
       location.href = '/search?' + p.toString();
     });
 
