@@ -1792,7 +1792,7 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   font-weight: 300;
   color: #e3e0da;
   font-size: clamp(1rem, 2vw, 1.18rem);
-  max-width: 520px;
+  max-width: 580px;
   margin-bottom: 26px;
   line-height: 1.75;
   letter-spacing: .01em;
@@ -1818,14 +1818,14 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .vhero-side { display: flex; align-items: flex-end; justify-content: flex-start; margin-top: 26px; }
 @media (min-width: 1024px) { .vhero-side { justify-content: flex-end; margin-top: 0; } }
 .vhero-tag {
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, .2);
-  padding: 13px 26px;
-  border-radius: 14px;
+  color: #f2f0eb;
+  border: 1px solid rgba(255, 255, 255, .18);
+  padding: 10px 20px;
+  border-radius: 12px;
   font-family: 'Kanit', sans-serif;
-  font-weight: 200;
-  font-size: clamp(1.05rem, 2.2vw, 1.5rem);
-  letter-spacing: .06em;
+  font-weight: 300;
+  font-size: clamp(.9rem, 1.5vw, 1.05rem);
+  letter-spacing: .08em;
 }
 [data-fade] { opacity: 0; transition: opacity 1s ease; }
 [data-fade].fade-show { opacity: 1; }
@@ -1836,6 +1836,8 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 
 /* navbar บนหน้าแรก: กลาสดำโปร่งตอนอยู่บนวิดีโอ → ครีมปกติเมื่อเลื่อนผ่าน */
 body.home-cine .nav {
+  position: fixed; /* ลอยทับวิดีโอ — พื้นหลังพิลคือวิดีโอจริง เบลอแล้วกลมกลืน */
+  top: 0; left: 0; right: 0;
   background: transparent;
   backdrop-filter: none;
   border-bottom: none;
@@ -1843,10 +1845,10 @@ body.home-cine .nav {
   transition: background .35s ease, padding .35s ease;
 }
 body.home-cine:not(.past-hero) .nav .nav-inner {
-  background: rgba(14, 13, 11, .34);
+  background: rgba(12, 11, 9, .42);
   background-blend-mode: luminosity;
-  backdrop-filter: blur(9px);
-  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
   border-radius: 16px;
   padding: 0 18px;
   height: 58px;
@@ -1894,3 +1896,5 @@ body.home-cine.past-hero .nav .pref-btn { color: var(--ink-2); border-color: var
   font-size: clamp(1.3rem, 3vw, 1.7rem);
   margin: 6px 0 18px;
 }
+
+#searchArea { scroll-margin-top: 92px; }
