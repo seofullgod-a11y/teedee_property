@@ -1695,206 +1695,90 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 @media (max-width: 900px) { .contact-fab { display: inline-flex; } }
 @media (prefers-reduced-motion: reduce) { .contact-fab { animation: none; } .to-top { transition: none; } }
 
-/* ============ Cinematic Video Hero ============ */
-/* Liquid Glass ตามสเปค */
-.liquid-glass {
-  background: rgba(0, 0, 0, 0.4);
-  background-blend-mode: luminosity;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  border: none;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-.liquid-glass::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.4px;
-  background: linear-gradient(180deg,
-    rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 20%,
-    rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
-    rgba(255,255,255,0.1) 80%, rgba(255,255,255,0.3) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
+/* (โค้ด video hero เดิมถูกถอดออก — แทนที่ด้วย Aethera-style ด้านล่าง) */
+#searchArea { scroll-margin-top: 80px; }
 
-.vhero {
+/* ============ Aethera-style Hero (serif กลางจอ + วิดีโอ fade loop) ============ */
+.ahero {
   position: relative;
-  height: 100svh;
-  min-height: 540px;
-  background: #0c0b09;
+  min-height: 100vh;
+  min-height: 100svh;
+  width: 100%;
   overflow: hidden;
+  background: var(--bg);
   display: flex;
+  flex-direction: column;
 }
-.vhero-video {
+/* วิดีโอชั้นล่าง: เริ่มที่ 300px จากบนตามสเปค + ไล่เฉดบน-ล่างเข้าพื้นหน้าเว็บ */
+.ahero-video-wrap { position: absolute; top: 300px; right: 0; bottom: 0; left: 0; z-index: 0; }
+.ahero-video { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .15s linear; }
+.ahero-grad {
   position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover; /* วิดีโอเล่นดิบ ๆ ไม่มี overlay ทับตามสเปค */
+  background: linear-gradient(to bottom, var(--bg) 0%, rgba(250, 250, 247, 0) 32%, rgba(250, 250, 247, 0) 62%, var(--bg) 100%);
 }
-.vhero-novideo .vhero-video { display: none; }
-/* ไล่เฉดท้ายวิดีโอให้ละลายเข้ากับพื้นหน้าเว็บ — ไม่ตัดฉับ */
-.vhero::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0; bottom: -1px;
-  height: 180px;
-  background: linear-gradient(to bottom, rgba(250,250,247,0) 0%, rgba(250,250,247,.35) 55%, var(--bg) 100%);
-  pointer-events: none;
-  z-index: 1;
+:root[data-theme="dark"] .ahero-grad {
+  background: linear-gradient(to bottom, var(--bg) 0%, rgba(18, 17, 14, 0) 32%, rgba(18, 17, 14, 0) 62%, var(--bg) 100%);
 }
-:root[data-theme="dark"] .vhero::after {
-  background: linear-gradient(to bottom, rgba(18,17,14,0) 0%, rgba(18,17,14,.35) 55%, var(--bg) 100%);
-}
-.vhero-novideo { background: linear-gradient(135deg, #14110c 0%, #241d12 55%, #3a2e1a 100%); }
-.vhero-inner {
-  position: relative; z-index: 2;
-  display: flex; flex-direction: column; justify-content: flex-end;
+.ahero-content {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  padding-top: calc(8rem - 40px);
+  padding-bottom: 10rem;
   flex: 1;
-  padding-bottom: 48px;
 }
-.vhero-grid { display: block; }
-@media (min-width: 1024px) {
-  .vhero-inner { padding-bottom: 64px; }
-  .vhero-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 24px; }
-}
-.vhero-h {
-  font-family: 'Kanit', sans-serif;
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: -0.005em;
-  line-height: 1.22;
-  font-size: clamp(2.5rem, 6.2vw, 4.8rem);
-  margin-bottom: 18px;
-  text-shadow: 0 3px 30px rgba(0, 0, 0, .45), 0 1px 4px rgba(0, 0, 0, .3);
+.ahero-h {
+  font-family: 'Instrument Serif', 'Trirong', serif;
+  font-weight: 400;
+  font-size: clamp(2.6rem, 7.5vw, 5.6rem);
+  line-height: 1.14; /* serif ไทยมีสระบน-ล่าง ใช้ 0.95 ตามสเปคตรง ๆ ไม่ได้ ตัวจะชนกัน */
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  max-width: 1000px;
   text-wrap: balance;
 }
-.vh-line { display: block; }
-.vh-line + .vh-line .vh-ch { font-weight: 400; } /* บรรทัดสอง บางกว่า สร้างจังหวะ */
-.vh-word { display: inline-block; white-space: nowrap; } /* ห้ามตัดกลางคำไทย */
-.vh-ch {
-  display: inline-block;
-  opacity: 0;
-  transform: translateX(-18px);
-  transition-property: opacity, transform;
-  transition-timing-function: ease;
-  will-change: opacity, transform;
-}
-.vh-ch.gold { color: var(--gold); }
-.vhero-h.vh-go .vh-ch { opacity: 1; transform: translateX(0); }
-.vhero-h.vh-instant .vh-ch { opacity: 1; transform: none; transition: none !important; }
-.vhero-sub {
-  font-family: 'Kanit', sans-serif;
+.ahero-h em {
+  font-style: italic;
+  color: #8a857b; /* เทาอบอุ่นแบบสเปค #6F6F6F แต่เข้าโทนครีม */
   font-weight: 300;
-  color: #e3e0da;
-  font-size: clamp(1rem, 2vw, 1.18rem);
-  max-width: 580px;
-  margin-bottom: 26px;
-  line-height: 1.75;
-  letter-spacing: .01em;
-  text-shadow: 0 1px 14px rgba(0, 0, 0, .5);
 }
-.vhero-cta { display: flex; flex-wrap: wrap; gap: 14px; }
-.vh-btn {
-  padding: 14px 32px;
-  border-radius: 12px;
-  font-family: 'Kanit', sans-serif;
-  font-weight: 500;
-  font-size: 1rem;
-  letter-spacing: .01em;
-  cursor: pointer;
-  transition: background .2s ease, color .2s ease, transform .15s ease;
+:root[data-theme="dark"] .ahero-h em { color: #9a958a; }
+.ahero-desc {
+  font-family: 'Inter', var(--font-body), sans-serif;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  line-height: 1.85;
+  max-width: 620px;
+  margin-top: 2rem;
+}
+.ahero-cta {
+  margin-top: 3rem;
+  background: var(--ink);
+  color: var(--bg);
   border: none;
-}
-.vh-btn:active { transform: scale(.97); }
-.vh-btn-solid { background: #fff; color: #0f0e0c; }
-.vh-btn-solid:hover { background: #ece9e2; }
-.vh-btn-glass { color: #fff; border: 1px solid rgba(255, 255, 255, .2); }
-.vh-btn-glass:hover { background: #fff; color: #0f0e0c; }
-.vhero-side { display: flex; align-items: flex-end; justify-content: flex-start; margin-top: 26px; }
-@media (min-width: 1024px) { .vhero-side { justify-content: flex-end; margin-top: 0; } }
-.vhero-tag {
-  color: #f2f0eb;
-  border: 1px solid rgba(255, 255, 255, .18);
-  padding: 10px 20px;
-  border-radius: 12px;
-  font-family: 'Kanit', sans-serif;
-  font-weight: 300;
-  font-size: clamp(.9rem, 1.5vw, 1.05rem);
-  letter-spacing: .08em;
-}
-[data-fade] { opacity: 0; transition: opacity 1s ease; }
-[data-fade].fade-show { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-  [data-fade] { transition: none; }
-  .vh-ch { transition: none !important; }
-}
-
-/* navbar บนหน้าแรก: กลาสดำโปร่งตอนอยู่บนวิดีโอ → ครีมปกติเมื่อเลื่อนผ่าน */
-body.home-cine .nav {
-  position: fixed; /* ลอยทับวิดีโอ — พื้นหลังพิลคือวิดีโอจริง เบลอแล้วกลมกลืน */
-  top: 0; left: 0; right: 0;
-  background: transparent;
-  backdrop-filter: none;
-  border-bottom: none;
-  padding: 14px 0 0;
-  transition: background .35s ease, padding .35s ease;
-}
-body.home-cine:not(.past-hero) .nav .nav-inner {
-  background: rgba(12, 11, 9, .42);
-  background-blend-mode: luminosity;
-  backdrop-filter: blur(14px) saturate(1.05);
-  -webkit-backdrop-filter: blur(14px) saturate(1.05);
-  border-radius: 16px;
-  padding: 0 18px;
-  height: 58px;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .12), 0 8px 30px rgba(0, 0, 0, .18);
-  position: relative;
-  overflow: visible;
-}
-body.home-cine:not(.past-hero) .nav .nav-inner::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.4px;
-  background: linear-gradient(180deg,
-    rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 20%,
-    rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
-    rgba(255,255,255,0.1) 80%, rgba(255,255,255,0.3) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-body.home-cine .nav .nav-links a,
-body.home-cine .nav .brand,
-body.home-cine .nav .brand em,
-body.home-cine .nav .brand .sub-th { color: #fff; }
-body.home-cine .nav .nav-links a.on { color: var(--gold); }
-body.home-cine .nav .pref-btn { color: #eee; border-color: rgba(255, 255, 255, .22); }
-body.home-cine.past-hero .nav {
-  background: rgba(250, 250, 247, .9);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-  padding: 0;
-}
-body.home-cine.past-hero .nav .nav-links a,
-body.home-cine.past-hero .nav .brand { color: var(--ink); }
-body.home-cine.past-hero .nav .brand em { color: var(--gold); }
-body.home-cine.past-hero .nav .brand .sub-th { color: var(--muted); }
-body.home-cine.past-hero .nav .pref-btn { color: var(--ink-2); border-color: var(--line-strong); }
-:root[data-theme="dark"] body.home-cine.past-hero .nav { background: rgba(20, 19, 16, .9); }
-
-/* หัวข้อสั้นบน search section (แทน h1 เดิมที่ย้ายขึ้นวิดีโอ) */
-.search-h {
+  border-radius: 999px;
+  padding: 19px 56px;
   font-family: var(--font-display);
-  font-size: clamp(1.3rem, 3vw, 1.7rem);
-  margin: 6px 0 18px;
+  font-size: 1.02rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform .22s ease, box-shadow .22s ease;
+  box-shadow: 0 14px 34px rgba(25, 25, 23, .18);
 }
+.ahero-cta:hover { transform: scale(1.03); }
+.ahero-cta:active { transform: scale(.98); }
 
-#searchArea { scroll-margin-top: 92px; }
+/* fade-rise ตามสเปค: ลอยขึ้น 20px + จาง 0.8s ease-out, ดีเลย์ 0/0.2/0.4s */
+@keyframes fadeRise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.fade-rise { animation: fadeRise .8s ease-out both; }
+.fade-rise-d1 { animation: fadeRise .8s ease-out .2s both; }
+.fade-rise-d2 { animation: fadeRise .8s ease-out .4s both; }
+@media (prefers-reduced-motion: reduce) {
+  .fade-rise, .fade-rise-d1, .fade-rise-d2 { animation: none; }
+  .ahero-video { transition: none; opacity: 1 !important; }
+}
+@media (max-width: 640px) {
+  .ahero-video-wrap { top: 44vh; }
+  .ahero-content { padding-top: 4.5rem; padding-bottom: 7rem; }
+  .ahero-cta { padding: 16px 44px; }
+}
