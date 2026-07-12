@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=53">
+  <link rel="stylesheet" href="/css/style.css?v=54">
   <link rel="icon" href="/favicon">
 </head>
 <body>
@@ -221,7 +221,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=53"></script>
+  <script src="/js/shared.js?v=54"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
@@ -451,23 +451,30 @@
       lines.forEach((line, li) => {
         const lineEl = document.createElement('span');
         lineEl.className = 'vh-line';
-        // parse **gold**
-        const parts = line.split('**');
-        let charIdx = 0;
         const lineLen = line.replace(/\*\*/g, '').length;
-        parts.forEach((part, pi) => {
-          const gold = pi % 2 === 1;
-          const chars = graphemes(part);
-          if (!chars) { supported = false; lineEl.appendChild(document.createTextNode(part)); return; }
-          chars.forEach(ch => {
-            const sp = document.createElement('span');
-            sp.className = 'vh-ch' + (gold ? ' gold' : '');
-            sp.textContent = ch === ' ' ? '\u00A0' : ch;
-            sp.style.transitionDuration = CHAR_MS + 'ms';
-            sp.style.transitionDelay = (START_DELAY + li * lineLen * CHAR_DELAY + charIdx * CHAR_DELAY) + 'ms';
-            lineEl.appendChild(sp);
-            charIdx++;
+        let charIdx = 0;
+        // แบ่งเป็น "คำ" ก่อน (ตัดบรรทัดได้เฉพาะช่องว่าง — กันคำไทยขาดกลาง เช่น ชีวิ|ตที่ดี)
+        line.split(' ').forEach((word, wi, arr) => {
+          const wordEl = document.createElement('span');
+          wordEl.className = 'vh-word';
+          // ภายในคำ: parse **ทอง** ต่อ (คำเดียวอาจมีทั้งส่วนปกติ+ทอง เช่น หา**ที่ที่ใช่**)
+          word.split('**').forEach((part, pi) => {
+            const gold = pi % 2 === 1;
+            if (!part) return;
+            const chars = graphemes(part);
+            if (!chars) { supported = false; wordEl.appendChild(document.createTextNode(part)); return; }
+            chars.forEach(ch => {
+              const sp = document.createElement('span');
+              sp.className = 'vh-ch' + (gold ? ' gold' : '');
+              sp.textContent = ch;
+              sp.style.transitionDuration = CHAR_MS + 'ms';
+              sp.style.transitionDelay = (START_DELAY + li * lineLen * CHAR_DELAY + charIdx * CHAR_DELAY) + 'ms';
+              wordEl.appendChild(sp);
+              charIdx++;
+            });
           });
+          lineEl.appendChild(wordEl);
+          if (wi < arr.length - 1) { lineEl.appendChild(document.createTextNode(' ')); charIdx++; }
         });
         frag.appendChild(lineEl);
       });

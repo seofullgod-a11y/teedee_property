@@ -1737,6 +1737,19 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   object-fit: cover; /* วิดีโอเล่นดิบ ๆ ไม่มี overlay ทับตามสเปค */
 }
 .vhero-novideo .vhero-video { display: none; }
+/* ไล่เฉดท้ายวิดีโอให้ละลายเข้ากับพื้นหน้าเว็บ — ไม่ตัดฉับ */
+.vhero::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 180px;
+  background: linear-gradient(to bottom, rgba(250,250,247,0) 0%, rgba(250,250,247,.35) 55%, var(--bg) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+:root[data-theme="dark"] .vhero::after {
+  background: linear-gradient(to bottom, rgba(18,17,14,0) 0%, rgba(18,17,14,.35) 55%, var(--bg) 100%);
+}
 .vhero-novideo { background: linear-gradient(135deg, #14110c 0%, #241d12 55%, #3a2e1a 100%); }
 .vhero-inner {
   position: relative; z-index: 2;
@@ -1750,16 +1763,19 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   .vhero-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 24px; }
 }
 .vhero-h {
-  font-family: var(--font-display);
-  font-weight: 500;
+  font-family: 'Kanit', sans-serif;
+  font-weight: 600;
   color: #fff;
-  letter-spacing: -0.01em; /* ไทยใช้ค่าติดลบมากไม่ได้ สระ/วรรณยุกต์จะเบียด */
-  line-height: 1.18;
-  font-size: clamp(2.1rem, 6vw, 4.4rem);
-  margin-bottom: 16px;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, .35);
+  letter-spacing: -0.005em;
+  line-height: 1.22;
+  font-size: clamp(2.5rem, 6.2vw, 4.8rem);
+  margin-bottom: 18px;
+  text-shadow: 0 3px 30px rgba(0, 0, 0, .45), 0 1px 4px rgba(0, 0, 0, .3);
+  text-wrap: balance;
 }
 .vh-line { display: block; }
+.vh-line + .vh-line .vh-ch { font-weight: 400; } /* บรรทัดสอง บางกว่า สร้างจังหวะ */
+.vh-word { display: inline-block; white-space: nowrap; } /* ห้ามตัดกลางคำไทย */
 .vh-ch {
   display: inline-block;
   opacity: 0;
@@ -1772,20 +1788,24 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .vhero-h.vh-go .vh-ch { opacity: 1; transform: translateX(0); }
 .vhero-h.vh-instant .vh-ch { opacity: 1; transform: none; transition: none !important; }
 .vhero-sub {
-  color: #d3d0ca;
-  font-size: clamp(.95rem, 2vw, 1.1rem);
-  max-width: 480px;
-  margin-bottom: 22px;
-  line-height: 1.8;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, .4);
+  font-family: 'Kanit', sans-serif;
+  font-weight: 300;
+  color: #e3e0da;
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  max-width: 520px;
+  margin-bottom: 26px;
+  line-height: 1.75;
+  letter-spacing: .01em;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, .5);
 }
 .vhero-cta { display: flex; flex-wrap: wrap; gap: 14px; }
 .vh-btn {
-  padding: 13px 30px;
+  padding: 14px 32px;
   border-radius: 12px;
-  font-family: var(--font-display);
+  font-family: 'Kanit', sans-serif;
   font-weight: 500;
-  font-size: .95rem;
+  font-size: 1rem;
+  letter-spacing: .01em;
   cursor: pointer;
   transition: background .2s ease, color .2s ease, transform .15s ease;
   border: none;
@@ -1800,12 +1820,12 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 .vhero-tag {
   color: #fff;
   border: 1px solid rgba(255, 255, 255, .2);
-  padding: 12px 24px;
+  padding: 13px 26px;
   border-radius: 14px;
-  font-family: var(--font-display);
-  font-weight: 300;
+  font-family: 'Kanit', sans-serif;
+  font-weight: 200;
   font-size: clamp(1.05rem, 2.2vw, 1.5rem);
-  letter-spacing: .01em;
+  letter-spacing: .06em;
 }
 [data-fade] { opacity: 0; transition: opacity 1s ease; }
 [data-fade].fade-show { opacity: 1; }
@@ -1816,10 +1836,38 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
 
 /* navbar บนหน้าแรก: กลาสดำโปร่งตอนอยู่บนวิดีโอ → ครีมปกติเมื่อเลื่อนผ่าน */
 body.home-cine .nav {
-  background: rgba(12, 11, 9, .38);
-  backdrop-filter: blur(10px);
-  border-bottom-color: rgba(255, 255, 255, .08);
-  transition: background .35s ease, border-color .35s ease;
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: none;
+  padding: 14px 0 0;
+  transition: background .35s ease, padding .35s ease;
+}
+body.home-cine:not(.past-hero) .nav .nav-inner {
+  background: rgba(14, 13, 11, .34);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  border-radius: 16px;
+  padding: 0 18px;
+  height: 58px;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .12), 0 8px 30px rgba(0, 0, 0, .18);
+  position: relative;
+  overflow: visible;
+}
+body.home-cine:not(.past-hero) .nav .nav-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 20%,
+    rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
+    rgba(255,255,255,0.1) 80%, rgba(255,255,255,0.3) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 body.home-cine .nav .nav-links a,
 body.home-cine .nav .brand,
@@ -1829,7 +1877,9 @@ body.home-cine .nav .nav-links a.on { color: var(--gold); }
 body.home-cine .nav .pref-btn { color: #eee; border-color: rgba(255, 255, 255, .22); }
 body.home-cine.past-hero .nav {
   background: rgba(250, 250, 247, .9);
-  border-bottom-color: var(--line);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  padding: 0;
 }
 body.home-cine.past-hero .nav .nav-links a,
 body.home-cine.past-hero .nav .brand { color: var(--ink); }
