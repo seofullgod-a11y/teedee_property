@@ -9,18 +9,38 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=52">
+  <link rel="stylesheet" href="/css/style.css?v=53">
   <link rel="icon" href="/favicon">
 </head>
 <body>
   <div id="nav"></div>
 
   <!-- Hero -->
-  <header class="hero">
+  <!-- ============ Cinematic Video Hero ============ -->
+  <section class="vhero" id="vhero">
+    <video class="vhero-video" id="vheroVideo" autoplay loop muted playsinline preload="auto"
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260403_050628_c4e32401-fab4-4a27-b7a8-6e9291cd5959.mp4"></video>
+    <div class="vhero-inner container">
+      <div class="vhero-grid">
+        <div class="vhero-main">
+          <h1 class="vhero-h" id="vheroH" aria-label="หาที่ที่ใช่ สำหรับชีวิตที่ดี เริ่มต้นได้ที่นี่"></h1>
+          <p class="vhero-sub" data-fade="800">ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ติดต่อเจ้าของได้โดยตรง</p>
+          <div class="vhero-cta" data-fade="1200">
+            <button class="vh-btn vh-btn-solid" id="vheroSearch" type="button">เริ่มค้นหา</button>
+            <button class="vh-btn vh-btn-glass liquid-glass" data-concierge type="button">✨ ให้ AI ช่วยหา</button>
+          </div>
+        </div>
+        <div class="vhero-side" data-fade="1400">
+          <div class="vhero-tag liquid-glass">เช่า. ซื้อ. ที่ดิน. ทั่วไทย.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <header class="hero" id="searchArea">
     <div class="container">
       <span class="eyebrow">บ้านเช่า · บ้านขาย · ที่ดิน ทั่วไทย</span>
-      <h1 data-en='Find <span class="hl">the right place</span> for a better life.<br>It starts here.'>หา<span class="hl">ที่ที่ใช่</span> สำหรับชีวิตที่ดี<br>เริ่มต้นได้ที่นี่</h1>
-      <p class="sub">ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ติดต่อเจ้าของได้โดยตรง</p>
+      <h2 class="search-h" data-en="Start your search">เริ่มค้นหาทรัพย์ของคุณ</h2>
 
       <!-- Signature Search -->
       <div class="searchbox">
@@ -201,7 +221,7 @@
 
   <div id="footer"></div>
 
-  <script src="/js/shared.js?v=52"></script>
+  <script src="/js/shared.js?v=53"></script>
   <script>
     TD.chrome('home');
     ['ic-search', 'ic-search2'].forEach(id => document.getElementById(id).innerHTML = TD.icons.search);
@@ -407,6 +427,87 @@
       if (explicit.budget) { const [min, max] = explicit.budget.split('-'); p.set('min', min); p.set('max', max); }
       location.href = '/search?' + p.toString();
     });
+    // ============ Cinematic Hero ============
+    (function () {
+      document.body.classList.add('home-cine');
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // ---- หัวเรื่อง: ตัวอักษรวิ่งทีละตัว (แบ่งตาม grapheme กันสระ/วรรณยุกต์ไทยแตก) ----
+      // ใช้ ** ครอบคำที่ต้องการไฮไลต์สีทอง
+      const H_TH = 'หา**ที่ที่ใช่** สำหรับชีวิตที่ดี\nเริ่มต้นได้ที่นี่';
+      const H_EN = 'Find **the right place** for a better life.\nIt starts here.';
+      const CHAR_DELAY = 30, START_DELAY = 200, CHAR_MS = 500;
+      const h = document.getElementById('vheroH');
+      const raw = (TD.lang && TD.lang() === 'en') ? H_EN : H_TH;
+      function graphemes(s) {
+        try {
+          const seg = new Intl.Segmenter('th', { granularity: 'grapheme' });
+          return [...seg.segment(s)].map(x => x.segment);
+        } catch (e) { return null; } // เบราว์เซอร์เก่า: ไม่ animate
+      }
+      const lines = raw.split('\n');
+      let supported = true;
+      const frag = document.createDocumentFragment();
+      lines.forEach((line, li) => {
+        const lineEl = document.createElement('span');
+        lineEl.className = 'vh-line';
+        // parse **gold**
+        const parts = line.split('**');
+        let charIdx = 0;
+        const lineLen = line.replace(/\*\*/g, '').length;
+        parts.forEach((part, pi) => {
+          const gold = pi % 2 === 1;
+          const chars = graphemes(part);
+          if (!chars) { supported = false; lineEl.appendChild(document.createTextNode(part)); return; }
+          chars.forEach(ch => {
+            const sp = document.createElement('span');
+            sp.className = 'vh-ch' + (gold ? ' gold' : '');
+            sp.textContent = ch === ' ' ? '\u00A0' : ch;
+            sp.style.transitionDuration = CHAR_MS + 'ms';
+            sp.style.transitionDelay = (START_DELAY + li * lineLen * CHAR_DELAY + charIdx * CHAR_DELAY) + 'ms';
+            lineEl.appendChild(sp);
+            charIdx++;
+          });
+        });
+        frag.appendChild(lineEl);
+      });
+      h.appendChild(frag);
+      if (reduce || !supported) {
+        h.classList.add('vh-instant');
+      } else {
+        requestAnimationFrame(() => requestAnimationFrame(() => h.classList.add('vh-go')));
+      }
+
+      // ---- fade-in ตาม delay ----
+      document.querySelectorAll('[data-fade]').forEach(el => {
+        if (reduce) { el.classList.add('fade-show'); return; }
+        setTimeout(() => el.classList.add('fade-show'), Number(el.dataset.fade) || 0);
+      });
+
+      // ---- ปุ่มเริ่มค้นหา → เลื่อนไปช่องค้นหา ----
+      document.getElementById('vheroSearch').onclick = () => {
+        document.getElementById('searchArea').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+        setTimeout(() => { const q = document.getElementById('qInput'); if (q) q.focus({ preventScroll: true }); }, reduce ? 0 : 600);
+      };
+
+      // ---- navbar: โปร่งดำบนวิดีโอ → ครีมเมื่อเลื่อนผ่าน ----
+      const hero = document.getElementById('vhero');
+      let tick = false;
+      function navState() {
+        document.body.classList.toggle('past-hero', window.scrollY > hero.offsetHeight - 70);
+      }
+      window.addEventListener('scroll', () => {
+        if (tick) return; tick = true;
+        requestAnimationFrame(() => { navState(); tick = false; });
+      }, { passive: true });
+      navState();
+
+      // ---- วิดีโอโหลดไม่ได้/ช้า → พื้นหลัง gradient แทน (เว็บไม่พังไม่ดำมืด) ----
+      const vid = document.getElementById('vheroVideo');
+      vid.addEventListener('error', () => hero.classList.add('vhero-novideo'));
+      if (reduce) { try { vid.pause(); } catch (e) {} }
+    })();
+
     document.getElementById('chips').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       if (b.hasAttribute('data-concierge')) return; // ปุ่ม AI: ปล่อยให้ตัวเปิดแชทจัดการ ไม่เด้งไปค้นหา

@@ -951,6 +951,9 @@ TD.EN = {
   'รีวิวจากผู้เข้าชม': 'Visitor reviews', 'เขียนรีวิว': 'Write a review',
   'ยังไม่มีรีวิว เป็นคนแรกเลย!': 'No reviews yet — be the first!', 'รีวิวทรัพย์นี้': 'Review this property', 'ส่งรีวิว': 'Submit review',
   'ไม่พบหน้าที่คุณตามหา': "Page not found", 'กลับหน้าแรก': 'Back to home', 'ค้นหาทรัพย์': 'Search properties',
+  'ค้นหาบ้านเช่า คอนโด บ้านขาย และที่ดินจากทั่วประเทศ ข้อมูลครบทุกมิติ ติดต่อเจ้าของได้โดยตรง': 'Find rentals, condos, homes for sale and land nationwide. Complete details, contact owners directly.',
+  'เริ่มค้นหา': 'Start searching', 'เช่า. ซื้อ. ที่ดิน. ทั่วไทย.': 'Rent. Buy. Land. All of Thailand.',
+  'เริ่มค้นหาทรัพย์ของคุณ': 'Start your search',
   'บ้านเช่าเชียงใหม่': 'Rentals in Chiang Mai', 'ที่ดินทั้งหมด': 'All land', 'เลี้ยงสัตว์ได้': 'Pet-friendly',
   // ---- Home sections ----
   'ประกาศแนะนำ': 'Featured Listings', 'คัดมาให้เฉพาะประกาศเด่น ข้อมูลครบ พร้อมติดต่อ': 'Hand-picked standout listings, full details, ready to contact',
