@@ -1728,25 +1728,24 @@ footer { background: var(--dark); color: #b5b4ac; margin-top: 48px; }
   flex: 1;
 }
 .ahero-h {
-  font-family: 'Instrument Serif', 'Trirong', serif;
-  font-weight: 400;
-  font-size: clamp(2.6rem, 7.5vw, 5.6rem);
-  line-height: 1.14; /* serif ไทยมีสระบน-ล่าง ใช้ 0.95 ตามสเปคตรง ๆ ไม่ได้ ตัวจะชนกัน */
-  letter-spacing: -0.02em;
+  font-family: 'Kanit', sans-serif;
+  font-weight: 300; /* บางแบบ editorial — โมเดิร์น ไม่เหมือนหนังสือเรียน */
+  font-size: clamp(2.4rem, 6.5vw, 5rem);
+  line-height: 1.22;
+  letter-spacing: -0.01em;
   color: var(--ink);
-  max-width: 1000px;
+  max-width: 980px;
   text-wrap: balance;
 }
 .ahero-h em {
-  font-style: italic;
-  color: #8a857b; /* เทาอบอุ่นแบบสเปค #6F6F6F แต่เข้าโทนครีม */
-  font-weight: 300;
+  font-style: normal; /* ตัวเอียงไทยดูฝืน — ใช้สีทอง+น้ำหนักแทน */
+  color: var(--gold);
+  font-weight: 500;
 }
-:root[data-theme="dark"] .ahero-h em { color: #9a958a; }
 .ahero-desc {
-  font-family: 'Inter', var(--font-body), sans-serif;
+  font-family: var(--font-body);
   color: var(--muted);
-  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  font-size: clamp(1rem, 1.8vw, 1.13rem);
   line-height: 1.85;
   max-width: 620px;
   margin-top: 2rem;
